@@ -30,8 +30,14 @@ const Login: React.FC = () => {
             name: userData.name,
             picture: userData.picture,
           },
-          { withCredentials: true }
+          {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         );
+        
 
         // Redirect to profile creation page
         navigate('/profile-creation');
