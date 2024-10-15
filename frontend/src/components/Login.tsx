@@ -1,4 +1,3 @@
-// src/components/Login.tsx
 import React from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
@@ -22,8 +21,8 @@ const Login: React.FC = () => {
 
         const userData = res.data;
 
-        // Correct the URL here
-        await axios.post(
+        // Send the user data to backend to check if they already have an account
+        const backendResponse = await axios.post(
           'http://localhost:5000/append_user_id',
           {
             user_id: userData.email,
@@ -37,10 +36,15 @@ const Login: React.FC = () => {
             },
           }
         );
-        
 
-        // Redirect to profile creation page
-        navigate('/profile-creation');
+        const redirectTo = backendResponse.data.redirect_to;
+
+        // Redirect based on server response
+        if (redirectTo === 'map') {
+          navigate('/map'); // User has an existing account, go to map
+        } else {
+          navigate('/profile-creation'); // New user or profile incomplete
+        }
       } catch (err) {
         console.error('Error during login:', err);
       }
@@ -51,9 +55,12 @@ const Login: React.FC = () => {
   });
 
   return (
-    <div>
-      <h2>Login with Google</h2>
-      <button onClick={() => login()}>Sign in with Google</button>
+    <div className="login-container">
+      <h2>Welcome to QuantumAiEd</h2>
+      <p>Please sign in to continue</p>
+      <button className="login-button" onClick={() => login()}>
+        Sign in with Google
+      </button>
     </div>
   );
 };
