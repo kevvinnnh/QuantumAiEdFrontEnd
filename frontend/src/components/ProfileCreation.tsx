@@ -65,9 +65,12 @@ const ProfileCreation: React.FC = () => {
 
   const navigate = useNavigate();
 
+  // Use VITE_BACKEND_URL if available; fallback to localhost for local testing
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
   useEffect(() => {
     axios
-      .get('http://localhost:5000/get_user_id', { withCredentials: true })
+      .get(`${backendUrl}/get_user_id`, { withCredentials: true })
       .then((response) => {
         const uid = response.data.user_id;
         console.log('ProfileCreation: session user_id =', uid);
@@ -82,7 +85,7 @@ const ProfileCreation: React.FC = () => {
           setUserId('');
         }
       });
-  }, []);
+  }, [backendUrl]);
 
   if (userId === null) {
     return <p>Loading user info...</p>;
@@ -168,7 +171,7 @@ const ProfileCreation: React.FC = () => {
     console.log('DEBUG: Submitting profile =>', dataToSend);
 
     axios
-      .post('http://localhost:5000/save_profile', dataToSend, {
+      .post(`${backendUrl}/save_profile`, dataToSend, {
         withCredentials: true,
       })
       .then((response) => {
