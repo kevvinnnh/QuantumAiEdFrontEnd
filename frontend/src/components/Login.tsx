@@ -2,11 +2,13 @@ import React from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-// Ensure you have a Google icon image at the provided path
 import googleIcon from '../assets/google-icon.png';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Use VITE_BACKEND_URL if set; otherwise, fallback to localhost
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -21,9 +23,9 @@ const Login: React.FC = () => {
         const userData = res.data;
         const userEmail = userData.email || '';
 
-        // Append user info to the backend
+        // Append user info to the backend using the dynamic backend URL
         const backendResponse = await axios.post(
-          'http://localhost:5000/append_user_id',
+          `${backendUrl}/append_user_id`,
           {
             user_id: userEmail,
             name: userData.name,
