@@ -1,8 +1,11 @@
-/* General styles */
+/* ------------------------ */
+/*       General styles     */
+/* ------------------------ */
 body {
   background-color: #E8E3F3;
-  font-family: Arial, sans-serif;
-  color: #070F14;
+  background: linear-gradient(135deg, #f0f2f5, #ffffff);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
   margin: 0;
   padding: 0;
 }
@@ -20,6 +23,11 @@ body {
   text-align: center;
 }
 
+/* ------------------------ */
+/*     Original Components  */
+/* ------------------------ */
+
+/* Original login-container styling */
 .login-container {
   margin-top: 50px;
   padding: 20px;
@@ -51,6 +59,7 @@ body {
   background-color: #A487AE;
 }
 
+/* Profile creation container styling */
 .profile-creation-container {
   max-width: 100%;
   margin: 20px auto;
@@ -69,11 +78,25 @@ body {
   font-size: 1em;
 }
 
+/* Concept book styles */
+.concept-book {
+  text-align: left; /* Default left alignment */
+}
+
+.concept-book h3,
+.concept-book h4,
+.concept-book h5,
+.concept-book h6 {
+  text-align: center; /* Override for headers */
+}
+
+/* Step styling */
 .step h3 {
   color: #566395;
   margin-bottom: 20px;
 }
 
+/* Form elements styling */
 .form-select,
 .form-input {
   width: 100%;
@@ -84,12 +107,41 @@ body {
   margin-bottom: 20px;
 }
 
+/* Navigation buttons styling */
 .navigation-buttons {
   display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  justify-content: flex-end; /* Aligns buttons to the right */
+  gap: 10px; /* Adds space between buttons */
+  flex-wrap: wrap; /* Ensures responsiveness */
 }
 
+/* Interactive word tooltip styling */
+.interactive-word {
+  position: relative; /* Ensure tooltip is relative to the hovered word */
+  color: #566395;
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+
+.interactive-word:hover::after {
+  content: attr(data-term); /* Fetches tooltip text */
+  position: absolute;
+  top: 110%; /* Positions the tooltip below the word */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #566395; /* Solid background for visibility */
+  color: #E8E3F3; /* Text color for contrast */
+  padding: 8px 12px; /* Adds spacing inside tooltip */
+  border-radius: 5px;
+  max-width: 200px; /* Restricts tooltip width */
+  text-align: center; /* Centers text within the tooltip */
+  white-space: normal; /* Allows text to wrap if necessary */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Adds a shadow for emphasis */
+  z-index: 10;
+  font-size: 0.9em;
+}
+
+/* Generic button styling */
 .button {
   background-color: #566395;
   color: #E8E3F3;
@@ -111,7 +163,7 @@ body {
   background-color: #A487AE;
 }
 
-/* Responsive styles for mobile devices */
+/* Responsive styles for mobile devices (Original) */
 @media (max-width: 600px) {
   .login-container h2 {
     font-size: 1.5em;
@@ -148,4 +200,505 @@ body {
     width: 100%;
     margin-bottom: 10px;
   }
+}
+
+/* Hobbies list styling */
+.hobbies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Space between items */
+  margin-top: 10px;
+}
+
+.hobby-item {
+  display: flex;
+  align-items: center;
+  background-color: #F5F3FB; /* Slight background for tap area */
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 1px solid #A487AE;
+  transition: background-color 0.2s;
+}
+
+.hobby-item:hover {
+  background-color: #e2d4f0; /* Hover effect for mobile */
+}
+
+.hobby-checkbox {
+  margin-right: 10px;
+  transform: scale(1.2); /* Larger checkbox for easier tapping */
+}
+
+.hobby-label {
+  font-size: 1em;
+  color: #070F14;
+}
+
+/* ------------------------ */
+/*   Modern Login Updates   */
+/* ------------------------ */
+
+/* Updated login-container as a modern card */
+.login-container {
+  margin-top: 100px; /* Increased margin for better centering */
+  padding: 40px;      /* More padding for a spacious look */
+  background-color: #FFFFFF; /* Subtle background color */
+  border-radius: 10px;       /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+}
+
+/* Updated login button for a modern design using app colors */
+.login-button {
+  background-color: #566395; /* Replaced blue with app's primary color */
+  color: white;
+  padding: 12px 30px;
+  font-size: 1em;
+  font-weight: 500; /* Medium font weight */
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.3s, background-color 0.3s;
+  width: 100%;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-button:hover {
+  transform: scale(1.05); /* Slight scale on hover */
+  background-color: #A487AE; /* Replaced blue hover with app's secondary color */
+}
+
+/* Google icon for login button */
+.google-icon {
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+/* New header text for login page */
+.login-container h2 {
+  font-size: 2rem;
+  color: #2a2a2a;
+  margin-bottom: 0.5em;
+}
+
+/* Updated prompt paragraph */
+.login-container p {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 1.5em;
+}
+
+/* Terms & Conditions disclaimer */
+.terms {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 10px;
+  line-height: 1.4;
+}
+
+.terms a {
+  color: #566395; /* Replaced blue with app's primary color */
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.terms a:hover {
+  text-decoration: underline;
+}
+
+/* Modern login wrapper to center the login container vertically */
+.login-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* Responsive adjustments for modern login design */
+@media (max-width: 600px) {
+  .login-container {
+    padding: 30px 20px;
+  }
+
+  .login-container h2 {
+    font-size: 1.5rem;
+  }
+
+  .login-container p {
+    font-size: 0.9rem;
+  }
+}
+
+
+/* ----------------------------- */
+/*    Profile Creation Styles    */
+/* ----------------------------- */
+
+/* Wrapper to center the profile creation content and take up more screen space */
+.profile-creation-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: linear-gradient(135deg, #f0f2f5, #ffffff);
+}
+
+/* Modern card style for the profile creation container */
+.profile-creation-container {
+  background-color: #fff;
+  padding: 40px 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Header styling */
+.profile-creation-container h2 {
+  text-align: center;
+  font-size: 2rem;
+  color: #2a2a2a;
+  margin-bottom: 20px;
+}
+
+/* Welcome message styling */
+.profile-creation-container p {
+  text-align: center;
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+/* Step styling */
+.profile-creation-container .step {
+  margin-bottom: 20px;
+}
+
+.profile-creation-container .step h3 {
+  font-size: 1.5rem;
+  color: #566395;
+  margin-bottom: 10px;
+}
+
+/* Select and input fields styling */
+.profile-creation-container select,
+.profile-creation-container input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border: 1px solid #A487AE;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+/* Button styling */
+.profile-creation-container button {
+  padding: 12px 30px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #566395;
+  color: #fff;
+  transition: transform 0.3s, background-color 0.3s;
+  margin: 10px 5px;
+}
+
+.profile-creation-container button:hover {
+  transform: scale(1.05);
+  background-color: #A487AE;
+}
+
+/* Hobbies list styling */
+.profile-creation-container .hobbies-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.profile-creation-container .hobby-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #A487AE;
+  border-radius: 5px;
+  background-color: #F5F3FB;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.profile-creation-container .hobby-item:hover {
+  background-color: #e2d4f0;
+}
+
+.profile-creation-container .hobby-item input[type="checkbox"] {
+  margin-right: 8px;
+  transform: scale(1.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .profile-creation-container {
+    padding: 30px 20px;
+  }
+  
+  .profile-creation-container h2 {
+    font-size: 1.8rem;
+  }
+  
+  .profile-creation-container .step h3 {
+    font-size: 1.3rem;
+  }
+}
+
+/* ----------------------------- */
+/*      Welcome Video Popup      */
+/* ----------------------------- */
+
+.video-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.video-popup h2 {
+  color: #fff;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.video-popup video {
+  width: 80%;
+  border-radius: 8px;
+  max-width: 800px;
+}
+
+.video-popup button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #566395;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: transform 0.3s, background-color 0.3s;
+}
+
+.video-popup button:hover {
+  transform: scale(1.05);
+  background-color: #A487AE;
+}
+/* --------------------------------- */
+/*         Side Chat Container       */
+/* --------------------------------- */
+.side-chat-container {
+  width: 350px;
+  background-color: #f8f8f8;
+  border-left: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  height: 100%;
+  position: relative;
+}
+
+/* --------------------------------- */
+/*      Collapsed Chat Overlay       */
+/* --------------------------------- */
+.side-chat-collapsed-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(248, 248, 248, 0.9);
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* --------------------------------- */
+/*        Chat Header & Toggle       */
+/* --------------------------------- */
+.side-chat-header {
+  background-color: #eee;
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #ccc;
+}
+
+.side-chat-toggle-button {
+  background-color: #566395;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s, transform 0.3s;
+  margin: 0 auto;
+  display: block;
+}
+
+.side-chat-toggle-button:hover {
+  background-color: #A487AE;
+  transform: scale(1.05);
+}
+
+/* --------------------------------- */
+/*         Chat Messages Area        */
+/* --------------------------------- */
+.side-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  background-color: #fefefe;
+}
+
+/* --------------------------------- */
+/*         Individual Message        */
+/* --------------------------------- */
+.side-chat-message {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+/* Profile Picture Container */
+/* For the assistant, replace the background image with the asset provided.
+   For the user, you can simply insert an emoji as text inside this container. */
+.side-chat-message .profile-pic {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 10px;
+  flex-shrink: 0;
+  background-color: #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.side-chat-message .profile-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Message Bubble Styling */
+.side-chat-message .message-content {
+  background-color: #e1e1e1;
+  border-radius: 12px;
+  padding: 8px 12px;
+  max-width: 75%;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* Distinguish Assistant and User Messages */
+.side-chat-message.assistant .message-content {
+  background-color: #d1e7dd;
+}
+
+.side-chat-message.user .message-content {
+  background-color: #f8d7da;
+}
+
+/* --------------------------------- */
+/*         Chat Input Area           */
+/* --------------------------------- */
+.side-chat-input-container {
+  border-top: 1px solid #ccc;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  background-color: #f8f8f8;
+}
+
+.side-chat-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.side-chat-input:focus {
+  border-color: #566395;
+}
+
+.side-chat-send-button {
+  background-color: #566395;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  margin-left: 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.side-chat-send-button:hover {
+  background-color: #A487AE;
+  transform: scale(1.05);
+}
+
+/* --------------------------------- */
+/*         Chat History Area         */
+/* --------------------------------- */
+.chat-history-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.chat-history-title {
+  text-align: center;
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  color: #2a2a2a;
+}
+
+.chat-history-item {
+  margin-bottom: 12px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+}
+
+.chat-history-item p {
+  margin: 4px 0;
+}
+
+/* --------------------------------- */
+/*      Link Styling in Messages     */
+/* --------------------------------- */
+.side-chat-message a {
+  color: #566395;
+  text-decoration: underline;
 }

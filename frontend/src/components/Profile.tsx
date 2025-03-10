@@ -2,43 +2,46 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const Profile: React.FC = () => {
-  const [userData, setUserData] = useState<any>({
+  const [userData, setUserData] = useState({
     name: '',
     profilePicture: '',
     educationLevel: '',
     major: '',
-    favoriteHobby: '',
+    favoriteHobbies: [] as string[],
   });
-  const [loading, setLoading] = useState<boolean>(true); // Add loading state
+  const [loading, setLoading] = useState<boolean>(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Fetch the user ID and profile data
+  // Fetch the user ID and then the user profile using session data
   useEffect(() => {
     axios
       .get('http://localhost:5000/get_user_id', { withCredentials: true })
       .then((response) => {
-        return axios.get('http://localhost:5000/get_user_profile', {
-          params: { userId: response.data.user_id },
-          withCredentials: true,
-        });
+        // Do not pass userId as a query parameter; backend uses session
+        return axios.get('http://localhost:5000/get_user_profile', { withCredentials: true });
       })
       .then((profileResponse) => {
-        // Set profile data, fallback to empty string for profilePicture if not present
+        const data = profileResponse.data;
         setUserData({
-          ...profileResponse.data,
-          profilePicture: profileResponse.data.profilePicture || '',
+          name: data.name || 'User',
+          profilePicture: data.profilePicture || '',
+          educationLevel: data.educationLevel || 'Not provided',
+          // If major is null, show fallback text
+          major: data.major ? data.major : 'Not provided',
+          favoriteHobbies: Array.isArray(data.favoriteHobbies) ? data.favoriteHobbies : [],
         });
       })
       .catch((error) => {
         console.error('Error fetching user profile:', error);
       })
       .finally(() => {
-        setLoading(false); // Once the data is fetched, stop loading
+        setLoading(false);
       });
   }, []);
 
   const handleLogout = () => {
-    axios.post('http://localhost:5000/logout', {}, { withCredentials: true })
+    axios
+      .post('http://localhost:5000/logout', {}, { withCredentials: true })
       .then(() => {
         window.location.href = '/';
       })
@@ -62,38 +65,38 @@ const Profile: React.FC = () => {
   return (
     <div className="profile-container" style={{ position: 'relative', padding: '20px' }}>
       {/* Back Arrow (top left) */}
-      <div 
-        style={{ 
-          position: 'absolute', 
-          top: '10px', 
-          left: '10px', 
-          cursor: 'pointer', 
-          display: 'flex', 
-          alignItems: 'center' 
-        }} 
+      <div
+        style={{
+          position: 'absolute',
+          top: '10px',
+          left: '10px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+        }}
         onClick={() => (window.location.href = '/map')}
       >
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          width="30" 
-          height="30" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="30"
+          height="30"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           style={{ color: '#566395' }}
         >
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
-        <span 
-          style={{ 
-            marginLeft: '8px', 
-            fontSize: '1.2em', 
-            fontWeight: 'bold', 
-            color: '#566395', 
-            fontFamily: 'inherit'  
+        <span
+          style={{
+            marginLeft: '8px',
+            fontSize: '1.2em',
+            fontWeight: 'bold',
+            color: '#566395',
+            fontFamily: 'inherit',
           }}
         >
           Back
@@ -121,7 +124,7 @@ const Profile: React.FC = () => {
               justifyContent: 'center',
               alignItems: 'center',
               fontSize: '80px',
-              backgroundColor: '#E0E0E0'
+              backgroundColor: '#E0E0E0',
             }}
           >
             👤
@@ -129,9 +132,18 @@ const Profile: React.FC = () => {
         )}
 
         {/* Display user information */}
-        <p><strong>Education Level:</strong> {userData.educationLevel}</p>
-        <p><strong>Major:</strong> {userData.major}</p>
-        <p><strong>Favorite Hobby:</strong> {userData.favoriteHobby}</p>
+        <p>
+          <strong>Education Level:</strong> {userData.educationLevel}
+        </p>
+        <p>
+          <strong>Major:</strong> {userData.major}
+        </p>
+        <p>
+          <strong>Current Hobbies:</strong>{' '}
+          {Array.isArray(userData.favoriteHobbies)
+            ? userData.favoriteHobbies.join(', ')
+            : userData.favoriteHobbies}
+        </p>
 
         {/* Log Out Button */}
         <button
@@ -153,19 +165,21 @@ const Profile: React.FC = () => {
 
         {/* Logout Confirmation Popup */}
         {showLogoutConfirm && (
-          <div style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            backgroundColor: '#fff',
-            padding: '20px',
-            borderRadius: '10px',
-            boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-            zIndex: 1000,
-            width: '300px',
-            textAlign: 'center'
-          }}>
+          <div
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: '#fff',
+              padding: '20px',
+              borderRadius: '10px',
+              boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+              zIndex: 1000,
+              width: '300px',
+              textAlign: 'center',
+            }}
+          >
             <p>Are you sure you want to log out?</p>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
               <button
