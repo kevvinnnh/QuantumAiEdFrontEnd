@@ -4,12 +4,11 @@ interface Question {
   question: string;
   options: string[];
   correctAnswer: number;
-  explanation?: string; // New optional explanation property
+  explanation?: string; // Optional explanation property remains on Question if needed for display
 }
 
 interface QuestionsProps {
   showIntro: boolean;
-  currentIndex: number;
   question: Question;
   selectedOption: number | null;
   hasSubmitted: boolean;
@@ -20,13 +19,11 @@ interface QuestionsProps {
   onNext: () => void;
   onIntroMouseUp: (e: React.MouseEvent<HTMLDivElement>) => void;
   onStartQuiz: () => void;
-  explanation: string; // This might be used for text explained via the highlight feature
   isLastQuestion: boolean;
 }
 
 const Questions: React.FC<QuestionsProps> = ({
   showIntro,
-  currentIndex,
   question,
   selectedOption,
   hasSubmitted,
@@ -37,7 +34,6 @@ const Questions: React.FC<QuestionsProps> = ({
   onNext,
   onIntroMouseUp,
   onStartQuiz,
-  explanation,
   isLastQuestion,
 }) => {
   if (showIntro) {
@@ -160,9 +156,6 @@ const Questions: React.FC<QuestionsProps> = ({
           {question.options.map((option, idx) => {
             const isSelected = selectedOption === idx;
             const disabled = hasSubmitted;
-            // Option styling: if the answer has been submitted and this option is the correct answer,
-            // add a green border or background. Optionally, if the user got it wrong, we can highlight their
-            // selected answer in red.
             let optionStyle: React.CSSProperties = {
               backgroundColor: isSelected ? '#566395' : '#f8f9fa',
               color: isSelected ? '#f8f9fa' : '#111',
@@ -178,16 +171,14 @@ const Questions: React.FC<QuestionsProps> = ({
             };
 
             if (hasSubmitted) {
-              // If submitted, mark the correct answer
               if (idx === question.correctAnswer) {
                 optionStyle = {
                   ...optionStyle,
-                  backgroundColor: '#e0ffe0', // light green background
+                  backgroundColor: '#e0ffe0',
                   border: '2px solid green',
                   color: '#333',
                 };
               }
-              // Optionally, if the user selected a wrong answer, you might mark it in red.
               if (selectedOption !== question.correctAnswer && idx === selectedOption) {
                 optionStyle = {
                   ...optionStyle,
@@ -211,7 +202,6 @@ const Questions: React.FC<QuestionsProps> = ({
           })}
         </div>
 
-        {/* Show Submit button if not yet submitted */}
         {!hasSubmitted && selectedOption !== null && (
           <button
             onClick={onSubmitAnswer}
@@ -231,7 +221,6 @@ const Questions: React.FC<QuestionsProps> = ({
           </button>
         )}
 
-        {/* Post–submission immediate feedback and breakdown */}
         {hasSubmitted && (
           <div style={{ textAlign: 'center', marginTop: '20px' }}>
             <p
@@ -244,7 +233,6 @@ const Questions: React.FC<QuestionsProps> = ({
               {feedback}
             </p>
 
-            {/* Reveal correct answer and explanation regardless of whether the user was correct */}
             <div
               style={{
                 margin: '20px auto',
