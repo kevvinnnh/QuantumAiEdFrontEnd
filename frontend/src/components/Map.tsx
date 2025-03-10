@@ -55,7 +55,6 @@ const Map: React.FC = () => {
   const [bookOpen, setBookOpen] = useState<boolean>(false);
   const [unlockedLevels, setUnlockedLevels] = useState<number[]>([]);
   const navigate = useNavigate();
-  const [showBookPopup, setShowBookPopup] = useState<boolean>(false);
   const [showQuizPopup, setShowQuizPopup] = useState<boolean>(false);
 
   // Guide popups for this page:
@@ -83,9 +82,7 @@ const Map: React.FC = () => {
       }
     })();
 
-    const hasSeenBookPopup = localStorage.getItem('seenBookPopup');
     const hasSeenQuizPopup = localStorage.getItem('seenQuizPopup');
-    if (!hasSeenBookPopup) setShowBookPopup(true);
     if (!hasSeenQuizPopup) setShowQuizPopup(false);
   }, []);
 
@@ -118,13 +115,9 @@ const Map: React.FC = () => {
     navigate('/map');
   };
 
+  // Removed the book popup logic; simply open the Concept Book when the button is clicked.
   const handleBookOpen = () => {
-    if (!localStorage.getItem('seenBookPopup')) {
-      localStorage.setItem('seenBookPopup', 'true');
-      setShowBookPopup(true);
-    } else {
-      setBookOpen(true);
-    }
+    setBookOpen(true);
   };
 
   const handleQuizOpen = () => {
@@ -136,8 +129,8 @@ const Map: React.FC = () => {
     }
   };
 
+  // Updated closePopup to remove book popup reference.
   const closePopup = () => {
-    setShowBookPopup(false);
     setShowQuizPopup(false);
   };
 
@@ -213,8 +206,8 @@ const Map: React.FC = () => {
               color: '#fff',
               border: 'none',
               cursor: 'pointer',
-              width: '200px', 
-              height: '70px'
+              width: '200px',
+              height: '70px',
             }}
             onClick={handleBookOpen}
           >
@@ -289,18 +282,7 @@ const Map: React.FC = () => {
         })}
       </div>
 
-      {/* Existing Concept Book Popup */}
-      {showBookPopup && (
-        <div style={modalStyle}>
-          <h2>Concept Book</h2>
-          <p>
-            This is your pocket guide to quantum computing concepts. Tap the Concept Book button (located in the header) to view detailed explanations, tips, and further resources.
-          </p>
-          <button onClick={() => { closePopup(); setBookOpen(true); }} style={modalButtonStyle}>
-            Got It!
-          </button>
-        </div>
-      )}
+      {/* Removed Concept Book Popup */}
 
       {/* Existing Quiz Popup */}
       {showQuizPopup && (
