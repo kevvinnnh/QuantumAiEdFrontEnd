@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Quiz from './Quiz';
-import ConceptBook from './ConceptBook'
+import ConceptBook from './ConceptBook';
 
 async function fakeLogin() {
   try {
@@ -48,21 +48,6 @@ async function saveQuizProgress(completedQuiz: number, unlockQuiz: number) {
   }
   return response.json();
 }
-
-const definitions: Record<string, string> = {
-  qubit:
-    'A qubit is the quantum version of a classical bit, capable of representing 0, 1, or both simultaneously through superposition.',
-  superposition:
-    'The ability of a qubit to be in multiple states (0 and 1) simultaneously.',
-  entanglement:
-    'A quantum phenomenon where two or more qubits are linked, so the state of one affects the other.',
-  measurement:
-    'The act of observing a qubit, which collapses it into a definite state of either 0 or 1.',
-};
-
-const handleWordClick = (term: string) => {
-  alert(definitions[term] || 'Definition not found.');
-};
 
 const Map: React.FC = () => {
   const [currentLevel, setCurrentLevel] = useState<number>(0);
@@ -324,7 +309,7 @@ const Map: React.FC = () => {
           <p>
             The quiz tests your understanding of the chapter’s ideas. Tap the quiz button (the current level’s circle) to start the challenge and unlock the next level.
           </p>
-          <button onClick={() => { closePopup(); setQuizOpen(true); }} style={modalButtonStyle}>
+          <button onClick={() => { closePopup(); handleQuizOpen(); }} style={modalButtonStyle}>
             Got It!
           </button>
         </div>
@@ -336,10 +321,9 @@ const Map: React.FC = () => {
           <Quiz onExit={handleQuizExit} onComplete={handleQuizCompletion} />
         </div>
       )}
-{bookOpen && (
-  <ConceptBook currentLevel={currentLevel} onClose={() => setBookOpen(false)} />
-)}
-
+      {bookOpen && (
+        <ConceptBook currentLevel={currentLevel} onClose={handleBookClose} />
+      )}
 
       <Link
         to="/profile"

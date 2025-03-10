@@ -73,7 +73,7 @@ const ProfileCreation: React.FC = () => {
         console.log('ProfileCreation: session user_id =', uid);
         setUserId(uid);
       })
-      .catch((error) => {
+      .catch(() => {
         console.warn('No user in session, fallback to localStorage');
         const storedEmail = localStorage.getItem('loggedInUserEmail');
         if (storedEmail) {
@@ -233,7 +233,10 @@ const ProfileCreation: React.FC = () => {
   }
 
   return (
-    <div className="profile-creation-container" style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+    <div
+      className="profile-creation-container"
+      style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}
+    >
       <h2 style={{ textAlign: 'center', marginBottom: '10px' }}>Create Your Profile</h2>
       <p style={{ textAlign: 'center' }}>Welcome, {userId}!</p>
 

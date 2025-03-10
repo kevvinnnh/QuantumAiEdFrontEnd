@@ -30,8 +30,8 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
   const [highlightedText, setHighlightedText] = useState('');
   const [showHighlightPopup, setShowHighlightPopup] = useState(false);
   const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
-  const [explanation, setExplanation] = useState('');
-
+  // Removed 'explanation' state because it is not read elsewhere.
+  
   // === Chat State ===
   const [sideChatMessages, setSideChatMessages] = useState<
     Array<{ role: string; content: string }>
@@ -53,9 +53,9 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
   // === Chat Collapse (if needed) ===
   const [chatHidden, setChatHidden] = useState(false);
   const revealChat = () => setChatHidden(false);
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {};
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {};
-  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {};
+  const handleTouchStart = (_: React.TouchEvent<HTMLDivElement>) => {};
+  const handleTouchMove = (_: React.TouchEvent<HTMLDivElement>) => {};
+  const handleTouchEnd = (_: React.TouchEvent<HTMLDivElement>) => {};
 
   // === Side Effects ===
   useEffect(() => {
@@ -112,7 +112,6 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
     if (text) {
       setHighlightedText(text);
       setShowHighlightPopup(true);
-      setExplanation('');
       setPopupPos({ x: e.clientX, y: e.clientY });
     } else {
       setShowHighlightPopup(false);
@@ -132,9 +131,8 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
       if (!resp.ok) throw new Error('Failed to fetch explanation');
       const data = await resp.json();
       const explanationText = data.explanation || 'No explanation found.';
-      setExplanation(explanationText);
+      // Instead of setting an unused state, directly add the explanation to the side chat.
       setSideChatMessages(old => [...old, { role: 'assistant', content: explanationText }]);
-      
     } catch (err) {
       console.error(err);
     }
@@ -277,7 +275,6 @@ Please provide a condensed explanation that ${
 
         <Questions
           showIntro={showIntro}
-          currentIndex={currentIndex}
           question={quizData[currentIndex]}
           selectedOption={selectedOption}
           hasSubmitted={hasSubmitted}
@@ -288,7 +285,6 @@ Please provide a condensed explanation that ${
           onNext={handleNext}
           onIntroMouseUp={handleIntroMouseUp}
           onStartQuiz={handleStartQuiz}
-          explanation={explanation}
           isLastQuestion={currentIndex === quizData.length - 1}
         />
       </div>

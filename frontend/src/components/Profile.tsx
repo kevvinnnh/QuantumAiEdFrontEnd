@@ -16,7 +16,7 @@ const Profile: React.FC = () => {
   useEffect(() => {
     axios
       .get('http://localhost:5000/get_user_id', { withCredentials: true })
-      .then((response) => {
+      .then(() => {
         // Do not pass userId as a query parameter; backend uses session
         return axios.get('http://localhost:5000/get_user_profile', { withCredentials: true });
       })
