@@ -53,9 +53,6 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
   // === Chat Collapse (if needed) ===
   const [chatHidden, setChatHidden] = useState(false);
   const revealChat = () => setChatHidden(false);
-  const handleTouchStart = (_: React.TouchEvent<HTMLDivElement>) => {};
-  const handleTouchMove = (_: React.TouchEvent<HTMLDivElement>) => {};
-  const handleTouchEnd = (_: React.TouchEvent<HTMLDivElement>) => {};
 
   // === Side Effects ===
   useEffect(() => {
@@ -299,9 +296,6 @@ Please provide a condensed explanation that ${
           messagesEndRef={messagesEndRef}
           messagesContainerRef={messagesContainerRef}
           chatHidden={chatHidden}
-          handleTouchStart={handleTouchStart}
-          handleTouchMove={handleTouchMove}
-          handleTouchEnd={handleTouchEnd}
           revealChat={revealChat}
           showHistory={showHistory}
           toggleHistory={toggleHistory}
