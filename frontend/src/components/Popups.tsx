@@ -106,7 +106,7 @@ export const FinalResultsPopup: React.FC<FinalResultsPopupProps> = ({
           }}
           onClick={onReturn}
         >
-          Return to Map
+          Return to Dashboard
         </button>
       </div>
     </div>
