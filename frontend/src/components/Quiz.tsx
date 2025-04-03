@@ -1,3 +1,4 @@
+// src/components/Quiz.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { quizData } from './QuizQuestions';
 import Questions from './Questions';
@@ -5,7 +6,6 @@ import { ChatFeaturePopup, FinalResultsPopup, HighlightPopup } from './Popups';
 import SideChat from './SideChat';
 
 interface QuizProps {
-  concept?: string;
   onComplete: (score: number, passed: boolean) => void;
   onExit: () => void;
 }
@@ -15,10 +15,6 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
-
-  // === Intro State ===
-  const [showIntro, setShowIntro] = useState(true);
-  const [showChatFeaturePopup, setShowChatFeaturePopup] = useState(true);
 
   // === Answer State ===
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -30,7 +26,6 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
   const [highlightedText, setHighlightedText] = useState('');
   const [showHighlightPopup, setShowHighlightPopup] = useState(false);
   const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
-  // Removed 'explanation' state because it is not read elsewhere.
   
   // === Chat State ===
   const [sideChatMessages, setSideChatMessages] = useState<
@@ -50,7 +45,7 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
     setShowHistory(prev => !prev);
   };
 
-  // === Chat Collapse (if needed) ===
+  // === Chat Collapse ===
   const [chatHidden, setChatHidden] = useState(false);
   const revealChat = () => setChatHidden(false);
 
@@ -82,11 +77,6 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
 
   const handleCloseQuiz = () => {
     onExit();
-  };
-
-  const handleStartQuiz = () => {
-    setShowIntro(false);
-    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
   };
 
   const handleSubmitAnswer = () => {
@@ -128,7 +118,6 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
       if (!resp.ok) throw new Error('Failed to fetch explanation');
       const data = await resp.json();
       const explanationText = data.explanation || 'No explanation found.';
-      // Instead of setting an unused state, directly add the explanation to the side chat.
       setSideChatMessages(old => [...old, { role: 'assistant', content: explanationText }]);
     } catch (err) {
       console.error(err);
@@ -259,9 +248,8 @@ Please provide a condensed explanation that ${
             }}
           />
         )}
-        {showChatFeaturePopup && (
-          <ChatFeaturePopup onGotIt={() => setShowChatFeaturePopup(false)} />
-        )}
+        {/* Chat Feature Popup and Highlight Popup remain if needed */}
+        {/* <ChatFeaturePopup onGotIt={() => setShowChatFeaturePopup(false)} /> */}
         {showHighlightPopup && (
           <HighlightPopup
             position={popupPos}
@@ -271,7 +259,6 @@ Please provide a condensed explanation that ${
         )}
 
         <Questions
-          showIntro={showIntro}
           question={quizData[currentIndex]}
           selectedOption={selectedOption}
           hasSubmitted={hasSubmitted}
@@ -280,14 +267,12 @@ Please provide a condensed explanation that ${
           onSubmitAnswer={handleSubmitAnswer}
           onDiscussQuestion={handleDiscussQuestion}
           onNext={handleNext}
-          onIntroMouseUp={handleIntroMouseUp}
-          onStartQuiz={handleStartQuiz}
           isLastQuestion={currentIndex === quizData.length - 1}
         />
       </div>
 
       {/* RIGHT: Side Chat */}
-      {(showIntro || hasSubmitted) && !quizFinished && (
+      {!quizFinished && (
         <SideChat
           sideChatMessages={sideChatMessages}
           sideChatInput={sideChatInput}
