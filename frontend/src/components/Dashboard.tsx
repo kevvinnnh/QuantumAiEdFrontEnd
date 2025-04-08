@@ -1,12 +1,10 @@
 // src/components/Dashboard.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Quiz from './Quiz';
 import Reading from './Reading';
+import ReadingChat from './ReadingChat';
 
-//
-// ========= Color Palette =========
-//
 const colors = {
   dark: "#010117",
   accent: "#071746",
@@ -21,9 +19,6 @@ const colors = {
   border: "rgba(255,255,255,0.2)"
 };
 
-//
-// ========= Helper Functions =========
-//
 async function fakeLogin() {
   try {
     const response = await fetch('http://localhost:5000/append_user_id', {
@@ -69,11 +64,7 @@ async function saveQuizProgress(completedCourse: number, unlockCourse: number) {
   return response.json();
 }
 
-//
-// ========= Course Data =========
-//
 const courses = [
-  // FOUNDATIONS
   {
     id: 0,
     title: 'Introduction to quantum computing',
@@ -92,7 +83,6 @@ const courses = [
     description: 'Explore how quantum gates form the building blocks of quantum circuits.',
     image: 'https://via.placeholder.com/300x200?text=Quantum+Gates',
   },
-  // QUANTUM COMPUTING IN ACTION
   {
     id: 3,
     title: 'Getting Hands-on',
@@ -111,7 +101,6 @@ const courses = [
     description: 'Learn about compilers, simulators, and toolchains for quantum development.',
     image: 'https://via.placeholder.com/300x200?text=Workflows',
   },
-  // DEEP DIVE
   {
     id: 6,
     title: 'Adiabatic Quantum Computing',
@@ -132,17 +121,15 @@ const courses = [
   },
 ];
 
-//
-// ========= Dashboard Component =========
-//
 const Dashboard: React.FC = () => {
-  // Removed unused navigate and handleQuizOpen to fix TS error 6133
   const [viewMode, setViewMode] = useState<'dashboard' | 'lesson'>('dashboard');
   const [currentCourse, setCurrentCourse] = useState<number>(0);
   const [quizOpen, setQuizOpen] = useState<boolean>(false);
   const [unlockedCourses, setUnlockedCourses] = useState<number[]>([]);
   const [showEncryptionPopup, setShowEncryptionPopup] = useState<boolean>(true);
   const [showQuizPopup, setShowQuizPopup] = useState<boolean>(false);
+  const [readingChatOpen, setReadingChatOpen] = useState<boolean>(false);
+  const [readingChatInitialMessage, setReadingChatInitialMessage] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -180,9 +167,9 @@ const Dashboard: React.FC = () => {
         <h2 style={styles.lessonTitle}>{course.title}</h2>
         <img src={course.image} alt={course.title} style={styles.lessonImage} />
         <p style={styles.lessonDescription}>{course.description}</p>
-
-        {course.id === 0 && <Reading />}
-
+        {course.id === 0 && (
+          <Reading onOpenChat={(msg) => { setReadingChatInitialMessage(msg); setReadingChatOpen(true); }} chatOpen={readingChatOpen} />
+        )}
         <div style={styles.rereadingsBox}>
           <h3 style={styles.rereadingsTitle}>Rereadings</h3>
           <ul style={styles.rereadingsList}>
@@ -280,7 +267,7 @@ const Dashboard: React.FC = () => {
         </header>
 
         <div style={styles.content}>
-          {viewMode === 'dashboard' && (
+          {viewMode === 'dashboard' ? (
             <>
               <section style={styles.courseSection}>
                 <h3 style={styles.sectionTitle}>Foundations</h3>
@@ -345,9 +332,9 @@ const Dashboard: React.FC = () => {
                 </div>
               </section>
             </>
+          ) : (
+            renderLessonDetail()
           )}
-
-          {viewMode === 'lesson' && renderLessonDetail()}
         </div>
       </main>
 
@@ -356,13 +343,17 @@ const Dashboard: React.FC = () => {
           <Quiz onExit={handleQuizExit} onComplete={handleQuizCompletion} />
         </div>
       )}
+
+      {readingChatOpen && (
+        <ReadingChat
+          initialMessage={readingChatInitialMessage}
+          onClose={() => setReadingChatOpen(false)}
+        />
+      )}
     </div>
   );
 };
 
-//
-// ========= STYLES =========
-//
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
     display: 'flex',

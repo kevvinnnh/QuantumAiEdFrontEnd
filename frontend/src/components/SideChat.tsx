@@ -363,6 +363,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     maxWidth: '850px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
     fontSize: '1.1rem',
+    // Force chat message text to black
+    color: '#000',
   },
   senderLabel: {
     fontSize: '0.9em',
@@ -396,6 +398,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '4px',
     border: '1px solid #ddd',
     fontSize: '1.1rem',
+    // Force user input text to black
+    color: '#000',
   },
   sendButton: {
     marginLeft: '12px',

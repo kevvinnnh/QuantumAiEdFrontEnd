@@ -1,3 +1,4 @@
+// src/components/HighlightableInstructions.tsx
 import React, { useState } from 'react';
 
 interface HighlightableInstructionsProps {
@@ -19,30 +20,14 @@ const HighlightableInstructions: React.FC<HighlightableInstructionsProps> = ({
     const selection = window.getSelection();
     const text = selection?.toString() || '';
 
-    // If the user highlighted something
     if (text.trim()) {
       setHighlightedText(text);
       setShowPopup(true);
-
-      // Option A: Position the popup near the mouse
       setPopupPosition({
         x: event.pageX,
         y: event.pageY,
       });
-
-      // Option B (alternative approach): 
-      // Position the popup near the selected text boundingClientRect
-      // const range = selection?.getRangeAt(0);
-      // const rect = range?.getBoundingClientRect();
-      // if (rect) {
-      //   setPopupPosition({
-      //     x: rect.left + window.scrollX,
-      //     y: rect.top + window.scrollY - 40, // adjust as needed
-      //   });
-      // }
-
     } else {
-      // If user deselected or clicked outside, hide the popup
       setShowPopup(false);
     }
   };
@@ -59,8 +44,6 @@ const HighlightableInstructions: React.FC<HighlightableInstructionsProps> = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* This div displays the “instructions” text. 
-          Whenever the mouse is released, we check if something was highlighted. */}
       <div onMouseUp={handleMouseUp} style={{ whiteSpace: 'pre-wrap' }}>
         {instructions}
       </div>
