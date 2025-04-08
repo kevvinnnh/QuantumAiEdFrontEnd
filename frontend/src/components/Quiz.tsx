@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { quizData } from './QuizQuestions';
 import Questions from './Questions';
-import { FinalResultsPopup, HighlightPopup } from './Popups';
+import { FinalResultsPopup } from './Popups';
 import SideChat from './SideChat';
 
 interface QuizProps {
@@ -22,10 +22,6 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
   const [feedback, setFeedback] = useState('');
   const [showResultsPopup, setShowResultsPopup] = useState(false);
 
-  // === Highlight State ===
-  // Removed highlightedText and setPopupPos because they were declared but never used.
-  // If you need them later, you can re-add these states.
-  
   // === Chat State ===
   const [sideChatMessages, setSideChatMessages] = useState<
     Array<{ role: string; content: string }>
@@ -89,19 +85,6 @@ const Quiz: React.FC<QuizProps> = ({ onExit }) => {
       }
       setHasSubmitted(true);
     }
-  };
-
-  // === Highlight Handlers ===
-  // (Any highlight-related logic would go here if used)
-
-  const handleExplain = async () => {
-    // This function will need to be updated if you plan to use highlighted text
-    console.log("No highlighted text functionality implemented.");
-  };
-
-  const handleChatMore = async () => {
-    // This function will need to be updated if you plan to use highlighted text
-    console.log("No highlighted text functionality implemented.");
   };
 
   // === Side Chat Handler ===
@@ -178,6 +161,7 @@ Please provide a condensed explanation that ${
           overflowY: 'auto',
           backgroundColor: '#f9f9f9',
           padding: '20px',
+          color: '#000', // Ensures all text here is black by default
         }}
       >
         <button
@@ -206,16 +190,6 @@ Please provide a condensed explanation that ${
             }}
           />
         )}
-
-        {/*
-          HighlightPopup is still rendered for now; if you don't use the highlighting functionality,
-          you can remove this as well.
-        */}
-        <HighlightPopup
-          position={{ x: 0, y: 0 }}
-          onExplain={handleExplain}
-          onChatMore={handleChatMore}
-        />
 
         <Questions
           question={quizData[currentIndex]}

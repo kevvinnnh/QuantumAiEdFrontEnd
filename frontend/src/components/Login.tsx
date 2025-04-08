@@ -1,3 +1,4 @@
+// src/components/Login.tsx
 import React, { useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
@@ -5,11 +6,12 @@ import { useNavigate } from 'react-router-dom';
 import googleIcon from '../assets/google-icon.png';
 import assistantImage from '../assets/assistant.png';
 
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   
-  // Local state for manual sign-up fields
+  // Local state for manual sign-up fields (if needed)
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
@@ -46,8 +48,10 @@ const Login: React.FC = () => {
         const redirectTo = backendResponse.data.redirect_to;
         localStorage.setItem('loggedInUserEmail', userEmail);
         
-        // Redirect based on backend response
-        if (redirectTo === 'map') {
+        // If admin, redirect to admin dashboard
+        if (userEmail.toLowerCase() === 'kh78@rice.edu') {
+          navigate('/admin-dashboard');
+        } else if (redirectTo === 'map') {
           navigate('/map');
         } else {
           navigate('/profile-creation');
@@ -163,8 +167,8 @@ const Login: React.FC = () => {
         {/* RIGHT COLUMN */}
         <div style={styles.rightColumn}>
           <div style={styles.rightContent}>
-            <img src={assistantImage} alt="Assistant Character" style={styles.assistantImage} />
-            <h2 style={styles.heading}>Learn quantum computing your way:</h2>
+          <img src={assistantImage} alt="Assistant" style={styles.assistantImage} />
+          <h2 style={styles.heading}>Learn quantum computing your way:</h2>
             <p style={styles.subheading}>simple, free, and at your own pace.</p>
           </div>
         </div>
@@ -197,9 +201,8 @@ const styles: { [key: string]: React.CSSProperties } = {
   container: {
     display: 'flex',
     flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
     height: '100vh',
-    fontFamily: 'Arial, sans-serif',
-    fontSize: '20px',
   },
   leftColumn: {
     flex: 1,
