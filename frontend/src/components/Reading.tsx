@@ -1,7 +1,7 @@
 // src/components/Reading.tsx
 
 import React, { useMemo, useState } from 'react';
-import HighlightableInstructionsForReading from './HighlightableInstructionsForReadings';
+import HighlightableInstructionsForReading from './HighlightableInstructionsForReadings';  // ← fixed
 import { lessonContents, LessonContent } from './LessonContents';
 
 interface Props {
@@ -34,30 +34,31 @@ const Reading: React.FC<Props> = ({
   if (!content) return <p>Lesson content not found.</p>;
 
   const renderedParagraphs = useMemo(() => {
-    return content.paragraphs.map((raw, paraIdx) => {
-      if (!content.interactiveTerms) {
-        return <p key={paraIdx}>{raw}</p>;
-      }
+    if (!content.interactiveTerms) {
+      return content.paragraphs.map((raw, idx) => <p key={idx}>{raw}</p>);
+    }
 
+    return content.paragraphs.map((raw, paraIdx) => {
       let keyCounter = 0;
       let nodes: Array<string | JSX.Element> = [raw];
 
-      Object.entries(content.interactiveTerms).forEach(([term, definition]) => {
+      Object.entries(content.interactiveTerms || {}).forEach(([term, definition]) => {
         const regex = new RegExp(`(${term})`, 'gi');
-        nodes = nodes.flatMap((node) => {
-          if (typeof node !== 'string') return [node];
-          return node.split(regex).map((part) =>
-            part.toLowerCase() === term.toLowerCase() ? (
-              <InteractiveTerm
-                key={`${paraIdx}-${keyCounter++}`}
-                term={part}
-                definition={definition}
-              />
-            ) : (
-              part
-            )
-          );
-        });
+        nodes = nodes.flatMap(node =>
+          typeof node === 'string'
+            ? node.split(regex).map(part =>
+                part.toLowerCase() === term.toLowerCase() ? (
+                  <InteractiveTerm
+                    key={`${paraIdx}-${keyCounter++}`}
+                    term={part}
+                    definition={definition}
+                  />
+                ) : (
+                  part
+                )
+              )
+            : [node]
+        );
       });
 
       return <p key={paraIdx}>{nodes}</p>;
