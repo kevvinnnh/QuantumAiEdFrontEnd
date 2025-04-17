@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import axios from 'axios';
 import assistantIcon from '../assets/chat_mascot.png';
 
 interface Message {
@@ -37,18 +38,6 @@ const markdownComponents = {
   ),
 };
 
-// Build API URL helper
-const API_BASE =
-  (import.meta as any).env?.VITE_API_BASE_URL ||
-  (window.location.hostname === 'localhost'
-    ? 'http://localhost:5000'
-    : 'https://quantaide-api.vercel.app');
-const buildUrl = (endpoint: string) => {
-  const base = API_BASE.replace(/\/+$/, '');
-  const ep = endpoint.replace(/^\/+/, '');
-  return `${base}/${ep}`;
-};
-
 const TypingText: React.FC<{ text: string }> = ({ text }) => {
   const [displayed, setDisplayed] = useState('');
   useEffect(() => {
@@ -77,18 +66,22 @@ const SideChat: React.FC<SideChatProps> = ({
   toggleHistory,
   chatHistory,
 }) => {
-  // Resize
+  // Base URL for API (match your Login component)
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
+  // Chat pane width & resizing
   const [chatWidth, setChatWidth] = useState(550);
   const [resizing, setResizing] = useState(false);
   const startX = useRef(0);
-  const startWidth = useRef(550);
-  const containerRef = useRef<HTMLDivElement|null>(null);
+  const startWidth = useRef(chatWidth);
 
-  // Local copy of messages for analogy updates
+  // Local copy of messages to allow analogy insertion
   const [localMessages, setLocalMessages] = useState<Message[]>(sideChatMessages);
-  useEffect(() => setLocalMessages(sideChatMessages), [sideChatMessages]);
+  useEffect(() => {
+    setLocalMessages(sideChatMessages);
+  }, [sideChatMessages]);
 
-  // Pointer events for resizing
+  // Handle pointer resizing
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     setResizing(true);
     startX.current = e.clientX;
@@ -99,8 +92,7 @@ const SideChat: React.FC<SideChatProps> = ({
     const onMove = (e: PointerEvent) => {
       if (resizing) {
         const delta = e.clientX - startX.current;
-        const newW = startWidth.current - delta;
-        setChatWidth(Math.max(300, Math.min(newW, 800)));
+        setChatWidth(Math.max(300, Math.min(startWidth.current - delta, 800)));
       }
     };
     const onUp = () => resizing && setResizing(false);
@@ -110,14 +102,14 @@ const SideChat: React.FC<SideChatProps> = ({
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     };
-  }, [resizing]);
+  }, [resizing, chatWidth]);
 
-  // Scroll to bottom on new message
+  // Auto-scroll on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [localMessages]);
 
-  // Reveal on scroll up
+  // Reveal chat on scroll up
   useEffect(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
@@ -128,26 +120,33 @@ const SideChat: React.FC<SideChatProps> = ({
     return () => el.removeEventListener('scroll', onScroll);
   }, [revealChat]);
 
-  // Generate analogy
+  // Request a new analogy from the backend
   const handleGenerateAnalogy = async (text: string) => {
     if (chatHidden) revealChat();
     const userMsg: Message = { role: 'user', content: text };
     setLocalMessages(prev => [...prev, userMsg]);
+
     try {
-      const res = await fetch(buildUrl('/generate_analogy'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ text }),
-      });
-      const data = await res.json();
-      const analog = data.analogy || 'No analogy generated.';
+      const resp = await axios.post(
+        `${backendUrl}/generate_analogy`,
+        { text },
+        {
+          withCredentials: true,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+      const analog = resp.data.analogy || 'No analogy generated.';
       setLocalMessages(prev => [...prev, { role: 'assistant', content: analog }]);
     } catch (err) {
       console.error('Analogy error:', err);
+      setLocalMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: 'Sorry, I couldn’t generate an analogy right now.' }
+      ]);
     }
   };
 
+  // Render chat bubbles and "Get Analogy" button
   const renderMessages = (msgs: Message[]) =>
     msgs.map((m, i) => {
       const isAssistant = m.role === 'assistant';
@@ -174,7 +173,7 @@ const SideChat: React.FC<SideChatProps> = ({
                 style={styles.analogyButton}
                 onClick={() => handleGenerateAnalogy(m.content)}
               >
-                Get Analog​y
+                Try another analogy
               </button>
             </div>
           )}
@@ -183,7 +182,7 @@ const SideChat: React.FC<SideChatProps> = ({
     });
 
   return (
-    <div ref={containerRef} style={{ ...styles.container, width: chatWidth }}>
+    <div style={{ ...styles.container, width: chatWidth }}>
       <div style={styles.resizer} onPointerDown={handlePointerDown} />
       <div style={styles.historyToggle}>
         <button style={styles.toggleButton} onClick={toggleHistory}>
