@@ -1,10 +1,10 @@
 // src/components/Profile.tsx
+
 import React, { useEffect, useState, ChangeEvent } from 'react';
 import axios from 'axios';
 
-const API_BASE =
-  (import.meta as any).env.VITE_API_BASE_URL ||
-  (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://quantaide-api.vercel.app');
+// Base URL for API (uses same env var across your app)
+const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 const HOBBIES = [
   'Reading', 'Music', 'Dancing', 'Photography',
@@ -54,7 +54,7 @@ const Profile: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get(`${API_BASE}/get_user_profile`, { withCredentials: true })
+      .get(`${backendUrl}/get_user_profile`, { withCredentials: true })
       .then(res => {
         const d = res.data;
         setData({
@@ -97,10 +97,14 @@ const Profile: React.FC = () => {
     const form = new FormData();
     form.append('picture', file);
     axios
-      .post(`${API_BASE}/save_profile_picture`, form, {
-        withCredentials: true,
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      .post(
+        `${backendUrl}/save_profile_picture`,
+        form,
+        {
+          withCredentials: true,
+          headers: { 'Content-Type': 'multipart/form-data' }
+        }
+      )
       .then(res => setData(d => ({ ...d, profilePicture: res.data.url })))
       .catch(console.error);
   };
@@ -109,7 +113,7 @@ const Profile: React.FC = () => {
     setSaving(true);
     axios
       .post(
-        `${API_BASE}/save_profile`,
+        `${backendUrl}/save_profile`,
         {
           educationLevel:
             data.educationLevel === 'Other'
@@ -122,7 +126,10 @@ const Profile: React.FC = () => {
           codingExperience: data.codingExperience,
           favoriteHobbies: data.favoriteHobbies
         },
-        { withCredentials: true }
+        {
+          withCredentials: true,
+          headers: { 'Content-Type': 'application/json' }
+        }
       )
       .then(() => alert('Profile saved!'))
       .catch(err => {
@@ -134,7 +141,11 @@ const Profile: React.FC = () => {
 
   const handleLogout = () => {
     axios
-      .post(`${API_BASE}/logout`, {}, { withCredentials: true })
+      .post(
+        `${backendUrl}/logout`,
+        {},
+        { withCredentials: true }
+      )
       .then(() => (window.location.href = '/'))
       .catch(console.error);
   };
@@ -144,7 +155,6 @@ const Profile: React.FC = () => {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        {/* Back link */}
         <div
           style={styles.back}
           onClick={() => (window.location.href = '/map')}
@@ -154,7 +164,6 @@ const Profile: React.FC = () => {
 
         <h2 style={styles.heading}>Welcome back, {data.name}!</h2>
 
-        {/* Profile Picture */}
         <div style={styles.avatarSection}>
           {data.profilePicture ? (
             <img
