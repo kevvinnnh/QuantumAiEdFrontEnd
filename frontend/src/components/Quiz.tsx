@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
+import axios from 'axios';
 import { Question } from './QuizQuestions';
 import Questions from './Questions';
 import SideChat from './SideChat';
@@ -26,16 +27,7 @@ interface QuizProps {
   courseId: number;
 }
 
-const API_BASE =
-  (import.meta as any).env?.VITE_API_BASE_URL ||
-  (window.location.hostname === 'localhost'
-    ? 'http://localhost:5000'
-    : 'https://quantaide-api.vercel.app');
-const buildUrl = (endpoint: string) => {
-  const base = API_BASE.replace(/\/+$/, '');
-  const ep = endpoint.replace(/^\/+/, '');
-  return `${base}/${ep}`;
-};
+const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -78,11 +70,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
 
   // Handle Next or Finish
   const handleNext = () => {
-    // Push current chat to history with correct property name
-    setChatHistory(h => [
-      ...h,
-      { question: currentIndex, messages: sideChatMessages },
-    ]);
+    setChatHistory(h => [...h, { question: currentIndex, messages: sideChatMessages }]);
     setSideChatMessages([]);
     setSideChatInput('');
     setShowHistory(false);
@@ -107,14 +95,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
     setSideChatInput('');
 
     try {
-      const res = await fetch(buildUrl('/chat_about_text'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ highlighted_text: '', messages: newMessages }),
-      });
-      const data = await res.json();
-      const reply = data.assistant_reply || 'No response from AI.';
+      const res = await axios.post(
+        `${backendUrl}/chat_about_text`,
+        { highlighted_text: '', messages: newMessages },
+        { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
+      );
+      const reply = res.data.assistant_reply || 'No response from AI.';
       setSideChatMessages(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch (err) {
       console.error('Chat error:', err);
@@ -141,14 +127,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
     setChatHidden(false);
 
     try {
-      const res = await fetch(buildUrl('/chat_about_text'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ highlighted_text: '', messages: [initial] }),
-      });
-      const data = await res.json();
-      const reply = data.assistant_reply || 'No response from AI.';
+      const res = await axios.post(
+        `${backendUrl}/chat_about_text`,
+        { highlighted_text: '', messages: [initial] },
+        { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
+      );
+      const reply = res.data.assistant_reply || 'No response from AI.';
       setSideChatMessages(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch (err) {
       console.error('Discuss error:', err);
