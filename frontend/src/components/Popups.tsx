@@ -1,65 +1,60 @@
 import React from 'react';
-import highlightDemo from '../assets/highlight-demo.mov'; // Ensure this file exists
+import highlightDemo from '../assets/highlight-demo.mov';
+import {  FaArrowLeft } from 'react-icons/fa';
 
 interface ChatFeaturePopupProps {
   onGotIt: () => void;
 }
 
-export const ChatFeaturePopup: React.FC<ChatFeaturePopupProps> = ({ onGotIt }) => {
-  return (
-    <div style={popupOverlayStyle}>
-      <div style={popupContentStyle}>
-        <h2 style={headerStyle}>✨ Chat & Explain Features ✨</h2>
-        {/* Larger demo video for the highlight feature */}
-        <video
-          src={highlightDemo}
-          autoPlay
-          loop
-          muted
-          playsInline
-          style={{
-            width: '100%',
-            maxWidth: '800px',
-            borderRadius: '10px',
-            marginBottom: '20px',
-          }}
-        >
-          Your browser does not support the video tag.
-        </video>
-        <ul style={{ padding: '0', listStyle: 'none', lineHeight: '1.8', fontSize: '1.1em' }}>
-          <li>
-            <strong>Explain:</strong> Highlight any text, then click <em>Explain</em> for bullet-point summaries.
-          </li>
-          <li>
-            <strong>Chat More:</strong> Highlight text and click <em>Chat More</em> to learn more about a topic.
-          </li>
-          <li>
-            <strong>Ask Anything:</strong> Use the side chat to ask your own questions or click <em>Follow up with AI</em> for quiz help.
-          </li>
-        </ul>
-        <button
-          style={{
-            marginTop: '30px',
-            padding: '15px 25px',
-            border: 'none',
-            borderRadius: '8px',
-            backgroundColor: '#566395',
-            color: '#fff',
-            cursor: 'pointer',
-            fontSize: '1.2em',
-            width: '150px',
-            display: 'block',
-            marginLeft: 'auto',
-            marginRight: 'auto',
-          }}
-          onClick={onGotIt}
-        >
-          Got it!
-        </button>
-      </div>
+export const ChatFeaturePopup: React.FC<ChatFeaturePopupProps> = ({ onGotIt }) => (
+  <div style={popupOverlayStyle}>
+    <div style={popupContentStyle}>
+      <h2 style={headerStyle}>✨ Chat &amp; Explain Features ✨</h2>
+      <video
+        src={highlightDemo}
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          width: '100%',
+          maxWidth: '800px',
+          borderRadius: '10px',
+          marginBottom: '20px',
+        }}
+      >
+        Your browser does not support the video tag.
+      </video>
+      <ul style={{ padding: 0, listStyle: 'none', lineHeight: 1.8, fontSize: '1.1em' }}>
+        <li>
+          <strong>Explain:</strong> Highlight any text, then click <em>Explain</em> for bullet‑point summaries.
+        </li>
+        <li>
+          <strong>Chat More:</strong> Highlight text and click <em>Chat More</em> to learn more about a topic.
+        </li>
+        <li>
+          <strong>Ask Anything:</strong> Use the side chat to ask your own questions or click <em>Follow up with AI</em> for quiz help.
+        </li>
+      </ul>
+      <button
+        onClick={onGotIt}
+        style={{
+          marginTop: '30px',
+          padding: '15px 25px',
+          border: 'none',
+          borderRadius: '8px',
+          backgroundColor: '#566395',
+          color: '#fff',
+          cursor: 'pointer',
+          fontSize: '1.2em',
+          width: '150px',
+        }}
+      >
+        Got it!
+      </button>
     </div>
-  );
-};
+  </div>
+);
 
 interface FinalResultsPopupProps {
   score: number;
@@ -73,24 +68,27 @@ export const FinalResultsPopup: React.FC<FinalResultsPopupProps> = ({
   onReturn,
 }) => {
   const percent = Math.round((score / total) * 100);
+  const passed = percent >= 70;
+
   return (
     <div style={popupOverlayStyle}>
       <div style={popupContentStyle}>
         <h2 style={headerStyle}>Quiz Results</h2>
         <p style={{ fontSize: '1.2em' }}>
-          You answered <strong>{score}</strong> out of <strong>{total}</strong> questions correctly.
+          You answered <strong>{score}</strong> out of <strong>{total}</strong> correctly.
         </p>
         <p style={{ fontSize: '1.2em' }}>That’s <strong>{percent}%</strong>!</p>
-        {score >= 7 ? (
+        {passed ? (
           <p style={{ color: 'green', fontWeight: 'bold', fontSize: '1.3em' }}>
             Congratulations! You passed!
           </p>
         ) : (
           <p style={{ color: 'red', fontWeight: 'bold', fontSize: '1.3em' }}>
-            You did not reach 70%. Keep learning and try again!
+            You didn’t reach 70%. Keep learning and try again!
           </p>
         )}
         <button
+          onClick={onReturn}
           style={{
             marginTop: '30px',
             padding: '15px 25px',
@@ -100,13 +98,12 @@ export const FinalResultsPopup: React.FC<FinalResultsPopupProps> = ({
             color: '#fff',
             cursor: 'pointer',
             fontSize: '1.2em',
-            display: 'block',
-            marginLeft: 'auto',
-            marginRight: 'auto',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
           }}
-          onClick={onReturn}
         >
-          Return to Dashboard
+          <FaArrowLeft /> Back to Courses
         </button>
       </div>
     </div>
@@ -123,54 +120,51 @@ export const HighlightPopup: React.FC<HighlightPopupProps> = ({
   position,
   onExplain,
   onChatMore,
-}) => {
-  return (
-    <div
+}) => (
+  <div
+    style={{
+      position: 'fixed',
+      top: position.y + 10,
+      left: position.x + 10,
+      backgroundColor: '#fff',
+      border: '1px solid #ccc',
+      borderRadius: '5px',
+      padding: '10px',
+      zIndex: 999,
+      boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+    }}
+  >
+    <button
+      onClick={onExplain}
       style={{
-        position: 'fixed',
-        top: position.y + 10,
-        left: position.x + 10,
-        backgroundColor: '#fff',
-        border: '1px solid #ccc',
-        borderRadius: '5px',
-        padding: '10px',
-        zIndex: 999,
-        boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+        marginRight: '10px',
+        backgroundColor: '#566395',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '4px',
+        padding: '8px 12px',
+        cursor: 'pointer',
       }}
     >
-      <button
-        onClick={onExplain}
-        style={{
-          marginRight: '10px',
-          backgroundColor: '#566395',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '4px',
-          padding: '8px 12px',
-          cursor: 'pointer',
-        }}
-      >
-        Explain
-      </button>
-      <button
-        onClick={onChatMore}
-        style={{
-          backgroundColor: '#566395',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '4px',
-          padding: '8px 12px',
-          cursor: 'pointer',
-        }}
-      >
-        Chat More
-      </button>
-    </div>
-  );
-};
+      Explain
+    </button>
+    <button
+      onClick={onChatMore}
+      style={{
+        backgroundColor: '#566395',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '4px',
+        padding: '8px 12px',
+        cursor: 'pointer',
+      }}
+    >
+      Chat More
+    </button>
+  </div>
+);
 
-// --- Shared Popup Styles ---
-const popupOverlayStyle: React.CSSProperties = {
+export const popupOverlayStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0,
   left: 0,
@@ -183,7 +177,7 @@ const popupOverlayStyle: React.CSSProperties = {
   zIndex: 1000,
 };
 
-const popupContentStyle: React.CSSProperties = {
+export const popupContentStyle: React.CSSProperties = {
   backgroundColor: '#fff',
   padding: '40px',
   borderRadius: '15px',
@@ -193,11 +187,9 @@ const popupContentStyle: React.CSSProperties = {
   textAlign: 'center',
 };
 
-const headerStyle: React.CSSProperties = {
+export const headerStyle: React.CSSProperties = {
   marginBottom: '20px',
   fontSize: '1.8em',
   color: '#566395',
   textAlign: 'center',
 };
-
-export { popupOverlayStyle, popupContentStyle, headerStyle };
