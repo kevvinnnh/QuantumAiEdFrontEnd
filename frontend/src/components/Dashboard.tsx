@@ -10,6 +10,8 @@ import { allQuizData } from './QuizQuestion';
 import lesson0Img from '../assets/lessonIcons/lesson-0.png';
 import lesson1Img from '../assets/lessonIcons/lesson-1.png';
 import lesson2Img from '../assets/lessonIcons/lesson-2.png';
+import { useNavigate } from 'react-router-dom';
+
 
 /* ------------------------------------------------------------------ */
 /* THEME COLORS                                                       */
@@ -59,6 +61,7 @@ const Dashboard: React.FC = () => {
     setView('dashboard');
     setChatOpen(false);
   };
+  const navigate = useNavigate();
 
   const openLesson = (id: number) => {
     if (!unlocked.includes(id)) {
@@ -200,11 +203,11 @@ const Dashboard: React.FC = () => {
               <FaCommentDots size="1.5em" /> <span>Chat</span>
             </button>
             <button
-              style={styles.profileBtn}
-              onClick={() => (window.location.href = '/profile')}
-            >
-              👤
-            </button>
+   style={styles.profileBtn}
+   onClick={() => navigate('/profile')}
+ >
+   👤
+ </button>
           </div>
         </header>
 
