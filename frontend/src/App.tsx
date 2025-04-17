@@ -2,9 +2,6 @@
 
 import React from 'react';
 import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
   useParams,
   useNavigate
 } from 'react-router-dom';
@@ -16,6 +13,7 @@ import Quiz from './components/Quiz';
 import AdminDashboard from './components/AdminDashboard';
 import { allQuizData } from './components/QuizQuestion';
 import './App.css';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 
 /**
  * QuizPage acts as a thin wrapper around the Quiz component,
