@@ -24,7 +24,7 @@ const HighlightableInstructionsForReading: React.FC<Props> = ({
       const rect = sel.getRangeAt(0).getBoundingClientRect();
 
       // Nudge up by 10px, left by 20px
-      const TOP_NUDGE  = -370;
+      const TOP_NUDGE  = -670;
       const LEFT_NUDGE = -730;
 
       setPopupPos({
