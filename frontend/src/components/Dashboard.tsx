@@ -1,183 +1,164 @@
 // src/components/Dashboard.tsx
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import Quiz from './Quiz';
-import Reading from './Reading';
-import ReadingChat from './ReadingChat';
 
+import React, { useState, useEffect } from 'react';
+import { FaCommentDots, FaArrowLeft } from 'react-icons/fa';
+import Reading from './Reading';
+import Quiz from './Quiz';
+import GlobalChat from './GlobalChat';
+import HighlightableInstructionsForReading from './HighlightableInstructionsForReadings';
+import { allQuizData } from './QuizQuestion';
+import lesson0Img from '../assets/lessonIcons/lesson-0.png';
+import lesson1Img from '../assets/lessonIcons/lesson-1.png';
+import lesson2Img from '../assets/lessonIcons/lesson-2.png';
+
+/* ------------------------------------------------------------------ */
+/* THEME COLORS                                                       */
+/* ------------------------------------------------------------------ */
 const colors = {
-  dark: "#010117",
-  accent: "#071746",
-  primary: "#566395",
-  light: "#f8f9fa",
-  white: "#FFFFFF",
-  cardBackground: "rgba(255,255,255,0.1)",
-  lessonBackground: "rgba(255,255,255,0.1)",
-  modalBackground: "#FFFFFF",
-  popupBackground: "#FFFFFF",
-  popupText: "#000000",
-  border: "rgba(255,255,255,0.2)"
+  dark: '#010117',
+  accent: '#071746',
+  primary: '#566395',
+  light: '#f8f9fa',
+  white: '#FFFFFF',
+  cardBackground: 'rgba(255,255,255,0.05)',
+  lessonBackground: 'rgba(255,255,255,0.03)',
+  modalBackground: '#FFFFFF',
+  modalTextColor: '#111111',
+  border: 'rgba(255,255,255,0.1)',
 };
 
-async function fakeLogin() {
-  try {
-    const response = await fetch('http://localhost:5000/append_user_id', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        user_id: 'test@example.com',
-        name: 'Test User',
-        picture: 'https://example.com/pic.jpg',
-      }),
-    });
-    if (!response.ok) {
-      throw new Error(`fakeLogin failed, status = ${response.status}`);
-    }
-    const data = await response.json();
-    console.log('fakeLogin response:', data);
-  } catch (error) {
-    console.error('fakeLogin error:', error);
-  }
-}
-
-async function fetchQuizProgress() {
-  const response = await fetch('http://localhost:5000/get_quiz_progress', {
-    credentials: 'include',
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch quiz progress, status = ${response.status}`);
-  }
-  return response.json();
-}
-
-async function saveQuizProgress(completedCourse: number, unlockCourse: number) {
-  const response = await fetch('http://localhost:5000/save_quiz_progress', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ completedQuiz: completedCourse, unlockQuiz: unlockCourse }),
-  });
-  if (!response.ok) {
-    throw new Error(`save_quiz_progress failed, status = ${response.status}`);
-  }
-  return response.json();
-}
-
+/* ------------------------------------------------------------------ */
+/* STATIC COURSE DATA                                                 */
+/* ------------------------------------------------------------------ */
 const courses = [
-  {
-    id: 0,
-    title: 'Introduction to quantum computing',
-    description: 'Discover how quantum computing differs from classical computing.',
-    image: 'https://via.placeholder.com/300x200?text=Intro+to+Quantum',
-  },
-  {
-    id: 1,
-    title: 'Basic Quantum principles',
-    description: 'Understand wave-particle duality, superposition, entanglement, and more.',
-    image: 'https://via.placeholder.com/300x200?text=Quantum+Principles',
-  },
-  {
-    id: 2,
-    title: 'Quantum Gates and Circuits (Basics)',
-    description: 'Explore how quantum gates form the building blocks of quantum circuits.',
-    image: 'https://via.placeholder.com/300x200?text=Quantum+Gates',
-  },
-  {
-    id: 3,
-    title: 'Getting Hands-on',
-    description: 'Learn practical quantum computing with real-world examples.',
-    image: 'https://via.placeholder.com/300x200?text=Hands-on',
-  },
-  {
-    id: 4,
-    title: 'Foundations for Quantum Computing',
-    description: 'Dive deeper into the essential math and physics behind quantum computing.',
-    image: 'https://via.placeholder.com/300x200?text=Foundations+QC',
-  },
-  {
-    id: 5,
-    title: 'Quantum Workflows',
-    description: 'Learn about compilers, simulators, and toolchains for quantum development.',
-    image: 'https://via.placeholder.com/300x200?text=Workflows',
-  },
-  {
-    id: 6,
-    title: 'Adiabatic Quantum Computing',
-    description: 'Explore the adiabatic model and quantum annealing techniques.',
-    image: 'https://via.placeholder.com/300x200?text=Adiabatic',
-  },
-  {
-    id: 7,
-    title: 'Quantum Signal Processing & Simulation',
-    description: 'Understand how quantum systems simulate complex physical processes.',
-    image: 'https://via.placeholder.com/300x200?text=Signal+Processing',
-  },
-  {
-    id: 8,
-    title: 'Quantum Hardware & Future Trends',
-    description: 'Discover the cutting-edge hardware behind quantum computers.',
-    image: 'https://via.placeholder.com/300x200?text=Hardware+Trends',
-  },
+  { id: 0, title: 'Introduction to quantum computing', description: 'Discover what quantum computing is and how it differs from classical computing.', image: lesson0Img, progress: 30 },
+  { id: 1, title: 'Basic Quantum principles', description: 'Understand wave‑particle duality, superposition, entanglement, and more.', image: lesson1Img , progress: 0 },
+  { id: 2, title: 'Quantum Gates and Circuits (Basics)', description: 'Explore how quantum gates form the building blocks of quantum circuits.', image: lesson2Img , progress: 0 },
+  { id: 3, title: 'Getting Hands‑on', description: 'Learn practical quantum computing with real‑world examples.', image: lesson0Img, progress: 0 },
+  { id: 4, title: 'Foundations for Quantum computing', description: 'Dive deeper into the essential math and physics behind quantum computing.', image: lesson1Img, progress: 0 },
+  { id: 5, title: 'Quantum Cryptography & Security', description: 'Learn how quantum computing impacts cryptography, encryption and security protocols.', image: lesson2Img, progress: 0 },
+  { id: 6, title: 'Adiabatic Quantum Computing', description: 'Explore the adiabatic model and quantum annealing techniques.', image: lesson0Img, progress: 0 },
+  { id: 7, title: 'Quantum Signal Processing & Simulation', description: 'Understand how quantum systems simulate complex physical processes.', image: lesson1Img, progress: 0 },
+  { id: 8, title: 'Quantum Hardware & Future Trends', description: 'Discover the cutting‑edge hardware behind quantum computers.', image: lesson2Img , progress: 0 },
 ];
 
 const Dashboard: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'dashboard' | 'lesson'>('dashboard');
+  /* ---------- view / lesson state -------------------------------- */
+  const [view, setView] = useState<'dashboard' | 'lesson'>('dashboard');
   const [currentCourse, setCurrentCourse] = useState<number>(0);
+  const [unlocked, setUnlocked] = useState<number[]>([0]);
   const [quizOpen, setQuizOpen] = useState<boolean>(false);
-  const [unlockedCourses, setUnlockedCourses] = useState<number[]>([]);
-  const [showEncryptionPopup, setShowEncryptionPopup] = useState<boolean>(true);
-  const [showQuizPopup, setShowQuizPopup] = useState<boolean>(false);
-  const [readingChatOpen, setReadingChatOpen] = useState<boolean>(false);
-  const [readingChatInitialMessage, setReadingChatInitialMessage] = useState('');
 
-  useEffect(() => {
-    (async () => {
-      try {
-        await fakeLogin();
-        const result = await fetchQuizProgress();
-        setUnlockedCourses(result.unlockedLevels || [0]);
-      } catch (error) {
-        console.error('Error in useEffect:', error);
-        setUnlockedCourses([0]);
-      }
-    })();
+  /* ---------- chat & highlight state ------------------------------ */
+  const [chatOpen, setChatOpen] = useState<boolean>(false);
+  const [highlightText, setHighlightText] = useState<string | null>(null);
+  const [highlightMode, setHighlightMode] = useState<'explain' | 'analogy' | null>(null);
 
-    const hasSeenQuizPopup = localStorage.getItem('seenQuizPopup');
-    if (!hasSeenQuizPopup) setShowQuizPopup(false);
-  }, []);
+  /* ---------- navigation helpers --------------------------------- */
+  const goDashboard = () => {
+    setView('dashboard');
+    setChatOpen(false);
+  };
 
-  const handleCourseClick = (courseId: number) => {
-    if (unlockedCourses.includes(courseId)) {
-      setCurrentCourse(courseId);
-      setViewMode('lesson');
+  const openLesson = (id: number) => {
+    if (!unlocked.includes(id)) {
+      alert('This course is locked. Complete the previous course first.');
+      return;
+    }
+    setCurrentCourse(id);
+    setView('lesson');
+    setChatOpen(false);
+  };
+
+  /* ---------- highlight callbacks -------------------------------- */
+  const handleExplain = (text: string) => {
+    setHighlightText(text);
+    setHighlightMode('explain');
+    setChatOpen(true);
+  };
+
+  const handleAnalogy = (text: string) => {
+    setHighlightText(text);
+    setHighlightMode('analogy');
+    setChatOpen(true);
+  };
+
+  /* ---------- quiz completion ------------------------------------ */
+  const onQuizComplete = (_score: number, passed: boolean) => {
+    setQuizOpen(false);
+    if (!passed) {
+      alert('You need 70% or higher to pass. Keep learning and try again!');
+      return;
+    }
+    const next = currentCourse + 1;
+    setUnlocked((prev) => (prev.includes(next) ? prev : [...prev, next].sort((a, b) => a - b)));
+    if (next < courses.length) {
+      alert(`Great job! Lesson ${next + 1} unlocked.`);
+      openLesson(next);
     } else {
-      alert('This course is locked. Complete the previous course(s) first!');
+      alert("Congratulations! You've completed all courses!");
+      goDashboard();
     }
   };
 
-  const renderLessonDetail = () => {
-    const course = courses.find((c) => c.id === currentCourse);
-    if (!course) return null;
+  /* ---------- quiz availability check ---------------------------- */
+  const currentQuiz = allQuizData[currentCourse] || [];
+  useEffect(() => {
+    if (quizOpen && currentQuiz.length === 0) {
+      alert('Quiz not available for this lesson yet.');
+      setQuizOpen(false);
+    }
+  }, [quizOpen, currentQuiz]);
+
+  /* ---------- render helpers ------------------------------------- */
+  const courseCard = (c: typeof courses[0]) => (
+    <div
+      key={c.id}
+      style={{
+        ...styles.card,
+        ...(unlocked.includes(c.id) ? styles.cardEnabled : styles.cardDisabled),
+      }}
+      onClick={() => openLesson(c.id)}
+    >
+      <img src={c.image} alt={c.title} style={styles.cardImg} />
+      <div style={styles.cardContent}>
+        <h4 style={styles.cardTitle}>{c.title}</h4>
+        <p style={styles.cardDescription}>{c.description}</p>
+        {c.progress > 0 && (
+          <div style={styles.progressBar}>
+            <div style={{ ...styles.progressFill, width: `${c.progress}%` }} />
+            <span style={styles.progressText}>{c.progress}% complete</span>
+          </div>
+        )}
+      </div>
+      {!unlocked.includes(c.id) && <div style={styles.lockIcon}>🔒</div>}
+    </div>
+  );
+
+  const lessonView = () => {
+    const course = courses[currentCourse];
     return (
       <div style={styles.lessonContainer}>
-        <button style={styles.backButton} onClick={() => setViewMode('dashboard')}>
-          ← Back to Courses
+        <button style={styles.backButton} onClick={goDashboard}>
+          <FaArrowLeft style={{ marginRight: 8 }} />
+          Back to Courses
         </button>
+
         <h2 style={styles.lessonTitle}>{course.title}</h2>
         <img src={course.image} alt={course.title} style={styles.lessonImage} />
         <p style={styles.lessonDescription}>{course.description}</p>
-        {course.id === 0 && (
-          <Reading onOpenChat={(msg) => { setReadingChatInitialMessage(msg); setReadingChatOpen(true); }} chatOpen={readingChatOpen} />
-        )}
-        <div style={styles.rereadingsBox}>
-          <h3 style={styles.rereadingsTitle}>Rereadings</h3>
-          <ul style={styles.rereadingsList}>
-            <li>Article: "Quantum Computing 101"</li>
-            <li>Video: "Introduction to Qubits"</li>
-            <li>Paper: "The Future of Quantum Algorithms"</li>
-          </ul>
-        </div>
+
+        <HighlightableInstructionsForReading
+          onExplain={handleExplain}
+          onViewAnalogy={handleAnalogy}
+        >
+          <Reading
+            courseId={currentCourse}
+            onExplainRequest={handleExplain}
+            onViewAnalogy={handleAnalogy}
+          />
+        </HighlightableInstructionsForReading>
+
         <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
           Take Quiz
         </button>
@@ -185,405 +166,191 @@ const Dashboard: React.FC = () => {
     );
   };
 
-  const handleQuizCompletion = async (score: number, passed: boolean) => {
-    console.log('User final score was:', score);
-    setQuizOpen(false);
-    if (passed) {
-      const nextCourse = currentCourse + 1;
-      if (nextCourse < courses.length && !unlockedCourses.includes(nextCourse)) {
-        try {
-          await saveQuizProgress(currentCourse, nextCourse);
-          const updated = await fetchQuizProgress();
-          setUnlockedCourses(updated.unlockedLevels || []);
-        } catch (error) {
-          console.error('Error saving quiz progress:', error);
-        }
-      }
-    }
-  };
-
-  const handleQuizExit = () => {
-    setQuizOpen(false);
-    setViewMode('lesson');
-  };
-
+  /* ---------------------------------------------------------------- */
+  /* JSX                                                              */
+  /* ---------------------------------------------------------------- */
   return (
     <div style={styles.container}>
-      {showEncryptionPopup && (
-        <div style={styles.encryptionPopupOverlay}>
-          <div style={styles.encryptionPopup}>
-            <h2 style={{ marginBottom: '10px' }}>Encryption</h2>
-            <p style={{ marginBottom: '20px' }}>
-              Encryption is like a digital vault with a secret code – without the key, your data stays locked.
-            </p>
-            <button style={styles.popupButton} onClick={() => setShowEncryptionPopup(false)}>
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
-
-      {showQuizPopup && (
-        <div style={styles.quizPopupOverlay}>
-          <div style={styles.quizPopup}>
-            <h2>Quiz</h2>
-            <p>
-              The quiz tests your understanding. Click below to start the challenge and unlock the next course.
-            </p>
-            <button
-              onClick={() => {
-                setShowQuizPopup(false);
-                setQuizOpen(true);
-              }}
-              style={styles.popupButton}
-            >
-              Got It!
-            </button>
-          </div>
-        </div>
-      )}
-
+      {/* LEFT SIDEBAR */}
       <aside style={styles.sidebar}>
-        <div style={styles.logoContainer}>
-          <h1 style={styles.logoText}>Quantaide</h1>
-        </div>
-        <nav style={styles.nav}>
-          <Link to="/map" style={styles.navLink}>
-            Dashboard
-          </Link>
-        </nav>
+        <h1 style={styles.logoText}>Quantaide</h1>
+        <button
+          style={{
+            ...styles.navButton,
+            ...(view === 'dashboard' ? styles.navButtonActive : {}),
+          }}
+          onClick={goDashboard}
+        >
+          Lessons
+        </button>
       </aside>
 
+      {/* MAIN PANEL */}
       <main style={styles.main}>
         <header style={styles.header}>
-          <h2 style={styles.headerTitle}>Courses</h2>
+          <h2 style={styles.headerTitle}>
+            {view === 'lesson' ? courses[currentCourse].title : 'Lessons'}
+          </h2>
           <div style={styles.headerIcons}>
-            <Link to="/profile" style={styles.profileLink}>
-              <span role="img" aria-label="user" style={styles.userIcon}>
-                👤
-              </span>
-            </Link>
+            <button
+              style={styles.chatButton}
+              onClick={() => setChatOpen((o) => !o)}
+              aria-label="Toggle Chat"
+            >
+              <FaCommentDots size="1.5em" /> <span>Chat</span>
+            </button>
+            <button
+              style={styles.profileBtn}
+              onClick={() => (window.location.href = '/profile')}
+            >
+              👤
+            </button>
           </div>
         </header>
 
         <div style={styles.content}>
-          {viewMode === 'dashboard' ? (
+          {view === 'dashboard' ? (
             <>
-              <section style={styles.courseSection}>
-                <h3 style={styles.sectionTitle}>Foundations</h3>
-                <div style={styles.cardGrid}>
-                  {courses.slice(0, 3).map((course) => (
-                    <div
-                      key={course.id}
-                      style={{
-                        ...styles.card,
-                        opacity: unlockedCourses.includes(course.id) ? 1 : 0.5,
-                        cursor: unlockedCourses.includes(course.id) ? 'pointer' : 'not-allowed',
-                      }}
-                      onClick={() => handleCourseClick(course.id)}
-                    >
-                      <img src={course.image} alt={course.title} style={styles.cardImg} />
-                      <h4 style={styles.cardTitle}>{course.title}</h4>
-                      <p style={styles.cardDescription}>{course.description}</p>
-                    </div>
-                  ))}
-                </div>
+              <section style={styles.rowSection}>
+                <h2 style={styles.rowTitle}>Foundations</h2>
+                <div style={styles.cardGrid}>{courses.slice(0, 3).map(courseCard)}</div>
               </section>
 
-              <section style={styles.courseSection}>
-                <h3 style={styles.sectionTitle}>Quantum computing in action</h3>
-                <div style={styles.cardGrid}>
-                  {courses.slice(3, 6).map((course) => (
-                    <div
-                      key={course.id}
-                      style={{
-                        ...styles.card,
-                        opacity: unlockedCourses.includes(course.id) ? 1 : 0.5,
-                        cursor: unlockedCourses.includes(course.id) ? 'pointer' : 'not-allowed',
-                      }}
-                      onClick={() => handleCourseClick(course.id)}
-                    >
-                      <img src={course.image} alt={course.title} style={styles.cardImg} />
-                      <h4 style={styles.cardTitle}>{course.title}</h4>
-                      <p style={styles.cardDescription}>{course.description}</p>
-                    </div>
-                  ))}
-                </div>
+              <section style={styles.rowSection}>
+                <h2 style={styles.rowTitle}>Quantum computing in action</h2>
+                <div style={styles.cardGrid}>{courses.slice(3, 6).map(courseCard)}</div>
               </section>
 
-              <section style={styles.courseSection}>
-                <h3 style={styles.sectionTitle}>Deep dive into quantum theory</h3>
-                <div style={styles.cardGrid}>
-                  {courses.slice(6, 9).map((course) => (
-                    <div
-                      key={course.id}
-                      style={{
-                        ...styles.card,
-                        opacity: unlockedCourses.includes(course.id) ? 1 : 0.5,
-                        cursor: unlockedCourses.includes(course.id) ? 'pointer' : 'not-allowed',
-                      }}
-                      onClick={() => handleCourseClick(course.id)}
-                    >
-                      <img src={course.image} alt={course.title} style={styles.cardImg} />
-                      <h4 style={styles.cardTitle}>{course.title}</h4>
-                      <p style={styles.cardDescription}>{course.description}</p>
-                    </div>
-                  ))}
-                </div>
+              <section style={styles.rowSection}>
+                <h2 style={styles.rowTitle}>Deep dive into quantum theory</h2>
+                <div style={styles.cardGrid}>{courses.slice(6, 9).map(courseCard)}</div>
               </section>
             </>
           ) : (
-            renderLessonDetail()
+            lessonView()
           )}
         </div>
       </main>
 
-      {quizOpen && (
-        <div style={styles.modalStyle}>
-          <Quiz onExit={handleQuizExit} onComplete={handleQuizCompletion} />
+      {/* QUIZ MODAL */}
+      {quizOpen && currentQuiz.length > 0 && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContent}>
+            <Quiz
+              courseId={currentCourse}
+              questions={currentQuiz}
+              onExit={() => { setQuizOpen(false); goDashboard(); }}
+              onComplete={onQuizComplete}
+            />
+          </div>
         </div>
       )}
 
-      {readingChatOpen && (
-        <ReadingChat
-          initialMessage={readingChatInitialMessage}
-          onClose={() => setReadingChatOpen(false)}
-        />
-      )}
+      {/* GLOBAL CHAT DRAWER */}
+      <GlobalChat
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        highlightText={highlightText}
+        highlightMode={highlightMode}
+      />
     </div>
   );
 };
-
-const styles: { [key: string]: React.CSSProperties } = {
+/* ------------------------------------------------------------------ */
+/* INLINE STYLES                                                     */
+/* ------------------------------------------------------------------ */
+const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
     minHeight: '100vh',
-    background: `linear-gradient(to bottom, ${colors.dark}, ${colors.accent})`,
-    color: colors.white,
-    fontFamily: 'Arial, sans-serif',
-    position: 'relative',
-  },
-  encryptionPopupOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    zIndex: 3000,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  encryptionPopup: {
-    backgroundColor: colors.popupBackground,
-    color: colors.popupText,
-    padding: '30px',
-    borderRadius: '8px',
-    maxWidth: '400px',
-    textAlign: 'center',
-  },
-  quizPopupOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    zIndex: 3000,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quizPopup: {
-    backgroundColor: colors.popupBackground,
-    color: colors.popupText,
-    padding: '30px',
-    borderRadius: '8px',
-    maxWidth: '400px',
-    textAlign: 'center',
-  },
-  popupButton: {
-    marginTop: '10px',
-    padding: '10px 20px',
-    backgroundColor: colors.primary,
-    color: colors.white,
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
+    background: `linear-gradient(135deg, ${colors.dark} 0%, ${colors.accent} 100%)`,
+    color: colors.light,
   },
   sidebar: {
-    width: '240px',
-    background: `linear-gradient(to bottom, ${colors.dark}, ${colors.accent})`,
+    width: 250,
+    background: colors.dark,
     display: 'flex',
     flexDirection: 'column',
-    padding: '20px',
-    boxSizing: 'border-box',
+    padding: 20,
     borderRight: `1px solid ${colors.border}`,
-  },
-  logoContainer: {
-    marginBottom: '40px',
   },
   logoText: {
     margin: 0,
-    fontSize: '1.8rem',
-    fontWeight: 'bold',
-    color: colors.white,
-  },
-  nav: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-  },
-  navLink: {
-    textDecoration: 'none',
-    color: colors.white,
-    fontSize: '1.1rem',
-    padding: '10px 0',
-    borderBottom: `1px solid ${colors.border}`,
-  },
-  main: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    background: `linear-gradient(to bottom, ${colors.dark}, ${colors.accent})`,
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '20px',
-    borderBottom: `1px solid ${colors.border}`,
-  },
-  headerTitle: {
-    margin: 0,
     fontSize: '2rem',
     fontWeight: 'bold',
-    flex: 1,
-  },
-  headerIcons: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px',
-  },
-  profileLink: {
-    textDecoration: 'none',
     color: colors.white,
   },
-  userIcon: {
-    fontSize: '1.8rem',
-  },
-  content: {
-    padding: '20px',
-    overflowY: 'auto',
-  },
-  courseSection: {
-    marginBottom: '40px',
-  },
-  sectionTitle: {
-    fontSize: '1.6rem',
-    marginBottom: '20px',
-    color: colors.white,
-  },
-  cardGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: '20px',
-  },
-  card: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: '8px',
-    padding: '15px',
-    boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
-    transition: 'opacity 0.3s ease',
-  },
-  cardImg: {
-    width: '100%',
-    height: 'auto',
-    borderRadius: '5px',
-    marginBottom: '10px',
-    objectFit: 'cover',
-    backgroundColor: '#ccc',
-  },
-  cardTitle: {
-    fontSize: '1.2rem',
-    margin: '0 0 8px 0',
-    color: colors.white,
-  },
-  cardDescription: {
-    fontSize: '0.95rem',
-    lineHeight: 1.4,
-    color: '#E0E0E0',
-  },
-  lessonContainer: {
-    backgroundColor: colors.lessonBackground,
-    borderRadius: '8px',
-    padding: '30px',
-    marginBottom: '40px',
-    maxWidth: '800px',
-    margin: '0 auto',
-  },
-  backButton: {
+  navButton: {
     background: 'none',
     border: 'none',
-    color: colors.primary,
+    color: colors.dark,
+    fontSize: '1.1rem',
+    padding: '12px',
+    textAlign: 'left',
+    cursor: 'pointer',
+  },
+  navButtonActive: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    fontWeight: 'bold',
+    borderLeft: `3px solid ${colors.primary}`,
+    color: colors.light,
+    
+  },
+  main: { flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '15px 25px',
+    background: colors.dark,
+    borderBottom: `1px solid ${colors.border}`,
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+  },
+  headerTitle: { margin: 0, fontSize: '1.6rem', fontWeight: 600 },
+  headerIcons: { display: 'flex', alignItems: 'center', gap: 12 },
+  chatButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '8px 12px',
+    background: colors.primary,
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    color: colors.white,
+  },
+  profileBtn: {
+    background: 'none',
+    border: 'none',
+    color: colors.white,
     fontSize: '1.5rem',
     cursor: 'pointer',
-    marginBottom: '20px',
   },
-  lessonTitle: {
-    fontSize: '2.2rem',
-    marginBottom: '20px',
-  },
-  lessonImage: {
-    width: '100%',
-    borderRadius: '5px',
-    marginBottom: '20px',
-  },
-  lessonDescription: {
-    fontSize: '1.1rem',
-    lineHeight: 1.6,
-    marginBottom: '20px',
-  },
-  rereadingsBox: {
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    padding: '20px',
-    borderRadius: '8px',
-    marginBottom: '30px',
-  },
-  rereadingsTitle: {
-    fontSize: '1.4rem',
-    marginBottom: '10px',
-  },
-  rereadingsList: {
-    fontSize: '1rem',
-    lineHeight: 1.6,
-    margin: 0,
-    paddingLeft: '20px',
-  },
-  takeQuizButton: {
-    padding: '15px 25px',
-    backgroundColor: colors.primary,
-    border: 'none',
-    borderRadius: '5px',
-    fontSize: '1.1rem',
-    color: colors.white,
-    cursor: 'pointer',
-  },
-  modalStyle: {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    backgroundColor: colors.modalBackground,
-    padding: '20px',
-    borderRadius: '10px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    zIndex: 1000,
-    width: '85%',
-    maxWidth: '1400px',
-    height: '93%',
-    overflowY: 'scroll',
-  },
+  content: { padding: 25, flex: 1 },
+  rowSection: { marginBottom: 40 },
+  rowTitle: { margin: '0 0 15px', fontSize: '1.4rem', color: colors.white },
+  cardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 25 },
+  card: { backgroundColor: colors.cardBackground, borderRadius: 8, overflow: 'hidden', position: 'relative' },
+  cardEnabled: { cursor: 'pointer' },
+  cardDisabled: { cursor: 'not-allowed', opacity: 0.6 },
+  cardImg: { width: '100%', height: 160, objectFit: 'cover' },
+  cardContent: { padding: 15 },
+  cardTitle: { margin: '0 0 8px', fontSize: '1.2rem', color: colors.white },
+  cardDescription: { margin: 0, fontSize: '0.95rem', color: colors.light },
+  progressBar: { position: 'relative', height: 6, background: 'rgba(255,255,255,0.15)', borderRadius: 4, marginTop: 10 },
+  progressFill: { height: '100%', background: colors.primary, borderRadius: 4 },
+  progressText: { position: 'absolute', top: -22, right: 0, fontSize: 12, color: colors.light },
+  lockIcon: { position: 'absolute', top: 10, right: 10, fontSize: '1.4rem', background: 'rgba(0,0,0,0.5)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.white },
+  lessonContainer: { backgroundColor: colors.lessonBackground, borderRadius: 8, padding: '30px 40px', maxWidth: 900, margin: '20px auto' },
+  backButton: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: colors.primary, color: colors.white, border: 'none', borderRadius: 6, cursor: 'pointer', marginBottom: 20 },
+  lessonTitle: { fontSize: '2.2rem', margin: '0 0 20px', color: colors.white, borderBottom: `2px solid ${colors.primary}`, paddingBottom: 10 },
+  lessonImage: { width: '100%', maxHeight: 400, objectFit: 'cover', borderRadius: 5, marginBottom: 20 },
+  lessonDescription: { fontSize: '1.1rem', marginBottom: 30, color: colors.light },
+  takeQuizButton: { display: 'block', margin: '30px auto 0',	padding: '12px 30px', background: colors.primary, color: colors.white, border: 'none', borderRadius: 5, cursor: 'pointer', fontSize: '1.1rem' },
+  modalOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1500 },
+  modalContent: { background: colors.modalBackground, color: colors.modalTextColor, borderRadius: 10, overflow: 'hidden', width: 'clamp(300px,90%,1200px)', height: 'clamp(400px,80vh,800px)' },
 };
 
 export default Dashboard;

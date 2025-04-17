@@ -1,9 +1,11 @@
+// src/components/SideChat.tsx
+
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import assistantIcon from '../assets/chat_mascot.png';
 
 interface Message {
-  role: string;
+  role: 'user' | 'assistant';
   content: string;
 }
 
@@ -35,23 +37,31 @@ const markdownComponents = {
   ),
 };
 
+// Build API URL helper
+const API_BASE =
+  (import.meta as any).env?.VITE_API_BASE_URL ||
+  (window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : 'https://quantaide-api.vercel.app');
+const buildUrl = (endpoint: string) => {
+  const base = API_BASE.replace(/\/+$/, '');
+  const ep = endpoint.replace(/^\/+/, '');
+  return `${base}/${ep}`;
+};
+
 const TypingText: React.FC<{ text: string }> = ({ text }) => {
-  const [displayedText, setDisplayedText] = useState('');
+  const [displayed, setDisplayed] = useState('');
   useEffect(() => {
-    let index = 0;
-    setDisplayedText('');
-    const interval = setInterval(() => {
-      setDisplayedText((prev) => prev + text[index]);
-      index++;
-      if (index >= text.length) clearInterval(interval);
+    let i = 0;
+    setDisplayed('');
+    const iv = setInterval(() => {
+      setDisplayed(prev => prev + text[i]);
+      i++;
+      if (i >= text.length) clearInterval(iv);
     }, 20);
-    return () => clearInterval(interval);
+    return () => clearInterval(iv);
   }, [text]);
-  return (
-    <ReactMarkdown components={markdownComponents}>
-      {displayedText}
-    </ReactMarkdown>
-  );
+  return <ReactMarkdown components={markdownComponents}>{displayed}</ReactMarkdown>;
 };
 
 const SideChat: React.FC<SideChatProps> = ({
@@ -67,55 +77,85 @@ const SideChat: React.FC<SideChatProps> = ({
   toggleHistory,
   chatHistory,
 }) => {
-  // State for adjustable width
-  const [chatWidth, setChatWidth] = useState<number>(550);
-  const [isResizing, setIsResizing] = useState<boolean>(false);
-  // Refs to store the initial pointer X and initial width when drag starts
-  const initialPointerX = useRef<number>(0);
-  const initialWidth = useRef<number>(550);
+  // Resize
+  const [chatWidth, setChatWidth] = useState(550);
+  const [resizing, setResizing] = useState(false);
+  const startX = useRef(0);
+  const startWidth = useRef(550);
+  const containerRef = useRef<HTMLDivElement|null>(null);
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  // Local copy of messages for analogy updates
+  const [localMessages, setLocalMessages] = useState<Message[]>(sideChatMessages);
+  useEffect(() => setLocalMessages(sideChatMessages), [sideChatMessages]);
 
+  // Pointer events for resizing
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    setIsResizing(true);
-    initialPointerX.current = e.clientX;
-    initialWidth.current = chatWidth;
-    // Capture pointer events
+    setResizing(true);
+    startX.current = e.clientX;
+    startWidth.current = chatWidth;
     e.currentTarget.setPointerCapture(e.pointerId);
   };
-
   useEffect(() => {
-    const handlePointerMove = (e: PointerEvent) => {
-      if (isResizing && containerRef.current) {
-        // Reverse the delta: newWidth = initialWidth - (e.clientX - initialPointerX)
-        const delta = e.clientX - initialPointerX.current;
-        const newWidth = initialWidth.current - delta;
-        setChatWidth(Math.max(300, Math.min(newWidth, 800)));
+    const onMove = (e: PointerEvent) => {
+      if (resizing) {
+        const delta = e.clientX - startX.current;
+        const newW = startWidth.current - delta;
+        setChatWidth(Math.max(300, Math.min(newW, 800)));
       }
     };
-
-    const handlePointerUp = () => {
-      if (isResizing) {
-        setIsResizing(false);
-      }
-    };
-
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
+    const onUp = () => resizing && setResizing(false);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
     };
-  }, [isResizing]);
+  }, [resizing]);
 
-  const renderMessages = (messages: Message[]) =>
-    messages.map((msg, i) => {
-      const isAssistant = msg.role === 'assistant';
+  // Scroll to bottom on new message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [localMessages]);
+
+  // Reveal on scroll up
+  useEffect(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (el.scrollTop < -30) revealChat();
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [revealChat]);
+
+  // Generate analogy
+  const handleGenerateAnalogy = async (text: string) => {
+    if (chatHidden) revealChat();
+    const userMsg: Message = { role: 'user', content: text };
+    setLocalMessages(prev => [...prev, userMsg]);
+    try {
+      const res = await fetch(buildUrl('/generate_analogy'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      const analog = data.analogy || 'No analogy generated.';
+      setLocalMessages(prev => [...prev, { role: 'assistant', content: analog }]);
+    } catch (err) {
+      console.error('Analogy error:', err);
+    }
+  };
+
+  const renderMessages = (msgs: Message[]) =>
+    msgs.map((m, i) => {
+      const isAssistant = m.role === 'assistant';
       return (
         <div key={i}>
           <div style={isAssistant ? styles.assistantWrapper : styles.userWrapper}>
             {isAssistant ? (
-              <img src={assistantIcon} alt="Assistant" style={styles.avatar} />
+              <img src={assistantIcon} style={styles.avatar} alt="Assistant" />
             ) : (
               <div style={styles.userAvatar}>🙂</div>
             )}
@@ -123,22 +163,18 @@ const SideChat: React.FC<SideChatProps> = ({
               <strong style={styles.senderLabel}>
                 {isAssistant ? 'QuantumAide:' : 'You:'}
               </strong>
-              {isAssistant ? (
-                <TypingText text={msg.content} />
-              ) : (
-                <ReactMarkdown components={markdownComponents}>
-                  {msg.content}
-                </ReactMarkdown>
+              {isAssistant ? <TypingText text={m.content} /> : (
+                <ReactMarkdown components={markdownComponents}>{m.content}</ReactMarkdown>
               )}
             </div>
           </div>
-          {i === messages.length - 1 && isAssistant && (
+          {i === msgs.length - 1 && isAssistant && (
             <div style={styles.analogyButtonContainer}>
               <button
-                onClick={() => handleGenerateAnalogy(msg.content)}
                 style={styles.analogyButton}
+                onClick={() => handleGenerateAnalogy(m.content)}
               >
-                Get Analogy
+                Get Analog​y
               </button>
             </div>
           )}
@@ -146,53 +182,15 @@ const SideChat: React.FC<SideChatProps> = ({
       );
     });
 
-  const handleGenerateAnalogy = async (text: string) => {
-    try {
-      const response = await fetch('http://localhost:5000/generate_analogy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ text }),
-      });
-      if (!response.ok) throw new Error('Failed to generate analogy');
-      const data = await response.json();
-      const analogyText = data.analogy || 'No analogy generated.';
-      setSideChatMessages((old) => [...old, { role: 'assistant', content: analogyText }]);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const [localMessages, setSideChatMessages] = useState<Message[]>(sideChatMessages);
-  useEffect(() => {
-    setSideChatMessages(sideChatMessages);
-  }, [sideChatMessages]);
-
   return (
-    <div
-      ref={containerRef}
-      style={{ ...styles.container, width: `${chatWidth}px` }}
-    >
-      {/* Resizer Handle */}
-      <div
-        style={styles.resizer}
-        onPointerDown={handlePointerDown}
-      />
-      {/* History Toggle Button */}
+    <div ref={containerRef} style={{ ...styles.container, width: chatWidth }}>
+      <div style={styles.resizer} onPointerDown={handlePointerDown} />
       <div style={styles.historyToggle}>
-        <button onClick={toggleHistory} style={styles.toggleButton}>
+        <button style={styles.toggleButton} onClick={toggleHistory}>
           {showHistory ? 'Hide History' : 'Show History'}
         </button>
       </div>
-      <div
-        ref={messagesContainerRef}
-        style={styles.messagesContainer}
-        onScroll={(e) => {
-          if (e.currentTarget.scrollTop < -30) {
-            revealChat();
-          }
-        }}
-      >
+      <div ref={messagesContainerRef} style={styles.messagesContainer}>
         {chatHidden && (
           <div style={styles.pullDownBanner} onClick={revealChat}>
             <p style={styles.pullDownText}>
@@ -207,12 +205,12 @@ const SideChat: React.FC<SideChatProps> = ({
               {chatHistory.length === 0 ? (
                 <p style={styles.historyEmpty}>No history yet.</p>
               ) : (
-                chatHistory.map((historyItem, index) => (
-                  <div key={index} style={styles.historyItem}>
+                chatHistory.map((h, idx) => (
+                  <div key={idx} style={styles.historyItem}>
                     <p style={styles.historyLabel}>
-                      Question {historyItem.question + 1} Chat:
+                      Question {h.question + 1} Chat:
                     </p>
-                    {renderMessages(historyItem.messages)}
+                    {renderMessages(h.messages)}
                   </div>
                 ))
               )}
@@ -223,17 +221,15 @@ const SideChat: React.FC<SideChatProps> = ({
           <div ref={messagesEndRef} />
         </div>
       </div>
-      {/* Input Area */}
       <div style={styles.inputArea}>
         <input
-          type="text"
           style={styles.inputField}
           placeholder="Type your message..."
           value={sideChatInput}
-          onChange={(e) => setSideChatInput(e.target.value)}
+          onChange={e => setSideChatInput(e.target.value)}
           onFocus={revealChat}
         />
-        <button onClick={handleSideChatSubmit} style={styles.sendButton}>
+        <button style={styles.sendButton} onClick={handleSideChatSubmit}>
           Send
         </button>
       </div>
@@ -241,16 +237,17 @@ const SideChat: React.FC<SideChatProps> = ({
   );
 };
 
-const styles: { [key: string]: React.CSSProperties } = {
+const styles: Record<string, React.CSSProperties> = {
   container: {
     backgroundColor: '#f8f8f8',
     borderLeft: '1px solid #ccc',
     display: 'flex',
     flexDirection: 'column',
     position: 'relative',
+    height: '100%'
   },
   resizer: {
-    width: '8px',
+    width: 8,
     cursor: 'ew-resize',
     position: 'absolute',
     left: 0,
@@ -260,7 +257,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: '#ddd',
   },
   historyToggle: {
-    padding: '10px',
+    padding: 10,
     textAlign: 'center',
     backgroundColor: '#eee',
   },
@@ -269,7 +266,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: '#566395',
     color: '#fff',
     border: 'none',
-    borderRadius: '20px',
+    borderRadius: 20,
     padding: '10px 20px',
     cursor: 'pointer',
   },
@@ -277,7 +274,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     flex: 1,
     overflowY: 'auto',
     WebkitOverflowScrolling: 'touch',
-    transition: 'height 0.3s ease',
     position: 'relative',
     paddingTop: '10px',
   },
@@ -286,7 +282,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     top: 0,
     left: 0,
     right: 0,
-    height: '50px',
+    height: 50,
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -299,118 +295,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: '1rem',
   },
   messagesInner: {
-    padding: '10px',
+    padding: 10,
   },
-  historyTitle: {
-    textAlign: 'center',
-    marginBottom: '10px',
-    fontSize: '1.5rem',
-  },
-  historyEmpty: {
-    textAlign: 'center',
-    fontStyle: 'italic',
-    fontSize: '1rem',
-  },
-  historyItem: {
-    marginBottom: '10px',
-  },
-  historyLabel: {
-    fontWeight: 'bold',
-    marginBottom: '5px',
-    fontSize: '1.1rem',
-  },
-  currentChatTitle: {
-    textAlign: 'center',
-    margin: '10px 0',
-    color: '#2a2a2a',
-    fontSize: '1.5rem',
-  },
-  assistantWrapper: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: '15px',
-  },
-  userWrapper: {
-    display: 'flex',
-    flexDirection: 'row-reverse',
-    alignItems: 'flex-start',
-    marginBottom: '15px',
-  },
-  avatar: {
-    width: '110px',
-    height: '110px',
-    borderRadius: '50%',
-    margin: '0 10px',
-    objectFit: 'cover',
-  },
-  userAvatar: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
-    margin: '0 10px',
-    backgroundColor: '#ddd',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontSize: '1.2em',
-  },
-  bubble: {
-    backgroundColor: '#fff',
-    border: '1px solid #ccc',
-    borderRadius: '8px',
-    padding: '12px',
-    maxWidth: '850px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    fontSize: '1.1rem',
-    // Force chat message text to black
-    color: '#000',
-  },
-  senderLabel: {
-    fontSize: '0.9em',
-    color: '#566395',
-    marginBottom: '6px',
-    display: 'block',
-  },
-  analogyButtonContainer: {
-    marginLeft: '120px',
-    marginBottom: '10px',
-  },
-  analogyButton: {
-    fontSize: '0.9rem',
-    padding: '8px 16px',
-    backgroundColor: '#566395',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-  },
-  inputArea: {
-    borderTop: '1px solid #ccc',
-    padding: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    backgroundColor: '#f8f8f8',
-  },
-  inputField: {
-    flex: 1,
-    padding: '10px',
-    borderRadius: '4px',
-    border: '1px solid #ddd',
-    fontSize: '1.1rem',
-    // Force user input text to black
-    color: '#000',
-  },
-  sendButton: {
-    marginLeft: '12px',
-    padding: '12px 20px',
-    backgroundColor: '#566395',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '1.1rem',
-  },
+  historyTitle: { textAlign: 'center', marginBottom: 10, fontSize: '1.5rem' },
+  historyEmpty: { textAlign: 'center', fontStyle: 'italic', fontSize: '1rem' },
+  historyItem: { marginBottom: 10 },
+  historyLabel: { fontWeight: 'bold', marginBottom: 5, fontSize: '1.1rem' },
+  currentChatTitle: { textAlign: 'center', margin: '10px 0', fontSize: '1.5rem' },
+  assistantWrapper: { display: 'flex', alignItems: 'flex-start', marginBottom: 15 },
+  userWrapper: { display: 'flex', flexDirection: 'row-reverse', alignItems: 'flex-start', marginBottom: 15 },
+  avatar: { width: 110, height: 110, borderRadius: '50%', margin: '0 10px', objectFit: 'cover' },
+  userAvatar: { width: 40, height: 40, borderRadius: '50%', margin: '0 10px', backgroundColor: '#ddd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2em' },
+  bubble: { backgroundColor: '#fff', border: '1px solid #ccc', borderRadius: 8, padding: 12, maxWidth: 850, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', fontSize: '1.1rem', color: '#000' },
+  senderLabel: { fontSize: '0.9em', color: '#566395', marginBottom: 6, display: 'block' },
+  analogyButtonContainer: { marginLeft: 120, marginBottom: 10 },
+  analogyButton: { fontSize: '0.9rem', padding: '8px 16px', backgroundColor: '#566395', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' },
+  inputArea: { borderTop: '1px solid #ccc', padding: 12, display: 'flex', alignItems: 'center', backgroundColor: '#f8f8f8' },
+  inputField: { flex: 1, padding: 10, borderRadius: 4, border: '1px solid #ddd', fontSize: '1.1rem', color: '#000' },
+  sendButton: { marginLeft: 12, padding: '12px 20px', backgroundColor: '#566395', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: '1.1rem' },
 };
 
 export default SideChat;

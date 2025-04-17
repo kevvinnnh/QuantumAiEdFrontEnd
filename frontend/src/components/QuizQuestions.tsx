@@ -13,7 +13,7 @@ export const quizData: Question[] = [
       'It leverages superposition and interference for complex state manipulations',
       'It can store more than one classical bit of information at once',
     ],
-    correctAnswer: 2,
+    correctAnswer: 1,
   },
   {
     question: '2) Entanglement allows two qubits to:',
@@ -33,7 +33,7 @@ export const quizData: Question[] = [
       'Qubits perform multiple calculations simultaneously through superposition',
       'Quantum entanglement directly optimizes all variables simultaneously',
     ],
-    correctAnswer: 2,
+    correctAnswer: 1,
   },
   {
     question: '4) During measurement, the collapse of a qubit’s wavefunction:',
@@ -43,7 +43,7 @@ export const quizData: Question[] = [
       'Occurs probabilistically, depending on the state amplitudes',
       'Induces entanglement with all other qubits in the system',
     ],
-    correctAnswer: 2,
+    correctAnswer: 1,
   },
   {
     question: '5) A critical application of quantum computing in chemical simulations is:',
@@ -53,7 +53,7 @@ export const quizData: Question[] = [
       'Simulating quantum states of molecules with near-exact precision',
       'Modeling Newtonian dynamics in complex chemical reactions',
     ],
-    correctAnswer: 2,
+    correctAnswer: 1,
   },
   {
     question: '6) In cryptography, quantum computers pose a threat to:',
@@ -83,7 +83,7 @@ export const quizData: Question[] = [
       'It yields results probabilistically, with no change to its original state after each measurement',
       'It collapses permanently into |0⟩ or |1⟩ after the first measurement',
     ],
-    correctAnswer: 2,
+    correctAnswer: 1,
   },
   {
     question: '9) Which best describes the phrase "spooky action at a distance"?',
@@ -93,7 +93,7 @@ export const quizData: Question[] = [
       'A property of superposition states in large quantum systems',
       'A colloquial term for the measurement process in quantum mechanics',
     ],
-    correctAnswer: 0,
+    correctAnswer: 1,
   },
   {
     question: '10) What is the primary limitation of current quantum computers?',

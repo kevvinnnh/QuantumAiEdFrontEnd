@@ -1,225 +1,490 @@
-import React, { useEffect, useState } from 'react';
+// src/components/Profile.tsx
+import React, { useEffect, useState, ChangeEvent } from 'react';
 import axios from 'axios';
 
+const API_BASE =
+  (import.meta as any).env.VITE_API_BASE_URL ||
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://quantaide-api.vercel.app');
+
+const HOBBIES = [
+  'Reading', 'Music', 'Dancing', 'Photography',
+  'Cooking', 'Gaming', 'Gardening', 'Writing',
+  'Sports', 'Art', 'Hiking'
+];
+
+const EDUCATION_LEVELS = [
+  '9th Grade', '10th Grade', '11th Grade', '12th Grade',
+  'Freshman', 'Sophomore', 'Junior', 'Senior', 'Other'
+];
+
+const CODING_EXP = [
+  'No experience (0 years)',
+  'Less than 1 year',
+  '1–2 years',
+  '3–4 years',
+  '4–5 years',
+  'More than 5 years'
+];
+
+interface ProfileData {
+  name: string;
+  profilePicture: string;
+  educationLevel: string;
+  otherEducation?: string;
+  major: string;
+  otherMajor?: string;
+  codingExperience: string;
+  favoriteHobbies: string[];
+}
+
 const Profile: React.FC = () => {
-  const [userData, setUserData] = useState({
+  const [data, setData] = useState<ProfileData>({
     name: '',
     profilePicture: '',
     educationLevel: '',
+    otherEducation: '',
     major: '',
-    favoriteHobbies: [] as string[],
+    otherMajor: '',
+    codingExperience: '',
+    favoriteHobbies: []
   });
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // Fetch the user ID and then the user profile using session data
   useEffect(() => {
     axios
-      .get('http://localhost:5000/get_user_id', { withCredentials: true })
-      .then(() => {
-        // Do not pass userId as a query parameter; backend uses session
-        return axios.get('http://localhost:5000/get_user_profile', { withCredentials: true });
-      })
-      .then((profileResponse) => {
-        const data = profileResponse.data;
-        setUserData({
-          name: data.name || 'User',
-          profilePicture: data.profilePicture || '',
-          educationLevel: data.educationLevel || 'Not provided',
-          // If major is null, show fallback text
-          major: data.major ? data.major : 'Not provided',
-          favoriteHobbies: Array.isArray(data.favoriteHobbies) ? data.favoriteHobbies : [],
+      .get(`${API_BASE}/get_user_profile`, { withCredentials: true })
+      .then(res => {
+        const d = res.data;
+        setData({
+          name: d.name,
+          profilePicture: d.profilePicture,
+          educationLevel: EDUCATION_LEVELS.includes(d.educationLevel)
+            ? d.educationLevel
+            : 'Other',
+          otherEducation: EDUCATION_LEVELS.includes(d.educationLevel)
+            ? ''
+            : d.educationLevel,
+          major: d.major || '',
+          otherMajor: '',
+          codingExperience: d.codingExperience || '',
+          favoriteHobbies: Array.isArray(d.favoriteHobbies)
+            ? d.favoriteHobbies
+            : []
         });
       })
-      .catch((error) => {
-        console.error('Error fetching user profile:', error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
+
+  const handleChange =
+    (k: keyof ProfileData) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setData(d => ({ ...d, [k]: e.target.value }));
+
+  const handleHobbyToggle = (hobby: string) => {
+    setData(d => {
+      const fav = d.favoriteHobbies.includes(hobby)
+        ? d.favoriteHobbies.filter(h => h !== hobby)
+        : [...d.favoriteHobbies, hobby];
+      return { ...d, favoriteHobbies: fav };
+    });
+  };
+
+  const handlePicture = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append('picture', file);
+    axios
+      .post(`${API_BASE}/save_profile_picture`, form, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      .then(res => setData(d => ({ ...d, profilePicture: res.data.url })))
+      .catch(console.error);
+  };
+
+  const handleSave = () => {
+    setSaving(true);
+    axios
+      .post(
+        `${API_BASE}/save_profile`,
+        {
+          educationLevel:
+            data.educationLevel === 'Other'
+              ? data.otherEducation
+              : data.educationLevel,
+          college_major:
+            data.major !== 'Other' ? data.major : undefined,
+          other_major:
+            data.major === 'Other' ? data.otherMajor : undefined,
+          codingExperience: data.codingExperience,
+          favoriteHobbies: data.favoriteHobbies
+        },
+        { withCredentials: true }
+      )
+      .then(() => alert('Profile saved!'))
+      .catch(err => {
+        console.error(err);
+        alert('Save failed');
+      })
+      .finally(() => setSaving(false));
+  };
 
   const handleLogout = () => {
     axios
-      .post('http://localhost:5000/logout', {}, { withCredentials: true })
-      .then(() => {
-        window.location.href = '/';
-      })
-      .catch((error) => {
-        console.error('Error logging out:', error);
-      });
+      .post(`${API_BASE}/logout`, {}, { withCredentials: true })
+      .then(() => (window.location.href = '/'))
+      .catch(console.error);
   };
 
-  const openLogoutConfirm = () => {
-    setShowLogoutConfirm(true);
-  };
-
-  const closeLogoutConfirm = () => {
-    setShowLogoutConfirm(false);
-  };
-
-  if (loading) {
-    return <p>Loading...</p>; // You can replace this with a spinner or loading animation
-  }
+  if (loading) return <div style={styles.page}>Loading…</div>;
 
   return (
-    <div className="profile-container" style={{ position: 'relative', padding: '20px' }}>
-      {/* Back Arrow (top left) */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '10px',
-          left: '10px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-        }}
-        onClick={() => (window.location.href = '/map')}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="30"
-          height="30"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ color: '#566395' }}
+    <div style={styles.page}>
+      <div style={styles.card}>
+        {/* Back link */}
+        <div
+          style={styles.back}
+          onClick={() => (window.location.href = '/map')}
         >
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-        <span
-          style={{
-            marginLeft: '8px',
-            fontSize: '1.2em',
-            fontWeight: 'bold',
-            color: '#566395',
-            fontFamily: 'inherit',
-          }}
-        >
-          Back
-        </span>
+          ← Back
+        </div>
+
+        <h2 style={styles.heading}>Welcome back, {data.name}!</h2>
+
+        {/* Profile Picture */}
+        <div style={styles.avatarSection}>
+          {data.profilePicture ? (
+            <img
+              src={data.profilePicture}
+              alt="Profile"
+              style={styles.avatar}
+            />
+          ) : (
+            <div style={styles.avatarFallback}>👤</div>
+          )}
+          <label style={styles.uploadLabel}>
+            Change Photo
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handlePicture}
+              style={styles.fileInput}
+            />
+          </label>
+        </div>
+
+        {/* Education */}
+        <div style={styles.section}>
+          <div style={styles.label}>Education level</div>
+          <div style={styles.optionsGrid}>
+            {EDUCATION_LEVELS.map(lvl => (
+              <label key={lvl} style={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="education"
+                  value={lvl}
+                  checked={data.educationLevel === lvl}
+                  onChange={handleChange('educationLevel')}
+                />
+                {lvl}
+              </label>
+            ))}
+          </div>
+          {data.educationLevel === 'Other' && (
+            <input
+              placeholder="Please specify"
+              value={data.otherEducation}
+              onChange={handleChange('otherEducation')}
+              style={styles.textInput}
+            />
+          )}
+        </div>
+
+        {/* Major */}
+        <div style={styles.section}>
+          <div style={styles.label}>Major / Field of study</div>
+          <input
+            type="text"
+            placeholder="Your major"
+            value={
+              data.major !== 'Other' ? data.major : data.otherMajor || ''
+            }
+            onChange={e => {
+              const v = e.target.value;
+              if (EDUCATION_LEVELS.includes(v))
+                setData(d => ({
+                  ...d,
+                  major: v,
+                  otherMajor: ''
+                }));
+              else
+                setData(d => ({
+                  ...d,
+                  major: 'Other',
+                  otherMajor: v
+                }));
+            }}
+            style={styles.textInput}
+          />
+        </div>
+
+        {/* Coding Experience */}
+        <div style={styles.section}>
+          <div style={styles.label}>Coding experience</div>
+          <div style={styles.optionsGrid}>
+            {CODING_EXP.map(opt => (
+              <label key={opt} style={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="coding"
+                  value={opt}
+                  checked={data.codingExperience === opt}
+                  onChange={handleChange('codingExperience')}
+                />
+                {opt}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Hobbies */}
+        <div style={styles.section}>
+          <div style={styles.label}>Your hobbies & interests</div>
+          <div style={styles.hobbyGrid}>
+            {HOBBIES.map(h => (
+              <button
+                key={h}
+                onClick={() => handleHobbyToggle(h)}
+                style={{
+                  ...styles.hobby,
+                  ...(data.favoriteHobbies.includes(h)
+                    ? styles.hobbySelected
+                    : {})
+                }}
+              >
+                {h}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={styles.actions}>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={styles.saveBtn}
+          >
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            style={styles.logoutBtn}
+          >
+            Log Out
+          </button>
+        </div>
       </div>
 
-      {/* Spacing between back button and profile info */}
-      <div style={{ marginTop: '60px' }}>
-        <h2>Welcome back, {userData.name}!</h2>
-
-        {/* Display user profile picture or emoji fallback */}
-        {userData.profilePicture ? (
-          <img
-            src={userData.profilePicture}
-            alt="User Profile"
-            style={{ width: '150px', height: '150px', borderRadius: '50%' }}
-          />
-        ) : (
-          <div
-            style={{
-              width: '150px',
-              height: '150px',
-              borderRadius: '50%',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              fontSize: '80px',
-              backgroundColor: '#E0E0E0',
-            }}
-          >
-            👤
-          </div>
-        )}
-
-        {/* Display user information */}
-        <p>
-          <strong>Education Level:</strong> {userData.educationLevel}
-        </p>
-        <p>
-          <strong>Major:</strong> {userData.major}
-        </p>
-        <p>
-          <strong>Current Hobbies:</strong>{' '}
-          {Array.isArray(userData.favoriteHobbies)
-            ? userData.favoriteHobbies.join(', ')
-            : userData.favoriteHobbies}
-        </p>
-
-        {/* Log Out Button */}
-        <button
-          className="button"
-          onClick={openLogoutConfirm}
-          style={{
-            marginTop: '20px',
-            padding: '10px 20px',
-            fontSize: '1.1em',
-            backgroundColor: '#566395',
-            color: '#fff',
-            borderRadius: '8px',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          Log Out
-        </button>
-
-        {/* Logout Confirmation Popup */}
-        {showLogoutConfirm && (
-          <div
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              backgroundColor: '#fff',
-              padding: '20px',
-              borderRadius: '10px',
-              boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-              zIndex: 1000,
-              width: '300px',
-              textAlign: 'center',
-            }}
-          >
+      {/* Logout Modal */}
+      {showLogoutConfirm && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modal}>
             <p>Are you sure you want to log out?</p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+            <div style={styles.modalActions}>
               <button
-                className="button"
                 onClick={handleLogout}
-                style={{
-                  padding: '10px 20px',
-                  fontSize: '1.1em',
-                  backgroundColor: '#566395',
-                  color: '#fff',
-                  borderRadius: '8px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  width: '45%',
-                }}
+                style={styles.saveBtn}
               >
                 Confirm
               </button>
               <button
-                className="button"
-                onClick={closeLogoutConfirm}
-                style={{
-                  padding: '10px 20px',
-                  fontSize: '1.1em',
-                  backgroundColor: '#A487AE',
-                  color: '#fff',
-                  borderRadius: '8px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  width: '45%',
-                }}
+                onClick={() => setShowLogoutConfirm(false)}
+                style={styles.cancelBtn}
               >
                 Cancel
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
+};
+
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: '100vh',
+    background: '#071746',
+    padding: 20,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start'
+  },
+  card: {
+    width: 600,
+    background: '#1C1F2E',
+    borderRadius: 10,
+    padding: 30,
+    color: '#f8f8fa',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+  },
+  back: {
+    cursor: 'pointer',
+    color: '#A487AE',
+    fontSize: '1.1rem',
+    marginBottom: 20
+  },
+  heading: {
+    margin: 0,
+    fontSize: '1.8rem',
+    marginBottom: 30
+  },
+  avatarSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginBottom: 30
+  },
+  avatar: {
+    width: 150,
+    height: 150,
+    borderRadius: '50%',
+    objectFit: 'cover',
+    marginBottom: 10,
+    border: '3px solid #566395'
+  },
+  avatarFallback: {
+    width: 150,
+    height: 150,
+    borderRadius: '50%',
+    background: '#394a6d',
+    fontSize: 60,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10
+  },
+  uploadLabel: {
+    background: '#566395',
+    padding: '6px 12px',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: '0.9rem'
+  },
+  fileInput: {
+    display: 'none'
+  },
+  section: {
+    marginBottom: 25
+  },
+  label: {
+    fontWeight: 600,
+    marginBottom: 8
+  },
+  optionsGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 12
+  },
+  radioLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    background: 'rgba(255,255,255,0.05)',
+    padding: '8px 12px',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: '0.95rem'
+  },
+  textInput: {
+    width: '100%',
+    padding: '10px',
+    borderRadius: 6,
+    border: '1px solid #566395',
+    background: '#0F1233',
+    color: '#f8f8fa',
+    fontSize: '1rem',
+    marginTop: 8
+  },
+  hobbyGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  hobby: {
+    padding: '6px 14px',
+    borderRadius: 6,
+    border: '1px solid #566395',
+    background: 'transparent',
+    color: '#f8f8fa',
+    cursor: 'pointer',
+    fontSize: '0.9rem'
+  },
+  hobbySelected: {
+    background: '#566395'
+  },
+  actions: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: 30
+  },
+  saveBtn: {
+    flex: 1,
+    marginRight: 10,
+    padding: '12px',
+    background: '#566395',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: '1rem'
+  },
+  logoutBtn: {
+    flex: 1,
+    marginLeft: 10,
+    padding: '12px',
+    background: '#A487AE',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: '1rem'
+  },
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  modal: {
+    background: '#fff',
+    color: '#111',
+    padding: 24,
+    borderRadius: 8,
+    width: 320,
+    textAlign: 'center'
+  },
+  modalActions: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: 20
+  },
+  cancelBtn: {
+    flex: 1,
+    marginLeft: 8,
+    background: '#ddd',
+    color: '#111',
+    border: 'none',
+    borderRadius: 6,
+    padding: '12px',
+    cursor: 'pointer'
+  }
 };
 
 export default Profile;
