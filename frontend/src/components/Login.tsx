@@ -93,7 +93,7 @@ const Login: React.FC = () => {
         {/* LEFT COLUMN */}
         <div style={styles.leftColumn}>
           <div style={styles.formContainer}>
-            <h1 style={styles.brandTitle}>Quantaide</h1>
+            <h1 style={styles.brandTitle}>QuantAid</h1>
             
             {/* Sign up with Google */}
             <button style={styles.googleButton} onClick={() => login()}>
@@ -146,7 +146,7 @@ const Login: React.FC = () => {
             </button>
             
             <p style={styles.termsText}>
-              By clicking SIGN UP, you acknowledge that you have read and agree to Quantaide’s{' '}
+              By clicking SIGN UP, you acknowledge that you have read and agree to QuantAid’s{' '}
               <a href="/terms" target="_blank" rel="noopener noreferrer" style={styles.linkStyle}>
                 Terms of Use
               </a>{' '}

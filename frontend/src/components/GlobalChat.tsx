@@ -145,7 +145,7 @@ const GlobalChat: React.FC<Props> = ({ isOpen, onClose, highlightText, highlight
       <div style={styles.overlay}>
         <div style={styles.container}>
           <div style={styles.header}>
-            <h3 style={styles.title}>Quantaide Chat</h3>
+            <h3 style={styles.title}>QuantAid Chat</h3>
             <button style={styles.closeBtn} onClick={onClose} aria-label="Close">
               ×
             </button>
