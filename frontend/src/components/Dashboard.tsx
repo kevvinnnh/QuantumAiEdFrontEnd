@@ -319,7 +319,7 @@ const Dashboard: React.FC = () => {
     <div style={styles.container}>
       {/* LEFT SIDEBAR */}
       <aside style={styles.sidebar}>
-        <h1 style={styles.logoText}>Quantaide</h1>
+        <h1 style={styles.logoText}>QuantAid</h1>
         <nav style={styles.nav}> {/* Use nav element */}
             <button
             style={{
