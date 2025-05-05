@@ -452,15 +452,17 @@ const styles: Record<string, React.CSSProperties> = {
   navButton: {
     background: 'none',
     border: 'none',
-    color: colors.light, // Default color light
+    color: '#49527a', // Slightly darker than your primary (#566395)
     fontSize: '1.1rem',
-    padding: '12px 20px', // Consistent padding
+    fontWeight: 'bold', // Make it bold
+    padding: '12px 20px',
     textAlign: 'left',
     cursor: 'pointer',
-    borderLeft: '3px solid transparent', // Placeholder for active border
-    transition: 'background-color 0.2s ease, color 0.2s ease', // Smooth transition
-    width: '100%', // Ensure button takes full width
+    borderLeft: '3px solid transparent',
+    transition: 'background-color 0.2s ease, color 0.2s ease',
+    width: '100%',
   },
+  
   navButtonActive: {
     backgroundColor: 'rgba(255,255,255,0.1)',
     fontWeight: 'bold',
@@ -580,14 +582,25 @@ const styles: Record<string, React.CSSProperties> = {
        color: colors.primary, // Use primary color for emphasis
        fontSize: '1rem',
    },
-  modalOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1500 }, // Darker overlay
-  modalContent: { background: colors.modalBackground, color: colors.modalTextColor, borderRadius: 12, overflow: 'hidden', width: 'clamp(300px, 90%, 1200px)', height: 'clamp(400px, 85vh, 800px)', display: 'flex', flexDirection: 'column' }, // Ensure flex column for potential internal scrolling in Quiz component
-   loadingText: { // Style for loading indicator
-      fontSize: '1.2rem',
-      textAlign: 'center',
-      marginTop: '50px',
-      color: colors.light,
-  }
+   modalOverlay: {
+    position: 'fixed',
+    inset: 0,                       // shorthand for top:0; right:0; bottom:0; left:0
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1500,
+  },
+  modalContent: {
+    position: 'relative',
+    width: '100vw',
+    height: '100vh',
+    borderRadius: 0,
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    background: 'transparent',    // the Quiz component now draws its own background
+  },
 };
 
 

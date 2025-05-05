@@ -8,13 +8,11 @@ import Questions from './Questions';
 import SideChat from './SideChat';
 import { FinalResultsPopup } from './Popups';
 
-// Chat message type
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-// History item type for SideChat
 interface SideHistoryItem {
   question: number;
   messages: ChatMessage[];
@@ -39,7 +37,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
   // Side chat state
   const [sideChatMessages, setSideChatMessages] = useState<ChatMessage[]>([]);
   const [sideChatInput, setSideChatInput] = useState('');
-  const [chatHidden, setChatHidden] = useState(false);
+  const [chatHidden, setChatHidden] = useState(true);
   const [chatHistory, setChatHistory] = useState<SideHistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -54,8 +52,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
     messagesContainerRef.current?.scrollTo(0, 0);
   }, [currentIndex]);
 
-  // Handle answer submission
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+
   const handleSubmitAnswer = () => {
     if (hasSubmitted || selectedOption === null) return;
     const correctIdx = questions[currentIndex].correctAnswer;
@@ -66,9 +64,10 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
       setFeedback('Incorrect...');
     }
     setHasSubmitted(true);
+    // Un-hide side chat when answer is submitted
+    setChatHidden(false);
   };
 
-  // Handle Next or Finish
   const handleNext = () => {
     setChatHistory(h => [...h, { question: currentIndex, messages: sideChatMessages }]);
     setSideChatMessages([]);
@@ -80,12 +79,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
       setSelectedOption(null);
       setHasSubmitted(false);
       setFeedback('');
+      setChatHidden(true);
     } else {
       setShowResultsPopup(true);
     }
   };
 
-  // Free-form chat submit
   const handleSideChatSubmit = async () => {
     const text = sideChatInput.trim();
     if (!text) return;
@@ -107,7 +106,6 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
     }
   };
 
-  // AI follow-up on question
   const handleDiscussQuestion = async () => {
     if (!hasSubmitted || selectedOption === null) return;
     const q = questions[currentIndex];
@@ -116,11 +114,9 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
     const basePrompt = `Question: "${q.question}"\n`;
     const prompt =
       selectedOption === q.correctAnswer
-        ? basePrompt +
-          `I answered "${userAns}" and that is correct. Please explain why this answer is correct.`
+        ? basePrompt + `I answered "${userAns}" and that is correct. Please explain why this answer is correct.`
         : basePrompt +
-          `I answered "${userAns}" but the correct answer is "${correctAns}". ` +
-          `Please explain why my answer is incorrect and why the correct answer is correct.`;
+          `I answered "${userAns}" but the correct answer is "${correctAns}". Please explain why my answer is incorrect and why the correct answer is correct.`;
 
     const initial: ChatMessage = { role: 'user', content: prompt };
     setSideChatMessages([initial]);
@@ -142,13 +138,15 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
   return (
     <div style={styles.container}>
       <button onClick={onExit} style={styles.backButton}>
-        <FaArrowLeft /> Back to Courses
+        <FaArrowLeft /> Back
       </button>
+
       <div style={styles.quizPane}>
         <h2 style={styles.header}>Quiz: Lesson {courseId + 1}</h2>
         <p style={styles.subheader}>
           Question {currentIndex + 1} of {questions.length}
         </p>
+
         {showResultsPopup ? (
           <FinalResultsPopup
             score={score}
@@ -161,6 +159,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
           />
         ) : (
           <Questions
+            currentIndex={currentIndex}
             question={questions[currentIndex]}
             selectedOption={selectedOption}
             hasSubmitted={hasSubmitted}
@@ -173,7 +172,9 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
           />
         )}
       </div>
-      {!showResultsPopup && (
+
+      {/* SideChat only appears after submitting an answer */}
+      {!showResultsPopup && !chatHidden && hasSubmitted && (
         <SideChat
           sideChatMessages={sideChatMessages}
           sideChatInput={sideChatInput}
@@ -193,16 +194,51 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId }) 
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  container: { display: 'flex', height: '100%', overflow: 'hidden', position: 'relative' },
-  backButton: {
-    position: 'absolute', top: 10, left: 10,
-    display: 'inline-flex', alignItems: 'center', gap: 6,
-    background: '#566395', color: '#fff', border: 'none',
-    borderRadius: 6, padding: '8px 12px', cursor: 'pointer', zIndex: 10,
+  container: {
+    display: 'flex',
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+    background: 'linear-gradient(180deg, #010117 0%, #071746 100%)',
+    color: '#FFFFFF',
+    overflow: 'hidden',
   },
-  quizPane: { flex: 1, padding: 20, background: '#f9f9f9', overflowY: 'auto' },
-  header: { textAlign: 'center', marginBottom: 20 },
-  subheader: { textAlign: 'center', marginBottom: 30 },
+  backButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    background: 'rgba(255,255,255,0.1)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    padding: '8px 12px',
+    cursor: 'pointer',
+    zIndex: 10,
+    fontSize: '0.9rem',
+  },
+  quizPane: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    padding: '60px 40px 40px',
+    boxSizing: 'border-box',
+  },
+  header: {
+    fontSize: '1.8rem',
+    margin: 0,
+    marginBottom: 8,
+  },
+  subheader: {
+    fontSize: '1rem',
+    margin: 0,
+    marginBottom: 32,
+    opacity: 0.8,
+  },
 };
 
 export default Quiz;
