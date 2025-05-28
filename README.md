@@ -1,53 +1,94 @@
 # QuantumAiEdFrontEnd
 
-This is the frontend for QuantumAiEd, a user interface for submitting quantum education content and receiving feedback from the backend.
+QuantumAiEd is an AI-powered platform designed to bridge the educational gap in early quantum computing instruction. This repository contains the frontend interface, built with React and TypeScript, which communicates with the backend to deliver personalized feedback and adaptive learning experiences.
 
-## 🌐 Tech Stack
+---
 
-- React
-- TypeScript
-- Vite
-- CSS Modules
-- Axios
+## 🌍 Live Demo
 
-## 🚀 Setup Instructions
+Access the deployed app here:  
+🔗 **[https://quantum-ai-ed-front-end-smoky.vercel.app/](https://quantum-ai-ed-front-end-smoky.vercel.app/)**
 
-1. Clone the repository:
+---
 
-   git clone https://github.com/kevvinnnh/QuantumAiEdFrontEnd.git
-   cd QuantumAiEdFrontEnd/frontend
+## 🧰 Tech Stack
 
-2. Install dependencies:
+- **Framework**: React + Vite + TypeScript  
+- **Styling**: CSS Modules  
+- **Networking**: Axios  
+- **Environment Management**: Vite `.env` variables
 
-   npm install
+---
 
-3. Set up environment variables:
+## ⚙️ Setup Instructions
 
-   cp .env.example .env
+### 1. Clone the Repository
 
-   Then open `.env` and add the following:
+```bash
+git clone https://github.com/kevvinnnh/QuantumAiEdFrontEnd.git
+cd QuantumAiEdFrontEnd/frontend
+```
 
-   VITE_BACKEND_URL=http://localhost:5000  
-   REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id_here  
-   VITE_PORT=5173
+### 2. Install Dependencies
 
-4. Start the development server:
+```bash
+npm install
+```
 
-   npm run dev
+### 3. Configure Environment Variables
 
-   The frontend will be available at http://localhost:5173
+Create a `.env` file from the example:
 
-## 🔗 Connecting to Backend
+```bash
+cp .env.example .env
+```
 
-Ensure the backend is running at the same URL specified in `VITE_BACKEND_URL`.
+Then open `.env` and fill in the following keys:
 
-## ❗ Troubleshooting
+```
+VITE_BACKEND_URL=http://localhost:5000
+REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
+VITE_PORT=5173
+```
 
-- Make sure the backend is running on the correct port (default: 5000)
-- Confirm your `.env` file contains all three keys
-- Check browser console for CORS or network errors
-- If Google login is used, ensure `REACT_APP_GOOGLE_CLIENT_ID` is valid
+### 4. Start the Development Server
+
+```bash
+npm run dev
+```
+
+By default, the frontend runs at:  
+📍 `http://localhost:5173`
+
+---
+
+## 🔗 Backend Connection
+
+This app communicates with the Flask-based backend at the URL defined in `VITE_BACKEND_URL`. Be sure the backend is running locally on port `5000` or update the value accordingly.
+
+---
+
+## 🧪 Troubleshooting
+
+- ❌ **API request failures**: Ensure the backend is running and `VITE_BACKEND_URL` is correct.
+- ⚠️ **CORS issues**: Confirm backend CORS settings allow `localhost:5173`.
+- 🛑 **Missing environment variables**: Double-check your `.env` file for typos or missing values.
+- 🔍 **Console errors**: Use browser developer tools for debugging UI issues.
+
+---
 
 ## 📄 License
 
-MIT
+MIT License
+
+---
+
+## 📝 Citation
+
+If you use QuantumAiEd in academic work, please cite:
+
+> Kevin Hernandez, Tirthak Patel.  
+> *Enhancing Early Quantum Computing Education with QuantumAiEd: Bridging the Educational Gap.*  
+> SIGCSETS 2025: Proceedings of the 56th ACM Technical Symposium on Computer Science Education V. 2, p. 1755.  
+> [https://doi.org/10.1145/3641555.3705028](https://doi.org/10.1145/3641555.3705028)  
+> Published: February 18, 2025. ACM.
