@@ -17,10 +17,13 @@ body {
 
 /* Root container */
 #root {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 1rem;
-  text-align: center;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* ------------------------ */
