@@ -4,7 +4,7 @@
 body {
   background-color: #E8E3F3;
   background: linear-gradient(135deg, #f0f2f5, #ffffff);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   color: #333;
   margin: 0;
   padding: 0;
@@ -17,10 +17,13 @@ body {
 
 /* Root container */
 #root {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 1rem;
-  text-align: center;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* ------------------------ */
