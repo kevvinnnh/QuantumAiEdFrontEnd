@@ -1,5 +1,5 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -13,6 +13,14 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.font-roboto {
+  font-family: 'Roboto', arial, sans-serif;
+}
+
+.font-sarabun {
+  font-family: 'Sarabun', system-ui, sans-serif;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -24,15 +32,32 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: inherit;
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: inherit;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  font-family: inherit;
 }
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+  font-family: inherit;
 }
 
 button {
@@ -52,6 +77,14 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+input, textarea, select {
+  font-family: inherit;
+}
+
+span, div, p, label {
+  font-family: inherit;
 }
 
 @media (prefers-color-scheme: light) {
