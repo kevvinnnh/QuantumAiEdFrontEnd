@@ -18,6 +18,8 @@ frontend/dist-ssr/
 frontend/.env
 .env.local
 .env.*
+!.env.example
+!frontend/.env.example
 
 # Editor directories and files
 .vscode/
