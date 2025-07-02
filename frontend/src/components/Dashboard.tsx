@@ -7,6 +7,7 @@ import Quiz from './Quiz';
 import GlobalChat from './GlobalChat';
 import HighlightableInstructionsForReading from './HighlightableInstructionsForReadings';
 import { allQuizData } from './QuizQuestion'; // Corrected import name casing
+import { lessonContents } from './LessonContents';
 import lesson0Img from '../assets/lessonIcons/lesson-0.png';
 import lesson1Img from '../assets/lessonIcons/lesson-1.png';
 import lesson2Img from '../assets/lessonIcons/lesson-2.png';
@@ -157,67 +158,39 @@ const Dashboard: React.FC = () => {
 
       setQuizOpen(false); // Close the quiz modal immediately
 
-      // Prepare data to send to backend
-      const quizResultData = {
-          courseId: currentCourse,
-          score: score, // Typically score is 0-100
-          passed: passed,
-      };
-
+      // Progress is saved in ./Quiz so we just handle navigation and feedback
       try {
-          console.log("Sending quiz result:", quizResultData);
-          const response = await fetch(`${BACKEND_URL}/save_quiz_result`, {
-              method: 'POST',
-              credentials: 'include', // Send cookies
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(quizResultData),
-          });
+          // Optionally re-fetch progress to update UI with latest state from backend
+          await fetchUserProgress();
 
-          if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-          }
-
-          const result = await response.json();
-          console.log("Quiz result saved, backend response:", result);
-
-          // **Update local state based on backend response**
-          if (result.unlockedLevels) {
-              setUnlocked(result.unlockedLevels);
-          }
-          // Optionally re-fetch all progress to ensure consistency, or just update unlocked
-          // await fetchUserProgress(); // Alternative: Re-fetch everything
-
-          // Show feedback to user AFTER backend confirmation
+          // Show feedback to user
           if (!passed) {
               alert('You need 70% or higher to pass. Keep learning and try again!');
-              // Stay in the current lesson or go back to dashboard?
-              // Let's stay in the current lesson for now.
-              // If you want to go back: goDashboard();
+              // Stay in the current lesson
           } else {
               const nextLevelId = currentCourse + 1;
-              if (result.unlockedLevels && result.unlockedLevels.includes(nextLevelId)) {
+              if (unlocked.includes(nextLevelId) || nextLevelId === currentCourse + 1) {
                   if (nextLevelId < courses.length) {
                       alert(`Great job! Lesson ${courses[nextLevelId].title} unlocked.`);
                       // Automatically open the next lesson
-                      openLesson(nextLevelId);
+                      // openLesson(nextLevelId);
                   } else {
                       alert("Congratulations! You've completed all available courses!");
-                      goDashboard(); // Go back to dashboard if all courses are done
+                      // goDashboard(); // Go back to dashboard if all courses are done
                   }
               } else {
                    // This case might happen if they re-take a quiz they already passed
                    alert(`Great job completing the quiz for ${courses[currentCourse].title}!`);
-                   goDashboard(); // Or stay in lesson? Let's go to dashboard.
+                  //  goDashboard(); // Go to dashboard
               }
+              goDashboard();
           }
 
       } catch (error) {
           console.error('Failed to save quiz result:', error);
           alert(`An error occurred while saving your quiz progress: ${error instanceof Error ? error.message : String(error)}. Please try again.`);
           // Decide how to handle failed save: Maybe allow retry? Or just inform user?
+          goDashboard();
       }
   };
 
@@ -225,6 +198,7 @@ const Dashboard: React.FC = () => {
   /* ---------- quiz availability check ---------------------------- */
   // Check currentCourse is not null before accessing allQuizData
   const currentQuiz = currentCourse !== null ? (allQuizData[currentCourse] || []) : [];
+  const currentLessonContent = currentCourse !== null ? lessonContents[currentCourse] : undefined;
 
   useEffect(() => {
     // Ensure currentCourse is valid before checking quiz length
@@ -396,8 +370,10 @@ const Dashboard: React.FC = () => {
             <Quiz
               courseId={currentCourse}
               questions={currentQuiz}
+              lessonContent={currentLessonContent}
               // Ensure goDashboard is stable or wrapped in useCallback if Quiz memoizes props
-              onExit={() => { setQuizOpen(false); goDashboard(); }}
+              // onExit={() => { setQuizOpen(false); goDashboard(); }}
+              onExit={() => { setQuizOpen(false) }} //NOTE: keep to lesson page now
               onComplete={onQuizComplete} // Pass the async handler
             />
           </div>

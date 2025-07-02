@@ -32,6 +32,13 @@ const Login: React.FC = () => {
         });
         const userData = res.data;
         const userEmail = userData.email || '';
+        localStorage.setItem('loggedInUserEmail', userEmail);
+
+        // Dev route to profile creation
+        if (String(import.meta.env.VITE_FORCE_PROFILE_CREATION).toLowerCase() === 'true') {
+          navigate('/profile-creation');
+          return;
+        }
         
         // Send user info to the backend
         const backendResponse = await axios.post(
@@ -47,7 +54,6 @@ const Login: React.FC = () => {
           }
         );
         const redirectTo = backendResponse.data.redirect_to;
-        localStorage.setItem('loggedInUserEmail', userEmail);
         
         // If admin, redirect to admin dashboard
         if (userEmail.toLowerCase() === 'kh78@rice.edu') {

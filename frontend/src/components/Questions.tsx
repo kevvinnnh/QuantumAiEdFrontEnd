@@ -7,6 +7,7 @@ interface Question {
   options: string[];
   correctAnswer: number;
   explanation?: string;
+  lessonContentIndices?: number[];
 }
 
 interface QuestionsProps {
@@ -16,10 +17,16 @@ interface QuestionsProps {
   hasSubmitted: boolean;
   feedback: string;
   onSelectOption: (index: number) => void;
-  onSubmitAnswer: () => void;
-  onDiscussQuestion: () => void;
-  onNext: () => void;
-  isLastQuestion: boolean;
+  // onSubmitAnswer: () => void;
+  // onDiscussQuestion: () => void;
+  // onNext: () => void;
+  // isLastQuestion: boolean;
+  questionStyles?: React.CSSProperties;
+  optionStyles?: React.CSSProperties;
+  showCorrectAnswers?: boolean;
+  timeMode?: boolean;
+  timeLimit?: number;
+  questionStartTime?: number;
 }
 
 const Questions: React.FC<QuestionsProps> = ({
@@ -27,15 +34,21 @@ const Questions: React.FC<QuestionsProps> = ({
   question,
   selectedOption,
   hasSubmitted,
-  feedback,
+  // feedback,
   onSelectOption,
-  onSubmitAnswer,
-  onDiscussQuestion,
-  onNext,
-  isLastQuestion,
+  // onSubmitAnswer,
+  // onDiscussQuestion,
+  // onNext,
+  // isLastQuestion,
+  questionStyles,
+  optionStyles,
 }) => (
   <div style={styles.container}>
-    <h2 style={styles.questionText}>{question.question}</h2>
+    <div style={styles.questionContainer}>
+      <h2 style={{...styles.questionText, ...questionStyles}}>
+        {question.question}
+      </h2>
+    </div>
 
     <div style={styles.optionsContainer}>
       {question.options.map((opt, idx) => {
@@ -58,12 +71,15 @@ const Questions: React.FC<QuestionsProps> = ({
           }
         }
 
+        // also apply font styles to each option button
+        btnStyle = { ...btnStyle, ...optionStyles };
+
         return (
           <button
             key={`q${currentIndex}-opt${idx}`}
             style={btnStyle}
             disabled={hasSubmitted}
-            onClick={() => !hasSubmitted && onSelectOption(idx)}
+            onClick={() => onSelectOption(idx)}
           >
             {opt}
           </button>
@@ -71,13 +87,13 @@ const Questions: React.FC<QuestionsProps> = ({
       })}
     </div>
 
-    {!hasSubmitted && selectedOption !== null && (
+    {/* {!hasSubmitted && selectedOption !== null && (
       <button style={styles.submitBtn} onClick={onSubmitAnswer}>
         Submit
       </button>
-    )}
+    )} */}
 
-    {hasSubmitted && (
+    {/* {hasSubmitted && (
       <div style={styles.feedbackArea}>
         <p style={feedback.includes('Correct') ? styles.feedbackCorrect : styles.feedbackWrong}>
           {feedback}
@@ -85,7 +101,7 @@ const Questions: React.FC<QuestionsProps> = ({
 
         <div style={styles.answerBox}>
           <p style={styles.answerLabel}>Correct Answer:</p>
-          <p style={styles.answerText}>{question.options[question.correctAnswer]}</p>
+          <p style={{...styles.answerText, ...optionStyles}}>{question.options[question.correctAnswer]}</p>
           {question.explanation && (
             <p style={styles.explanationText}>{question.explanation}</p>
           )}
@@ -100,32 +116,36 @@ const Questions: React.FC<QuestionsProps> = ({
           </button>
         </div>
       </div>
-    )}
+    )} */}
   </div>
 );
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
     width: '100%',
-    maxWidth: 700,
+    maxWidth: 900,
     textAlign: 'center',
   },
-  questionText: {
-    fontSize: '2rem',
-    marginBottom: 24,
-    lineHeight: 1.3,
+  questionContainer: {
+    width: '100%',
+    maxWidth: '900px',
+    margin: '0 auto',
+    textAlign: 'center',
   },
   optionsContainer: {
     display: 'flex',
     flexDirection: 'column',
     gap: 16,
+    width: '100%',
+    maxWidth: '600px',
+    margin: '0 auto',
   },
   optionButton: {
-    padding: '16px 24px',
-    fontSize: '1.1rem',
-    color: '#FFFFFF',
+    padding: '14px 24px',
+    // fontSize: '1.1rem',
+    // color: '#FFFFFF',
     backgroundColor: 'transparent',
-    border: '2px solid #FFFFFF',
+    border: '2px solid #424E62',
     borderRadius: 8,
     cursor: 'pointer',
     transition: 'background-color 0.2s',
@@ -134,20 +154,20 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 1,
   },
   optionSelected: {
-    backgroundColor: 'rgba(86,99,149,0.8)',
-    border: '2px solid #FFFFFF',
+    backgroundColor: '#253462',
+    border: '2px solid #414D61',
   },
   optionCorrect: {
-    backgroundColor: 'rgba(0,200,0,0.8)',
-    border: '2px solid #00c800',
+    backgroundColor: 'rgba(29, 55, 35, 0.8)',
+    border: '2px solid #407440',
   },
   optionWrong: {
-    backgroundColor: 'rgba(200,0,0,0.8)',
-    border: '2px solid #c80000',
+    backgroundColor: 'rgba(51, 24, 27, 0.8)',
+    border: '2px solid #85131E',
   },
   optionUnselectedDisabled: {
     backgroundColor: 'transparent',
-    border: '2px solid #FFFFFF',
+    border: '2px solid #414D61',
     opacity: 1,
   },
   submitBtn: {

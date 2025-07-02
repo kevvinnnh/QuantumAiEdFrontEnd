@@ -3,8 +3,9 @@
 export interface Question {
   question: string;
   options: string[];
-  correctAnswer: number;      // index of the correct option
-  explanation?: string;       // optional explanation
+  correctAnswer: number;            // index of the correct option
+  explanation?: string;             // optional explanation
+  lessonContentIndices?: number[];  // array of paragraph indices
 }
 
 export interface AllQuizData {
@@ -14,7 +15,7 @@ export interface AllQuizData {
 export const allQuizData: AllQuizData = {
   0: [
     {
-      question: '1) What is a primary difference between a qubit and a classical bit?',
+      question: 'What is a primary difference between a qubit and a classical bit?',
       options: [
         'A qubit can only be 0 or 1.',
         'A classical bit can be 0, 1, or both simultaneously.',
@@ -24,9 +25,10 @@ export const allQuizData: AllQuizData = {
       correctAnswer: 2,
       explanation:
         'Classical bits are limited to definite states (0 or 1), while qubits leverage superposition until measured.',
+      lessonContentIndices: [3, 4], // "Qubits", "Superposition"
     },
     {
-      question: '2) Quantum computing promises potential advantages over classical computing primarily in which tasks?',
+      question: 'Quantum computing promises potential advantages over classical computing primarily in which tasks?',
       options: [
         'Word processing and spreadsheet calculations.',
         'Video streaming and web browsing.',
@@ -36,9 +38,10 @@ export const allQuizData: AllQuizData = {
       correctAnswer: 2,
       explanation:
         'Quantum computers excel at problems intractable for classical machines, like molecular simulations or cryptanalysis.',
+      lessonContentIndices: [7, 8, 9, 10], // "Applications"
     },
     {
-      question: '3) Which phenomenon allows two qubits to exhibit correlated results instantaneously?',
+      question: 'Which phenomenon allows two qubits to exhibit correlated results instantaneously?',
       options: [
         'Superposition',
         'Interference',
@@ -48,9 +51,10 @@ export const allQuizData: AllQuizData = {
       correctAnswer: 2,
       explanation:
         'Entanglement links qubit states so measuring one immediately affects the other, regardless of distance.',
+      lessonContentIndices: [5], // "Entanglement"
     },
     {
-      question: '4) What happens when you measure a qubit in superposition?',
+      question: 'What happens when you measure a qubit in superposition?',
       options: [
         'It remains in superposition.',
         'It collapses to one of the basis states.',
@@ -60,6 +64,7 @@ export const allQuizData: AllQuizData = {
       correctAnswer: 2,
       explanation:
         'Measurement collapses the qubit’s superposition into a definite classical state, yielding one outcome.',
+      lessonContentIndices: [6], // "Measurement"
     },
   ],
 
@@ -75,6 +80,7 @@ export const allQuizData: AllQuizData = {
       correctAnswer: 1,
       explanation:
         'Superposition allows a quantum system to be in multiple states until an observation is made.',
+      lessonContentIndices: [2], // "Superposition"
     },
     {
       question: '2) Entanglement refers to:',
@@ -87,6 +93,7 @@ export const allQuizData: AllQuizData = {
       correctAnswer: 2,
       explanation:
         'Entangled particles have linked states such that measuring one instantly affects the other.',
+      lessonContentIndices: [3], // "Entanglement"
     },
     {
       question: '3) Which principle states measurement affects a quantum system’s state?',
@@ -99,6 +106,7 @@ export const allQuizData: AllQuizData = {
       correctAnswer: 2,
       explanation:
         'Measurement collapse describes how observing a quantum system forces it into a definite state.',
+        lessonContentIndices: [4], // "Measurement Collapse"
     },
     {
       question: '4) Wave-particle duality means quantum objects can behave as:',
@@ -111,6 +119,7 @@ export const allQuizData: AllQuizData = {
       correctAnswer: 2,
       explanation:
         'Quantum entities exhibit both wave-like and particle-like properties depending on how they are measured.',
+      lessonContentIndices: [1], // "Wave-Particle Duality"
     },
   ],
 
