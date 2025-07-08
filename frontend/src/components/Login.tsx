@@ -99,7 +99,7 @@ const Login: React.FC = () => {
       <div style={styles.container}>
         {/* LEFT COLUMN */}
         <div style={styles.leftColumn}>
-          <div style={styles.logoStyle} aria-label="QuantAid Logo"></div>
+          <div style={styles.logoStyle} aria-label="Quantaid Logo"></div>
           <div style={styles.formContainer}>
             {/* <h1 style={styles.brandTitle}>QuantAid</h1> */}
             
@@ -267,6 +267,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     left: '15px',
     height: '19px',
     width: '70px',
+    minHeight: '19px',
+    minWidth: '70px',
     zIndex: 1000,
     backgroundColor: '#F1E0E0',
     mask: `url(${QuantaidLogo}) no-repeat center`,

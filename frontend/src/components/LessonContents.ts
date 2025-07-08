@@ -1,8 +1,13 @@
 // src/data/LessonContents.ts
 
+export interface ParagraphItem {
+  text: string;
+  type?: 'heading' | 'subheading' | 'paragraph'; // Default is 'paragraph'
+}
+
 export interface LessonContent {
   title: string;
-  paragraphs: string[];
+  paragraphs: (string | ParagraphItem)[]; // Support both old string format and new object format
   interactiveTerms?: Record<string, string>;
 }
 
@@ -12,12 +17,12 @@ export const lessonContents: Record<number, LessonContent> = {
     paragraphs: [
       'Quantum computing is a revolutionary technology that harnesses the principles of quantum mechanics to perform computations far beyond the capability of classical computers. These principles enable new ways of processing information that are fundamentally different from binary logic.',
       'Highlight any text to get options, or click underlined terms like qubit, superposition, and entanglement to learn more!',
-      'Core Principles',
+      { text: 'Core Principles', type: 'heading' },
       'Qubits: Unlike classical bits, which are strictly 0 or 1, qubits can exist in a combination of both states simultaneously. This property, called superposition, provides quantum computers with unparalleled computational power for specific tasks.',
       'Superposition: Superposition enables a single qubit to represent multiple possibilities at once. For example, while a classical bit can only encode one number (0 or 1), a qubit in superposition can encode a combination of both. This property allows quantum computers to process many potential solutions simultaneously, exponentially increasing computational efficiency for some problems.',
       'Entanglement: Entanglement links two or more qubits such that the state of one immediately affects the state of the other, regardless of distance. This phenomenon forms the backbone of quantum communication and allows quantum computers to perform coordinated calculations across multiple qubits.',
       'Measurement: Measurement is the process of observing a qubit, which collapses its superposition into a definite state. This final state provides the result of a quantum computation, though the probabilistic nature of quantum mechanics means results may vary.',
-      'Applications',
+      { text: 'Applications', type: 'heading' },
       'Cryptography: Quantum computers can break classical encryption methods, such as RSA, by efficiently factoring large numbers using algorithms like Shor\'s Algorithm. At the same time, they enable the creation of quantum-safe encryption methods, ensuring secure communication in the quantum era.',
       'Drug Discovery and Materials Science: By simulating molecular interactions at the quantum level, quantum computers can accelerate the discovery of new drugs and materials—critical for breakthroughs in medicine and materials science.',
       'Optimization: Many industries face optimization challenges—from supply chain logistics to portfolio management in finance. Quantum computers can evaluate multiple solutions simultaneously, offering potential speedups for finding optimal solutions.',
@@ -37,11 +42,17 @@ export const lessonContents: Record<number, LessonContent> = {
     title: 'Basic Quantum Principles',
     paragraphs: [
       'In this lesson, we cover the foundational ideas that make quantum computing possible.',
-      'Wave-Particle Duality: Quantum objects can behave both as particles and as waves, depending on how they are observed.',
-      'Superposition: A qubit in superposition can exist in many possible states at once, enabling parallelism in computation.',
-      'Entanglement: When qubits become entangled, their states are correlated in such a way that the measurement of one determines the state of the other instantly.',
-      'Measurement Collapse: Observing a qubit forces it into one of its basis states, destroying its previous superposition.',
-      'Applications: These principles underpin advanced algorithms like Grover’s search and quantum teleportation, which exploit superposition and entanglement for speedups.',
+      { text: 'Key Concepts', type: 'heading' },
+      { text: 'Wave-Particle Duality', type: 'subheading' },
+      'Quantum objects can behave both as particles and as waves, depending on how they are observed.',
+      { text: 'Superposition', type: 'subheading' },
+      'A qubit in superposition can exist in many possible states at once, enabling parallelism in computation.',
+      { text: 'Entanglement', type: 'subheading' },
+      'When qubits become entangled, their states are correlated in such a way that the measurement of one determines the state of the other instantly.',
+      { text: 'Measurement Collapse', type: 'subheading' },
+      'Observing a qubit forces it into one of its basis states, destroying its previous superposition.',
+      { text: 'Applications', type: 'heading' },
+      'These principles underpin advanced algorithms like Grover\'s search and quantum teleportation, which exploit superposition and entanglement for speedups.',
     ],
     interactiveTerms: {
       'wave-particle duality':
@@ -58,10 +69,16 @@ export const lessonContents: Record<number, LessonContent> = {
     title: 'Quantum Gates and Circuits (Basics)',
     paragraphs: [
       'Quantum gates are the building blocks of quantum algorithms, analogous to classical logic gates.',
-      'Hadamard Gate (H): Puts a single qubit into an equal superposition of |0⟩ and |1⟩.',
-      'Pauli-X Gate: Flips the state of a qubit, analogous to a classical NOT gate.',
-      'CNOT Gate: A two-qubit gate that flips the second qubit (target) if the first qubit (control) is |1⟩.',
-      'Circuit Diagrams: Represent qubits as horizontal lines and gates as symbols placed on those lines in sequence.',
+      { text: 'Basic Gates', type: 'heading' },
+      { text: 'Hadamard Gate (H)', type: 'subheading' },
+      'Puts a single qubit into an equal superposition of |0⟩ and |1⟩.',
+      { text: 'Pauli-X Gate', type: 'subheading' },
+      'Flips the state of a qubit, analogous to a classical NOT gate.',
+      { text: 'CNOT Gate', type: 'subheading' },
+      'A two-qubit gate that flips the second qubit (target) if the first qubit (control) is |1⟩.',
+      { text: 'Building Circuits', type: 'heading' },
+      { text: 'Circuit Diagrams', type: 'subheading' },
+      'Represent qubits as horizontal lines and gates as symbols placed on those lines in sequence.',
       'By combining gates, you can build complex quantum circuits to implement powerful algorithms.',
     ],
     interactiveTerms: {
@@ -78,16 +95,19 @@ export const lessonContents: Record<number, LessonContent> = {
   3: {
     title: 'Getting Hands-on',
     paragraphs: [
-      'Now let’s write some actual quantum code using Qiskit.',
+      'Now let\'s write some actual quantum code using Qiskit.',
+      { text: 'Qiskit Framework', type: 'heading' },
       'Qiskit is an open-source Python framework for creating and running quantum circuits on simulators or real hardware.',
+      { text: 'Core Components', type: 'subheading' },
       'QuantumCircuit Object: Build circuits by instantiating a QuantumCircuit and adding gates.',
       'Transpilation: Converts your high-level description into low-level instructions optimized for a given backend.',
-      'Execution: Submit jobs to IBM Quantum simulators or real devices via the IBM Quantum Experience.',
+      { text: 'Execution', type: 'subheading' },
+      'Submit jobs to IBM Quantum simulators or real devices via the IBM Quantum Experience.',
       'Experiment with small circuits, view results, and analyze outcomes to deepen your understanding.',
     ],
     interactiveTerms: {
       Qiskit:
-        'Qiskit is IBM’s open-source SDK for working with quantum computers at the level of circuits, pulses, and algorithms.',
+        'Qiskit is IBM\'s open-source SDK for working with quantum computers at the level of circuits, pulses, and algorithms.',
       'QuantumCircuit':
         'A QuantumCircuit object in Qiskit holds qubits, classical bits, and the sequence of gates to be executed.',
       'IBM Quantum Experience':
@@ -98,10 +118,16 @@ export const lessonContents: Record<number, LessonContent> = {
     title: 'Foundations for Quantum Computing',
     paragraphs: [
       'This lesson dives into the math underpinning quantum theory.',
-      'Dirac Notation: Uses |ψ⟩ to denote quantum states and ⟨φ| for bra vectors.',
-      'Hilbert Space: The vector space in which quantum states live, equipped with an inner product.',
-      'Bloch Sphere: A geometric representation of the state of a single qubit on the surface of a sphere.',
-      'Complex Amplitudes: Probability amplitudes are complex numbers whose magnitudes squared give measurement probabilities.',
+      { text: 'Mathematical Foundations', type: 'heading' },
+      { text: 'Dirac Notation', type: 'subheading' },
+      'Uses |ψ⟩ to denote quantum states and ⟨φ| for bra vectors.',
+      { text: 'Hilbert Space', type: 'subheading' },
+      'The vector space in which quantum states live, equipped with an inner product.',
+      { text: 'Bloch Sphere', type: 'subheading' },
+      'A geometric representation of the state of a single qubit on the surface of a sphere.',
+      { text: 'Complex Amplitudes', type: 'subheading' },
+      'Probability amplitudes are complex numbers whose magnitudes squared give measurement probabilities.',
+      { text: 'Practical Applications', type: 'heading' },
       'Understanding these foundations will help you follow advanced algorithms and error-correction schemes.',
     ],
     interactiveTerms: {
@@ -115,10 +141,16 @@ export const lessonContents: Record<number, LessonContent> = {
     title: 'Quantum Cryptography & Security',
     paragraphs: [
       'Quantum mechanics not only breaks classical cryptography but also enables new secure protocols.',
-      'BB84 Protocol: Uses polarized photons to share encryption keys with guaranteed eavesdrop detection.',
-      'Quantum Key Distribution (QKD): Allows two parties to generate a shared, secret key with security based on physics.',
-      'Post-Quantum Cryptography: Classical algorithms designed to resist attacks by quantum computers.',
-      'Practical Implementations: Fiber-optic and free-space QKD systems are already in use for secure communication.',
+      { text: 'Quantum Key Distribution', type: 'heading' },
+      { text: 'BB84 Protocol', type: 'subheading' },
+      'Uses polarized photons to share encryption keys with guaranteed eavesdrop detection.',
+      { text: 'QKD Implementation', type: 'subheading' },
+      'Allows two parties to generate a shared, secret key with security based on physics.',
+      { text: 'Classical Resistance', type: 'heading' },
+      { text: 'Post-Quantum Cryptography', type: 'subheading' },
+      'Classical algorithms designed to resist attacks by quantum computers.',
+      { text: 'Current Applications', type: 'subheading' },
+      'Fiber-optic and free-space QKD systems are already in use for secure communication.',
     ],
     interactiveTerms: {
       BB84:
@@ -131,10 +163,16 @@ export const lessonContents: Record<number, LessonContent> = {
     title: 'Adiabatic Quantum Computing',
     paragraphs: [
       'Adiabatic quantum computing encodes solutions to optimization problems in the ground state of a Hamiltonian.',
-      'Adiabatic Theorem: A quantum system remains in its instantaneous ground state if changes are sufficiently slow.',
-      'Quantum Annealing: Slowly evolves the Hamiltonian from an easy initial form to one encoding the problem.',
-      'D-Wave Systems: Commercial quantum annealers built by D-Wave implement quantum annealing on hundreds of qubits.',
-      'Applications: Particularly suited for combinatorial optimization, scheduling, and materials modeling.',
+      { text: 'Theoretical Foundation', type: 'heading' },
+      { text: 'Adiabatic Theorem', type: 'subheading' },
+      'A quantum system remains in its instantaneous ground state if changes are sufficiently slow.',
+      { text: 'Quantum Annealing', type: 'subheading' },
+      'Slowly evolves the Hamiltonian from an easy initial form to one encoding the problem.',
+      { text: 'Commercial Implementation', type: 'heading' },
+      { text: 'D-Wave Systems', type: 'subheading' },
+      'Commercial quantum annealers built by D-Wave implement quantum annealing on hundreds of qubits.',
+      { text: 'Applications', type: 'subheading' },
+      'Particularly suited for combinatorial optimization, scheduling, and materials modeling.',
     ],
     interactiveTerms: {
       'Adiabatic Theorem':
@@ -147,10 +185,16 @@ export const lessonContents: Record<number, LessonContent> = {
     title: 'Quantum Signal Processing & Simulation',
     paragraphs: [
       'Quantum signal processing uses controlled quantum evolutions to perform spectral transformations.',
-      'Phase Estimation: Determines eigenvalues of a unitary operator, a key subroutine in many algorithms.',
-      'Hamiltonian Simulation: Mimics the evolution of a quantum system under a given Hamiltonian.',
-      'Quantum Fourier Transform (QFT): The quantum analogue of the discrete Fourier transform with exponential speedup.',
-      'Applications: Used in algorithms for chemistry, cryptanalysis, and solving linear systems of equations.',
+      { text: 'Core Algorithms', type: 'heading' },
+      { text: 'Phase Estimation', type: 'subheading' },
+      'Determines eigenvalues of a unitary operator, a key subroutine in many algorithms.',
+      { text: 'Hamiltonian Simulation', type: 'subheading' },
+      'Mimics the evolution of a quantum system under a given Hamiltonian.',
+      { text: 'Transform Methods', type: 'heading' },
+      { text: 'Quantum Fourier Transform (QFT)', type: 'subheading' },
+      'The quantum analogue of the discrete Fourier transform with exponential speedup.',
+      { text: 'Applications', type: 'subheading' },
+      'Used in algorithms for chemistry, cryptanalysis, and solving linear systems of equations.',
     ],
     interactiveTerms: {
       'Phase Estimation':
@@ -163,10 +207,16 @@ export const lessonContents: Record<number, LessonContent> = {
     title: 'Quantum Hardware & Future Trends',
     paragraphs: [
       'Quantum hardware is rapidly evolving, with multiple qubit modalities under development.',
-      'Superconducting Qubits: Use Josephson junctions at millikelvin temperatures to encode quantum states.',
-      'Trapped Ions: Individual ions confined by electromagnetic fields offer long coherence times.',
-      'Topological Qubits: Aim to encode information in nonlocal properties of quasiparticles for built-in error resistance.',
-      'Future Directions: Scaling up, error correction, and hybrid quantum-classical architectures will define the next decade.',
+      { text: 'Current Technologies', type: 'heading' },
+      { text: 'Superconducting Qubits', type: 'subheading' },
+      'Use Josephson junctions at millikelvin temperatures to encode quantum states.',
+      { text: 'Trapped Ions', type: 'subheading' },
+      'Individual ions confined by electromagnetic fields offer long coherence times.',
+      { text: 'Emerging Technologies', type: 'heading' },
+      { text: 'Topological Qubits', type: 'subheading' },
+      'Aim to encode information in nonlocal properties of quasiparticles for built-in error resistance.',
+      { text: 'Future Outlook', type: 'heading' },
+      'Scaling up, error correction, and hybrid quantum-classical architectures will define the next decade.',
     ],
     interactiveTerms: {
       'Superconducting Qubits':

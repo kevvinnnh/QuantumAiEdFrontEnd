@@ -784,6 +784,15 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
                             </p>
                           ))}
                         </div>
+                        <div style={styles.revisitLessonContainer}>
+                          <span 
+                            onClick={onExit}
+                            className="revisit-lesson-link"
+                            style={styles.revisitLessonLink}
+                          >
+                            Revisit full lesson
+                          </span>
+                        </div>
                       </>
                     );
                   })()}
@@ -940,7 +949,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
                 backgroundColor: showResultsScreen
                   ? '#3B6BBB'
                   : (hasSubmitted 
-                  ? (isCorrect ? '#406440' : '#1A2540')
+                  ? (isCorrect ? '#406440' : '#A20F1D')
                   : (canContinue ? '#142748' : '#2A3A52')),
               }}
             >
@@ -1284,13 +1293,37 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
   },
   reviewConceptContent: {
-    fontSize: '24px',
+    fontSize: '20px',
     fontWeight: '400',
     fontFamily: "'Inter', sans-serif",
     flex: 1,
     overflowY: 'auto',
     padding: '0 20px',
     scrollBehavior: 'smooth',
+  },
+  reviewConceptParagraphs: {
+    marginBottom: '30px',
+  },
+  reviewConceptParagraph: {
+    fontSize: '18px',
+    fontWeight: '400',
+    fontFamily: "'Inter', sans-serif",
+    lineHeight: '1.6',
+    marginBottom: '16px',
+  },
+  revisitLessonContainer: {
+    marginTop: '30px',
+    textAlign: 'left' as const,
+  },
+  revisitLessonLink: {
+    fontSize: '14px',
+    fontWeight: '400',
+    fontFamily: "'Inter', sans-serif",
+    color: '#AFAFAF',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    transition: 'color 0.2s ease',
+    lineHeight: '1.4',
   },
   continueButton: {
     padding: '12px 42px',
@@ -1402,6 +1435,11 @@ const addHoverStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
     .quiz-bottom-buttons:hover:not(:disabled) {
+      opacity: 0.9 !important;
+      transition: opacity 0.2s ease;
+    }
+
+    .revisit-lesson-link:hover:not(:disabled) {
       opacity: 0.9 !important;
       transition: opacity 0.2s ease;
     }
