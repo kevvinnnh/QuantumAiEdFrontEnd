@@ -23,7 +23,7 @@ body {
   padding: 0;
   text-align: left;
   overflow-x: hidden;
-  overflow-y: auto;
+  /* overflow-y: auto; */
 }
 
 /* ------------------------ */
