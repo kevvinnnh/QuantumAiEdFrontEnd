@@ -17,6 +17,9 @@ interface QuestionsProps {
   hasSubmitted: boolean;
   feedback: string;
   onSelectOption: (index: number) => void;
+  wrongChoices: number[];
+  questionCompleted: boolean;
+  showAnswersEnabled: boolean;
   // onSubmitAnswer: () => void;
   // onDiscussQuestion: () => void;
   // onNext: () => void;
@@ -36,6 +39,9 @@ const Questions: React.FC<QuestionsProps> = ({
   hasSubmitted,
   // feedback,
   onSelectOption,
+  wrongChoices,
+  questionCompleted,
+  showAnswersEnabled,
   // onSubmitAnswer,
   // onDiscussQuestion,
   // onNext,
@@ -51,35 +57,61 @@ const Questions: React.FC<QuestionsProps> = ({
     </div>
 
     <div style={styles.optionsContainer}>
+      {/* Try Again Indicator */}
+      {showAnswersEnabled && wrongChoices.length > 0 && !questionCompleted && (
+        <div style={styles.tryAgainIndicator}>
+          Try again
+        </div>
+      )}
+
       {question.options.map((opt, idx) => {
         let btnStyle = { ...styles.optionButton };
+        let isDisabled = false;
 
-        if (!hasSubmitted) {
-          // Pre-submit: highlight selection
+        // Determine the state and styling for each option
+        if (!questionCompleted) {
+          // Question is still in progress
           if (selectedOption === idx) {
+            // Currently selected option (before submission or between attempts)
             btnStyle = { ...btnStyle, ...styles.optionSelected };
+          } else if (wrongChoices.includes(idx)) {
+            // Previously chosen wrong option - mark as wrong and disable
+            btnStyle = { ...btnStyle, ...styles.optionWrong };
+            isDisabled = true;
           }
         } else {
-          // Post-submit: style correct, wrong, and unselected
+          // Question is completed (correct answer found or max attempts reached)
           if (idx === question.correctAnswer) {
+            // Always highlight the correct answer when question is completed
             btnStyle = { ...btnStyle, ...styles.optionCorrect };
-          } else if (selectedOption === idx && idx !== question.correctAnswer) {
+          } else if (wrongChoices.includes(idx)) {
+            // Mark all wrong choices as incorrect
             btnStyle = { ...btnStyle, ...styles.optionWrong };
           } else {
-            // unselected choices remain transparent with white border
+            // Unselected options remain in default disabled state
             btnStyle = { ...btnStyle, ...styles.optionUnselectedDisabled };
           }
+          isDisabled = true; // All options are disabled when question is completed
         }
 
         // also apply font styles to each option button
         btnStyle = { ...btnStyle, ...optionStyles };
 
+        // Override cursor style for disabled options
+        if (isDisabled) {
+          btnStyle = { ...btnStyle, cursor: 'not-allowed' };
+        }
+
         return (
           <button
             key={`q${currentIndex}-opt${idx}`}
             style={btnStyle}
-            disabled={hasSubmitted}
-            onClick={() => onSelectOption(idx)}
+            disabled={isDisabled}
+            onClick={() => {
+              if (!isDisabled) {
+                onSelectOption(idx);
+              }
+            }}
           >
             {opt}
           </button>
@@ -139,6 +171,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     maxWidth: '600px',
     margin: '0 auto',
+    position: 'relative',
   },
   optionButton: {
     padding: '14px 24px',
@@ -239,6 +272,19 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     borderRadius: 6,
     cursor: 'pointer',
+  },
+  tryAgainIndicator: {
+    position: 'absolute',
+    top: '-50px',
+    left: '0',
+    backgroundColor: '#A25313',
+    color: '#FFFFFF',
+    padding: '4px 8px',
+    borderRadius: 16,
+    fontSize: '16px',
+    fontWeight: '400',
+    fontFamily: "'Inter', sans-serif",
+    zIndex: 10,
   },
 };
 

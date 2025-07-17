@@ -53,6 +53,11 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
   const [quizEndTime, setQuizEndTime] = useState<number | null>(null);
   const [progressSaved, setProgressSaved] = useState(false); // Track if progress has been saved
 
+  // Show Correct Answers functionality state
+  const [wrongChoices, setWrongChoices] = useState<number[]>([]); // Track wrong choices for current question
+  const [attemptCount, setAttemptCount] = useState(0); // Track number of attempts for current question
+  const [questionCompleted, setQuestionCompleted] = useState(false); // Track if question is finished (correct answer or max attempts)
+
   // Review concept state
   const [showReviewConcept, setShowReviewConcept] = useState(false);
 
@@ -255,27 +260,66 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
   };
 
   const handleSubmitAnswer = (autoSubmitted = false) => {
-    if (hasSubmitted) return;
+    // If question is already completed (correct answer found or max attempts reached), don't process further
+    if (questionCompleted) return;
 
-    // Auto-submission via timer
+    // Auto-submission via timer or no selection
     if (!autoSubmitted && selectedOption == null) return;
     
     const correctIdx = questions[currentIndex].correctAnswer;
     const isAnswerCorrect = selectedOption === correctIdx;
     
-    if (isAnswerCorrect) {
-      setScore(s => s + 1);
-      setFeedback('Correct!');
-      playSound('correct');
-    } else {
-      setFeedback(autoSubmitted ? 'Time\'s up! Incorrect...' : 'Incorrect...');
-      playSound(autoSubmitted ? 'timeUp' : 'incorrect');
+    // Increment attempt count
+    const newAttemptCount = attemptCount + 1;
+    setAttemptCount(newAttemptCount);
+
+    if (!showAnswersEnabled) {
+      // When Show Correct Answers is DISABLED: just score and move on, no feedback or marking
+      if (isAnswerCorrect) {
+        setScore(s => s + 1);
+      }
+      // Immediately move to next question without any visual feedback
+      handleNext();
+      return;
     }
     
-    setIsCorrect(isAnswerCorrect);
-    setHasSubmitted(true);
-    // Un-hide side chat when answer is submitted
-    // setChatHidden(false);
+    if (isAnswerCorrect) {
+      // Correct answer - award points only on first attempt
+      if (newAttemptCount === 1) {
+        setScore(s => s + 1);
+      }
+      setFeedback('Correct!');
+      setIsCorrect(true);
+      setQuestionCompleted(true); // Mark question as completed
+      setHasSubmitted(true);
+      playSound('correct');
+    } else {
+      // Wrong answer
+      if (selectedOption !== null) {
+        setWrongChoices(prev => [...prev, selectedOption]); // Add to wrong choices
+      }
+      
+      playSound(autoSubmitted ? 'timeUp' : 'incorrect');
+      
+      if (newAttemptCount >= 2 || autoSubmitted) {
+        // Max attempts reached or time expired
+        setFeedback(autoSubmitted ? 'Time\'s up! Incorrect...' : 'Incorrect...');
+        setIsCorrect(false);
+        setQuestionCompleted(true); // Mark question as completed
+        setHasSubmitted(true);
+      } else {
+        // First wrong attempt - allow retry
+        setFeedback('Try again...');
+        setIsCorrect(false);
+        setSelectedOption(null); // Clear selection for retry
+        // Don't set hasSubmitted to true - allow another attempt
+      }
+    }
+    
+    // Un-hide side chat when answer is submitted (only when question is completed)
+    // if (questionCompleted || isAnswerCorrect || newAttemptCount >= 2 || autoSubmitted) {
+    //   setChatHidden(false);
+    // }
   };
 
   const handleNext = () => {
@@ -291,6 +335,10 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
       setHasSubmitted(false);
       setFeedback('');
       setIsCorrect(null);
+      // Reset Show Correct Answers state for new question
+      setWrongChoices([]);
+      setAttemptCount(0);
+      setQuestionCompleted(false);
       // setChatHidden(true);
       setShowReviewConcept(false); // Reset review concept for new question
       // Reset timer state for new question
@@ -304,7 +352,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
   };
 
    const handleOptionSelect = (index: number) => {
-    if (!hasSubmitted) {
+    // Don't allow selection if question is completed or if this option was already chosen incorrectly
+    if (questionCompleted || wrongChoices.includes(index)) {
+      return;
+    }
+
+    if (!hasSubmitted || (!questionCompleted && showAnswersEnabled)) {
       setSelectedOption(index);
       playSound('click');
     }
@@ -478,6 +531,10 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
       setSelectedOption(null);
       setHasSubmitted(false);
       setFeedback('');
+      // Reset Show Correct Answers state for new question
+      setWrongChoices([]);
+      setAttemptCount(0);
+      setQuestionCompleted(false);
       // setChatHidden(true);
       setShowReviewConcept(false); // Reset review concept for new question
       // Reset timer state for new question
@@ -530,8 +587,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
   };
 
   const handleContinue = () => {
-    if (hasSubmitted) {
-      // If already submitted, this acts like "Next"
+    if (questionCompleted) {
+      // If question is completed (correct answer or max attempts), this acts like "Next"
       handleNext();
     } else {
       // If not submitted, this acts like "Submit"
@@ -556,12 +613,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
   const getTimerColor = () => {
     if (!timeModeEnabled) return '#FFFFFF';
     const percentage = timeRemaining / timeLimit;
-    if (percentage > 0.5) return '#FFFFFF'; // Blue
+    if (percentage > 0.5) return '#FFFFFF'; // White
     if (percentage > 0.25) return '#FFA500'; // Orange
     return '#FF4444'; // Red
   };
 
-  const canContinue = selectedOption !== null && !hasSubmitted;
+  const canContinue = selectedOption !== null && (!showAnswersEnabled || !questionCompleted);
 
   // Results screen component
   const ResultsScreen = () => {
@@ -641,8 +698,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
       ) : (
         <>
           <div style={styles.topBar}>
-            <button onClick={progressSaved ? onExit : handleBackButtonClick} style={styles.backButton}>
-              <IoCloseOutline size={24} color={'#424E62'} />
+            <button 
+              ref={settingsButtonRef}
+              onClick={toggleSettingsDropdown} 
+              style={styles.dotsButton}
+            >
+              <BsThreeDots size={24} color={'#424E62'} />
             </button>
             
             <QuizProgressBar
@@ -650,17 +711,13 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
               totalQuestions={questions.length}
               isLastQuestion={currentIndex === questions.length - 1}
               hasSubmittedLastAnswer={hasSubmitted && currentIndex === questions.length - 1}
-              style={styles.progressBar}  // Pass your custom styles
-              fillColor="#7BA8ED"         // Still customize fill color
+              style={styles.progressBar}
+              fillColor="#7BA8ED"
               animationDuration={600}
             />
 
-            <button 
-              ref={settingsButtonRef}
-              onClick={toggleSettingsDropdown} 
-              style={styles.dotsButton}
-            >
-              <BsThreeDots size={24} color={'#424E62'} />
+            <button onClick={progressSaved ? onExit : handleBackButtonClick} style={styles.backButton}>
+              <IoCloseOutline size={24} color={'#424E62'} />
             </button>
           </div>
 
@@ -696,7 +753,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
               style={{
                 ...styles.settingsDropdown,
                 position: 'fixed',
-                left: dropdownPosition.x - 220, // Align the 250px wide dropdown
+                left: dropdownPosition.x - 30, // Align the 250px wide dropdown
                 top: dropdownPosition.y,
                 right: 'auto',
               }}
@@ -786,7 +843,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
                         </div>
                         <div style={styles.revisitLessonContainer}>
                           <span 
-                            onClick={onExit}
+                            onClick={progressSaved ? onExit : handleBackButtonClick}
                             className="revisit-lesson-link"
                             style={styles.revisitLessonLink}
                           >
@@ -807,6 +864,9 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
                   hasSubmitted={hasSubmitted}
                   feedback={feedback}
                   onSelectOption={handleOptionSelect}
+                  wrongChoices={wrongChoices}
+                  questionCompleted={questionCompleted}
+                  showAnswersEnabled={showAnswersEnabled}
                   // onSubmitAnswer={handleSubmitAnswer}
                   // onDiscussQuestion={handleDiscussQuestion}
                   // onNext={handleNext}
@@ -840,7 +900,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
                 <MdOutlineThumbsUpDown size={17} color="#9D9D9D" />
                 <span style={styles.leaveFeedbackText}>Leave Feedback</span>
               </button>
-            ) : hasSubmitted ? (
+            ) : questionCompleted && showAnswersEnabled ? (
               // Show result icon when submitted
               <div style={styles.resultIconContainer}>
                 <svg width="60" height="60" style={styles.resultSvg}>
@@ -927,12 +987,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
           <div style={styles.actionsSection}>
             <button
               className="quiz-bottom-buttons"
-              onClick={!hasSubmitted ? handleSkip : 
+              onClick={(!questionCompleted && showAnswersEnabled) || !showAnswersEnabled ? handleSkip : 
                       showResultsScreen ? onExit : 
                       (showReviewConcept ? handleCloseReviewConcept : handleReviewConcept)}
               style={styles.actionButton}
             >
-              {!hasSubmitted ? 'SKIP' : 
+              {(!questionCompleted && showAnswersEnabled) || !showAnswersEnabled ? 'SKIP' : 
                showResultsScreen ? 'REVIEW LESSON' : 
                (showReviewConcept ? 'CLOSE CONCEPT' : 'REVIEW CONCEPT')}
             </button>
@@ -940,17 +1000,19 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
             <button
               className={`quiz-bottom-buttons ${showResultsScreen ? 'results-continue' : ''}`}
               onClick={showResultsScreen ? onExit : handleContinue}
-              disabled={!canContinue && !hasSubmitted}
+              disabled={!canContinue && !questionCompleted}
               style={{
                 ...styles.continueButton,
-                opacity: (!canContinue && !hasSubmitted) ? 0.5 : 1,
-                cursor: (!canContinue && !hasSubmitted) ? 'not-allowed' : 'pointer',
-                color: showResultsScreen ? '#0D103F' : (canContinue || hasSubmitted ? '#FFFFFF' : '#AAABAF'),
+                opacity: (!canContinue && !questionCompleted) ? 0.5 : 1,
+                cursor: (!canContinue && !questionCompleted) ? 'not-allowed' : 'pointer',
+                color: showResultsScreen ? '#0D103F' : (canContinue || questionCompleted ? '#FFFFFF' : '#AAABAF'),
                 backgroundColor: showResultsScreen
                   ? '#3B6BBB'
-                  : (hasSubmitted 
+                  : (!showAnswersEnabled 
+                  ? (canContinue ? '#142748' : '#2A3A52')
+                  : (questionCompleted 
                   ? (isCorrect ? '#406440' : '#A20F1D')
-                  : (canContinue ? '#142748' : '#2A3A52')),
+                  : (canContinue ? '#142748' : '#2A3A52'))),
               }}
             >
               CONTINUE
@@ -1016,7 +1078,6 @@ const styles: Record<string, React.CSSProperties> = {
     height: '24px',
     cursor: 'pointer',
     zIndex: 10,
-    marginRight: '2.5rem',
   },
   progressBar: {
     width: '90%',
@@ -1038,6 +1099,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: '24px',
     cursor: 'pointer',
     zIndex: 10,
+    marginRight: '2.5rem',
   },
   modalOverlay: {
     position: 'fixed',
@@ -1291,6 +1353,13 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
+  },
+  reviewConceptTitle: {
+    // fontSize: '24px',
+    // fontWeight: '600',
+    // fontFamily: "'Inter', sans-serif",
+    // color: '#FFFFFF',
+    // marginBottom: '20px',
   },
   reviewConceptContent: {
     fontSize: '20px',

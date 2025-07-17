@@ -20,7 +20,7 @@ const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
   hasSubmittedLastAnswer = false,
   // onComplete,
   style = {}, // Accept custom styles from parent
-  fillColor = '#4CAF50',
+  fillColor = "#7BA8ED",
   animationDuration = 600,
 }) => {
   const [displayProgress, setDisplayProgress] = useState(0);
