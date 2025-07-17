@@ -102,12 +102,59 @@ const Login: React.FC = () => {
   
   return (
     <>
-      {/* Global style for spinner animation */}
+      {/* Global style for spinner animation and input consistency */}
       <style>
         {`
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+          
+          /* Force consistent input styling and alignment */
+          input[type="text"], input[type="email"], input[type="password"] {
+            background-color: rgba(116, 142, 203, 1) !important;
+            color: #1F1A2A !important;
+            outline: none !important;
+            border: none !important;
+            font-style: normal !important;
+            text-align: left !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            box-sizing: border-box !important;
+          }
+          
+          input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
+            background-color: rgba(116, 142, 203, 1) !important;
+            color: #1F1A2A !important;
+            outline: none !important;
+            border: none !important;
+            font-style: normal !important;
+            text-align: left !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+          
+          /* Fix placeholder text styling and alignment */
+          input[type="text"]::placeholder, input[type="email"]::placeholder, input[type="password"]::placeholder {
+            color: #1F1A2A !important;
+            opacity: 0.6 !important;
+            font-style: normal !important;
+            font-weight: normal !important;
+            text-align: left !important;
+            padding-left: 0 !important;
+            text-indent: 0 !important;
+          }
+          
+          /* Prevent browser autofill styling */
+          input:-webkit-autofill,
+          input:-webkit-autofill:hover,
+          input:-webkit-autofill:focus,
+          input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px rgba(116, 142, 203, 1) inset !important;
+            -webkit-text-fill-color: #1F1A2A !important;
+            background-color: rgba(116, 142, 203, 1) !important;
+            text-align: left !important;
+            padding-left: 1rem !important;
           }
         `}
       </style>
@@ -169,11 +216,13 @@ const Login: React.FC = () => {
                   This name will appear on your profile
                 </p>
                 <input
+                  key="name-input"
                   type="text"
                   placeholder="John/Jane Doe"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   style={styles.input}
+                  autoComplete="name"
                 />
               </div>
             )}

@@ -987,14 +987,14 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
           <div style={styles.actionsSection}>
             <button
               className="quiz-bottom-buttons"
-              onClick={(!questionCompleted && showAnswersEnabled) || !showAnswersEnabled ? handleSkip : 
-                      showResultsScreen ? onExit : 
+              onClick={showResultsScreen ? onExit : 
+                      ((!questionCompleted && showAnswersEnabled) || (!showAnswersEnabled && !showResultsScreen)) ? handleSkip : 
                       (showReviewConcept ? handleCloseReviewConcept : handleReviewConcept)}
               style={styles.actionButton}
             >
-              {(!questionCompleted && showAnswersEnabled) || !showAnswersEnabled ? 'SKIP' : 
-               showResultsScreen ? 'REVIEW LESSON' : 
-               (showReviewConcept ? 'CLOSE CONCEPT' : 'REVIEW CONCEPT')}
+              {showResultsScreen ? 'REVIEW LESSON' : 
+              ((!questionCompleted && showAnswersEnabled) || (!showAnswersEnabled && !showResultsScreen)) ? 'SKIP' : 
+              (showReviewConcept ? 'CLOSE CONCEPT' : 'REVIEW CONCEPT')}
             </button>
             
             <button
