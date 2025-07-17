@@ -284,8 +284,12 @@ const Dashboard: React.FC = () => {
   /* ---------- search state --------------------------------------- */
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  /* ---------- chat & highlight state ------------------------------ */
+  /* ---------- chat & highlight state and callback ---------------- */
   const [chatOpen, setChatOpen] = useState<boolean>(false);
+  const [chatWidth, setChatWidth] = useState<number>(0);
+  const handleChatWidthChange = useCallback((width: number) => {
+    setChatWidth(width);
+  }, []);
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [highlightMode, setHighlightMode] = useState<'explain' | 'analogy' | null>(null);
 
@@ -296,6 +300,9 @@ const Dashboard: React.FC = () => {
 
   /* ---------- navigation helpers --------------------------------- */
   const navigate = useNavigate();
+
+  /* ---------- scrolling content ref --------------------------------- */
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const goDashboard = useCallback(() => { // Wrap in useCallback if passed as prop or dependency
     setView('dashboard');
@@ -759,56 +766,60 @@ const Dashboard: React.FC = () => {
     );
   };
 
-   const lessonView = () => {
-  if (currentLesson === null) return <p>Loading lesson...</p>;
-  
-  // Find the course and topic info for context
-  let courseInfo = null;
-  let topicInfo = null;
-  
-  for (const course of courses) {
-    for (const concept of course.concepts) {
-      const topic = concept.topics.find(t => t.id === currentLesson);
-      if (topic) {
-        courseInfo = course;
-        topicInfo = topic;
-        break;
+  const lessonView = () => {
+    if (currentLesson === null) return <p>Loading lesson...</p>;
+    
+    // Find the course and topic info for context
+    let courseInfo = null;
+    let topicInfo = null;
+    
+    for (const course of courses) {
+      for (const concept of course.concepts) {
+        const topic = concept.topics.find(t => t.id === currentLesson);
+        if (topic) {
+          courseInfo = course;
+          topicInfo = topic;
+          break;
+        }
       }
+      if (topicInfo) break;
     }
-    if (topicInfo) break;
-  }
 
-  return (
-    <div style={styles.lessonContainer}>
-      {renderBreadcrumb()}
+    return (
+      <div style={styles.lessonContainer}>
+        {/* Non-highlightable upper section */}
+        <div className='lesson-header' style={styles.lessonHeader}>
+          {renderBreadcrumb()}
 
-      <h2 style={styles.lessonTitle}>{topicInfo?.title || 'Lesson'}</h2>
-      {topicInfo?.description && (
-        <p style={styles.lessonDescription}>{topicInfo.description}</p>
-      )}
+          <h2 style={styles.lessonTitle}>{topicInfo?.title || 'Lesson'}</h2>
+          {topicInfo?.description && (
+            <p style={styles.lessonDescription}>{topicInfo.description}</p>
+          )}
 
-      {currentQuiz.length > 0 && (
-          <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
-          TAKE QUIZ
-          </button>
-      )}
-       {currentQuiz.length === 0 && (
-          <p style={styles.noQuizText}>Quiz coming soon for this lesson!</p>
-      )}
+          {currentQuiz.length > 0 && (
+              <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
+              TAKE QUIZ
+              </button>
+          )}
+          {currentQuiz.length === 0 && (
+              <p style={styles.noQuizText}>Quiz coming soon for this lesson!</p>
+          )}
+        </div>
 
-      <HighlightableInstructionsForReading
-        onExplain={handleExplain}
-        onViewAnalogy={handleAnalogy}
-      >
-        <Reading
-          courseId={currentLesson}
-          onExplainRequest={handleExplain}
+        {/* Highlightable content section */}
+        <HighlightableInstructionsForReading
+          onExplain={handleExplain}
           onViewAnalogy={handleAnalogy}
-        />
-      </HighlightableInstructionsForReading>
-    </div>
-  );
-};
+        >
+          <Reading
+            courseId={currentLesson}
+            onExplainRequest={handleExplain}
+            onViewAnalogy={handleAnalogy}
+          />
+        </HighlightableInstructionsForReading>
+      </div>
+    );
+  };
 
   /* ---------------------------------------------------------------- */
   /* JSX                                                              */
@@ -932,7 +943,13 @@ const Dashboard: React.FC = () => {
       </aside>
 
       {/* MAIN PANEL */}
-      <main style={styles.main}>
+      <main
+        style={{
+          ...styles.main,
+          width: chatOpen ? `calc(100vw - 250px - ${chatWidth}px)` : 'calc(100vw - 250px)',
+        }}
+        className="main-panel-animated"
+      >
         <header style={styles.header}>
           <form onSubmit={handleSearchSubmit} style={styles.headerSearch}>
             <div style={styles.searchContainer} className="search-container">
@@ -947,19 +964,28 @@ const Dashboard: React.FC = () => {
               />
             </div>
           </form>
-          <div style={styles.headerIcons}>
-            {/* Only show chat button when in a lesson? Or always? Assuming always for now */}
-             <button
+        </header>
+        <div style={styles.headerIcons}>
+          {!quizOpen && (
+              <button
+              className="chat-button"
               style={styles.chatButton}
               onClick={() => setChatOpen((o) => !o)}
               aria-label="Toggle Chat"
             >
               <MdOutlinePerson size="1.5em" /> <span>Chat</span>
             </button>
-          </div>
-        </header>
+          )}
+        </div>
 
-        <div style={styles.content} className="dashboard-content">
+        <div
+          ref={contentRef}
+          style={{
+            ...styles.content,
+            position: 'relative',
+          }}
+          className={`default-scrollbar content-animated dashboard-content`}
+        >
           {isLoadingProgress ? (
              <p style={styles.loadingText}>Loading your progress...</p> // Show loading indicator
           ) : view === 'dashboard' ? (
@@ -985,7 +1011,9 @@ const Dashboard: React.FC = () => {
             courseDetailView()
           ) : (
             // Render lessonView only if not loading and view is 'lesson'
-            lessonView()
+            <>
+              {lessonView()}
+            </>
           )}
         </div>
       </main>
@@ -1014,6 +1042,7 @@ const Dashboard: React.FC = () => {
         onClose={() => setChatOpen(false)}
         highlightText={highlightText}
         highlightMode={highlightMode}
+        onWidthChange={handleChatWidthChange}
       />
     </div>
   );
@@ -1025,7 +1054,7 @@ const Dashboard: React.FC = () => {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
-    height: '100vh', // Changed from minHeight to height for fixed layout
+    height: '100vh',
     background: '#030E29',
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
     overflow: 'hidden', // Prevent body scrolling
@@ -1038,20 +1067,20 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '20px 0',
     borderRight: `1px solid ${colors.border}`,
     flexShrink: 0,
-    position: 'fixed', // Make sidebar fixed
-    height: '100vh', // Full viewport height
-    zIndex: 100, // Ensure it stays above content
-    justifyContent: 'space-between', // Distribute space between logo/nav and bottom section
+    position: 'fixed',
+    height: '100vh',
+    zIndex: 100,
+    justifyContent: 'space-between',
   },
   logoStyle: {
     position: 'relative',
     height: '38px',
-    width: '140px', // Restore original logo width
+    width: '140px',
     minHeight: '38px',
     minWidth: '140px',
-    margin: '0 20px', // Keep consistent margins with buttons
+    margin: '0 20px',
     marginLeft: '3rem', //TODO: find better solution
-    padding: '12px 0', // Only vertical padding, no horizontal padding
+    padding: '12px 0',
     backgroundImage: `url(${QuantaidLogo})`,
     backgroundRepeat: 'no-repeat',
     backgroundSize: 'contain',
@@ -1060,12 +1089,12 @@ const styles: Record<string, React.CSSProperties> = {
     boxSizing: 'border-box',
   },
   nav: {
-    marginTop: 40, // Add top margin so "Lessons" isn't too close to logo
+    marginTop: 40,
     display: 'flex',
     flexDirection: 'column',
-    flex: 1, // Take up all available space between logo and bottom section
-    paddingBottom: 20, // Add some bottom padding so nav doesn't touch profile section
-    padding: '0 20px', // Add horizontal padding to match other buttons
+    flex: 1,
+    paddingBottom: 20,
+    padding: '0 20px',
   },
   navButton: {
     display: 'flex',
@@ -1095,9 +1124,10 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    marginLeft: 250, // Account for fixed sidebar width
-    height: '100vh', // Full viewport height
+    marginLeft: 250,
+    height: '100vh',
     overflow: 'hidden', // Prevent main from scrolling
+    minWidth: 300,
   },
   header: {
     display: 'flex',
@@ -1106,13 +1136,13 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0.9rem 4rem',
     background: 'transparent',
     borderBottom: `1px solid ${colors.border}`,
-    position: 'fixed', // Make header fixed
+    position: 'fixed',
     top: 0,
-    left: 250, // Account for sidebar width
-    right: 0, // Extend to right edge
-    zIndex: 99, // Below sidebar but above content
+    left: 250,
+    right: 0,
+    zIndex: 99,
     color: colors.white,
-    backgroundColor: '#030E29', // Match container background
+    backgroundColor: '#030E29',
   },
   headerSearch: {
     display: 'flex',
@@ -1152,6 +1182,10 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 15
   },
   chatButton: {
+    position: 'fixed',
+    top: '0.9rem',
+    right: '4rem',
+    zIndex: 1900, // 1900 over header, 3000 over GlobalChat
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1174,7 +1208,8 @@ const styles: Record<string, React.CSSProperties> = {
     overflowY: 'auto', // Enable vertical scrolling for content only
     overflowX: 'hidden', // Prevent horizontal scrolling
     marginTop: 60, // Account for fixed header height
-    height: 'calc(100vh - 80px)', // Subtract header height from viewport
+    height: 'calc(100vh - 80px)',
+    transition: 'padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   },
   loadingText: {
     color: colors.white,
@@ -1205,6 +1240,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.white,
     margin: '0 12px',
     fontSize: '0.9rem',
+    cursor: 'default',
   },
   breadcrumbCurrent: {
     color: colors.white,
@@ -1382,6 +1418,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     flexShrink: 0,
     marginTop: 10,
+    cursor: 'default',
   },
   conceptNumber: {
     color: '#030E29',
@@ -1441,6 +1478,13 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: 1000,
     margin: '0 auto',
     padding: '20px 0',
+  },
+  lessonHeader: {
+    userSelect: 'none', // Make this section non-selectable
+    WebkitUserSelect: 'none',
+    MozUserSelect: 'none',
+    msUserSelect: 'none',
+    marginBottom: '2rem',
   },
   lessonTitle: { 
     fontSize: '36px',
@@ -1603,6 +1647,49 @@ const styles: Record<string, React.CSSProperties> = {
 const addAllStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
+    /* Make lesson header non-selectable */
+    .lesson-header {
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      pointer-events: auto; /* Keep interactions like button clicks */
+    }
+
+    .lesson-header * {
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+    }
+
+    /* Ensure buttons in header remain clickable */
+    .lesson-header button {
+      pointer-events: auto !important;
+    }
+
+    /* Text selection highlighting */
+    ::selection {
+      background-color: #23316A !important;
+      color: white !important;
+    }
+
+    ::-moz-selection {
+      background-color: #23316A !important;
+      color: white !important;
+    }
+
+    /* Hover effects for the popup buttons */
+    .highlight-explain-btn:hover {
+      background-color: #d6e7f7 !important;
+      transform: translateY(-1px);
+    }
+
+    .highlight-analogy-btn:hover {
+      background-color: #9bb0dd !important;
+      transform: translateY(-1px);
+    }
+
     /* Search Input Styles */
     .search-input::placeholder {
       color: rgba(255, 255, 255, 0.5);
@@ -1621,34 +1708,55 @@ const addAllStyles = () => {
     }
 
     /* Custom Scrollbar Styles */
-    .dashboard-content::-webkit-scrollbar {
+    .default-scrollbar::-webkit-scrollbar {
       width: 8px;
     }
     
-    .dashboard-content::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
+    .default-scrollbar::-webkit-scrollbar-track {
+      background: rgba(42, 46, 70, 0.3);
       border-radius: 4px;
     }
     
-    .dashboard-content::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, #3B89FF 0%, #2563eb 100%);
+    .default-scrollbar::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #2A2E46 0%, #1F2336 100%);
       border-radius: 4px;
       transition: background 0.3s ease;
     }
     
-    .dashboard-content::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(180deg, #4f96ff 0%, #3b82f6 100%);
+    .default-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #353A56 0%, #2A2E46 100%);
+      border-radius: 4px;
     }
     
-    .dashboard-content::-webkit-scrollbar-thumb:active {
-      background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+    .default-scrollbar::-webkit-scrollbar-thumb:active {
+      background: linear-gradient(180deg, #1F2336 0%, #171A28 100%);
+      border-radius: 4px;
     }
 
     /* Firefox Scrollbar Support */
-    .dashboard-content {
+    .default-scrollbar {
       scrollbar-width: thin;
-      scrollbar-color: #3B89FF rgba(255, 255, 255, 0.05);
+       scrollbar-color: #2A2E46 rgba(42, 46, 70, 0.3);
       scroll-behavior: smooth;
+      /* Add hardware acceleration for better performance */
+      transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+
+    // /* Custom scrollbar - hide default scrollbar for dashboard view only */
+    // .custom-scrollbar::-webkit-scrollbar {
+    //   display: none;
+    // }
+
+    // .custom-scrollbar-content {
+    //   scrollbar-width: none;
+    //   -ms-overflow-style: none;
+    // }
+    
+    /* Smooth chat button state changes */
+    .chat-button {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     /* Nav button hover effects */
@@ -1698,6 +1806,28 @@ const addAllStyles = () => {
       background-color: #212E44 !important;
       border: 2px solid rgba(255,255,255,0.1) !important; /* Force border to stay the same on focus */
       outline: none !important; /* Remove browser default outline */
+    }
+    
+    /* GlobalChat hover effects */
+    .global-chat-close-btn:hover {
+      color: #ffffff !important;
+    }
+    
+    .global-chat-try-btn:hover {
+      background-color: rgba(86, 99, 149, 0.1) !important;
+    }
+    
+    .global-chat-send-btn:hover:not(:disabled) {
+      background-color: #6b7bb5 !important;
+    }
+    
+    .global-chat-send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .global-chat-input:focus {
+      border-color: #8a9cdb !important;
     }
   `;
   document.head.appendChild(style);
