@@ -1,18 +1,16 @@
 // src/components/Dashboard.tsx
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback and useRef
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { FaSearch, FaLock, FaCheckCircle } from 'react-icons/fa';
-import { MdOutlinePerson, MdKeyboardArrowUp, MdOutlineSettings, MdHelpOutline, MdOutlineThumbsUpDown } from "react-icons/md";
-import { HiUserCircle } from "react-icons/hi2";
-import { PiSignOutBold } from "react-icons/pi";
-import { TfiBookmarkAlt } from "react-icons/tfi";
+import { MdOutlinePerson } from "react-icons/md";
+import Sidebar from './Sidebar';
 import Reading from './Reading';
 import Quiz from './Quiz';
 import GlobalChat from './GlobalChat';
+import FeedbackModal from './FeedbackModal';
 import HighlightableInstructionsForReading from './HighlightableInstructionsForReadings';
 import { allQuizData } from './QuizQuestion';
 import { lessonContents } from './LessonContents';
-import QuantaidLogo from '../assets/quantaid-logo.svg';
 import lesson0Img from '../assets/lessonIcons/lesson-0.svg';
 import lesson1Img from '../assets/lessonIcons/lesson-1.svg';
 import lesson2Img from '../assets/lessonIcons/lesson-2.svg';
@@ -271,15 +269,24 @@ interface CompletedQuiz {
 }
 
 const Dashboard: React.FC = () => {
+  /* ---------- animation state ------------------------------------ */
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const collapsibleSidebarWidth = 1500;
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   /* ---------- view / lesson state -------------------------------- */
   const [view, setView] = useState<'dashboard' | 'course-detail' | 'lesson'>('dashboard');
-  const [currentCourse, setCurrentCourse] = useState<number | null>(null); // Allow null initially
-  const [currentLesson, setCurrentLesson] = useState<number | null>(null); // For actual lesson content
-  // Initialize unlocked as empty, will be populated by fetch
-  const [unlocked, setUnlocked] = useState<number[]>([]);
+  const [currentCourse, setCurrentCourse] = useState<number | null>(null);
+  const [currentLesson, setCurrentLesson] = useState<number | null>(null);
+  const [, setUnlocked] = useState<number[]>([]);
   const [quizOpen, setQuizOpen] = useState<boolean>(false);
-  const [isLoadingProgress, setIsLoadingProgress] = useState<boolean>(true); // Loading state
-  const [completedQuizzes, setCompletedQuizzes] = useState<CompletedQuiz[]>([]); // Store completed quiz details
+  const [isLoadingProgress, setIsLoadingProgress] = useState<boolean>(true);
+  const [completedQuizzes, setCompletedQuizzes] = useState<CompletedQuiz[]>([]);
+
+  /* ---------- feedback state ------------------------------------- */
+  const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
 
   /* ---------- search state --------------------------------------- */
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -287,9 +294,6 @@ const Dashboard: React.FC = () => {
   /* ---------- chat & highlight state and callback ---------------- */
   const [chatOpen, setChatOpen] = useState<boolean>(false);
   const [chatWidth, setChatWidth] = useState<number>(0);
-  const handleChatWidthChange = useCallback((width: number) => {
-    setChatWidth(width);
-  }, []);
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [highlightMode, setHighlightMode] = useState<'explain' | 'analogy' | null>(null);
 
@@ -304,12 +308,12 @@ const Dashboard: React.FC = () => {
   /* ---------- scrolling content ref --------------------------------- */
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const goDashboard = useCallback(() => { // Wrap in useCallback if passed as prop or dependency
+  const goDashboard = useCallback(() => {
     setView('dashboard');
-    setCurrentCourse(null); // Clear current course when going to dashboard
+    setCurrentCourse(null);
     setCurrentLesson(null);
-    setChatOpen(false); // Close chat when navigating away
-  }, []); // No dependencies needed here
+    setChatOpen(false);
+  }, []);
 
   const goToCourseDetail = useCallback((courseId: number) => {
     setCurrentCourse(courseId);
@@ -318,11 +322,161 @@ const Dashboard: React.FC = () => {
     setChatOpen(false);
   }, []);
 
-  const goBackFromCourseDetail = useCallback(() => {
-    setView('dashboard');
-    setCurrentCourse(null);
-    setCurrentLesson(null);
+  // const goBackFromCourseDetail = useCallback(() => {
+  //   setView('dashboard');
+  //   setCurrentCourse(null);
+  //   setCurrentLesson(null);
+  // }, []);
+
+  // Animation constants
+  const ANIMATION_DURATION = 300;
+  const ANIMATION_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
+
+  // Track screen size for responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Calculate sidebar dimensions
+  const SIDEBAR_EXPANDED_WIDTH = 250;
+  const SIDEBAR_COLLAPSED_WIDTH = 70;
+  const currentSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH;
+
+  // Auto-collapse logic
+  useEffect(() => {
+    const shouldCollapse = screenWidth < collapsibleSidebarWidth && chatOpen && chatWidth > 0;
+    
+    if (shouldCollapse !== sidebarCollapsed) {
+      handleSidebarToggle();
+    }
+  }, [screenWidth, chatOpen, chatWidth, sidebarCollapsed]);
+
+  // Coordinated sidebar toggle
+  const handleSidebarToggle = useCallback(() => {
+    if (isAnimating) return;
+
+    setIsAnimating(true);
+    setSidebarCollapsed(prev => !prev);
+
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+    }
+
+    animationTimeoutRef.current = setTimeout(() => {
+      setIsAnimating(false);
+    }, ANIMATION_DURATION);
+  }, [isAnimating, ANIMATION_DURATION]);
+
+  // Cleanup animation timeout
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleCollapsedProfileClick = useCallback(() => {
+    if (chatOpen) {
+      setChatOpen(false);
+      
+      setTimeout(() => {
+        setShowProfileDropdown(true);
+      }, ANIMATION_DURATION + 50);
+    } else {
+      if (sidebarCollapsed) {
+        handleSidebarToggle();
+        setTimeout(() => {
+          setShowProfileDropdown(true);
+        }, ANIMATION_DURATION);
+      } else {
+        setShowProfileDropdown(!showProfileDropdown);
+      }
+    }
+  }, [chatOpen, sidebarCollapsed, showProfileDropdown, handleSidebarToggle, ANIMATION_DURATION]);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileDropdownRef.current && 
+        !profileDropdownRef.current.contains(event.target as Node) &&
+        profileButtonRef.current &&
+        !profileButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    if (showProfileDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileDropdown]);
+
+  // Close dropdown when sidebar collapses
+  useEffect(() => {
+    if (sidebarCollapsed && showProfileDropdown) {
+      setShowProfileDropdown(false);
+    }
+  }, [sidebarCollapsed, showProfileDropdown]);
+
+  // Calculate main panel positioning and dimensions
+  const getMainPanelStyles = useCallback(() => {
+    return {
+      marginLeft: currentSidebarWidth,
+      maxWidth: chatOpen && chatWidth > 0 
+        ? `calc(100vw - ${currentSidebarWidth}px - ${chatWidth}px)`
+        : `calc(100vw - ${currentSidebarWidth}px)`,
+      flex: 1,
+      transition: `all ${ANIMATION_DURATION}ms ${ANIMATION_EASING}`,
+    };
+  }, [currentSidebarWidth, chatOpen, chatWidth, ANIMATION_DURATION, ANIMATION_EASING]);
+
+  // Calculate header positioning and dimensions
+  const getHeaderStyles = useCallback(() => {
+    return {
+      marginLeft: currentSidebarWidth,
+      width: `calc(100vw - ${currentSidebarWidth}px)`,
+      flex: 1,
+      transition: `all ${ANIMATION_DURATION}ms ${ANIMATION_EASING} !important`,
+    };
+  }, [currentSidebarWidth, chatOpen, chatWidth, ANIMATION_DURATION, ANIMATION_EASING]);
+
+  // Chat width change handler (simple for now, can update for zero transition time during resize?)
+  const handleChatWidthChange = useCallback((width: number) => {
+    setChatWidth(width);
+  }, []);
+
+  // Chat toggle also collapses sidebar based on screen width
+  const handleChatToggle = useCallback(() => {
+
+    const newChatState = !chatOpen;
+    setChatOpen(newChatState);
+
+    if (newChatState && screenWidth < collapsibleSidebarWidth && !sidebarCollapsed) {
+      handleSidebarToggle();
+    }
+    
+    if (!newChatState && screenWidth >= collapsibleSidebarWidth && sidebarCollapsed) {
+      setTimeout(() => {
+        handleSidebarToggle();
+      }, 50);
+    }
+  }, [chatOpen, screenWidth, sidebarCollapsed, handleSidebarToggle]);
+
+  // Navigation handlers
+  const handleNavigateToDashboard = useCallback(() => {
+    goDashboard();
+  }, [goDashboard]);
 
   // Function to fetch user progress
   const fetchUserProgress = useCallback(async () => {
@@ -331,16 +485,16 @@ const Dashboard: React.FC = () => {
     try {
       const response = await fetch(`${BACKEND_URL}/get_user_progress`, {
         method: 'GET',
-        credentials: 'include', // Crucial for sending session cookies
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
-      if (response.status === 401) { // Unauthorized
+      if (response.status === 401) {
         console.log("User not logged in, redirecting to login.");
-        navigate('/'); // Redirect to login page
-        return; // Stop execution
+        navigate('/');
+        return;
       }
 
       if (!response.ok) {
@@ -350,23 +504,21 @@ const Dashboard: React.FC = () => {
 
       const data = await response.json();
       console.log("Progress data received:", data);
-      setUnlocked(data.unlockedLevels || [0]); // Default to [0] if backend sends null/undefined
-      setCompletedQuizzes(data.completedQuizzes || []); // Store completed quiz info
+      setUnlocked(data.unlockedLevels || [0]);
+      setCompletedQuizzes(data.completedQuizzes || []);
     } catch (error) {
       console.error('Failed to fetch user progress:', error);
-      // Handle error appropriately, maybe show a message to the user
-      // If progress fails, maybe default to basic state or show error message
-      setUnlocked([0]); // Fallback to default if fetch fails
+      setUnlocked([0]);
       setCompletedQuizzes([]);
     } finally {
       setIsLoadingProgress(false);
     }
-  }, [navigate]); // Add navigate as dependency
+  }, [navigate]);
 
   // Fetch progress when the component mounts
   useEffect(() => {
     fetchUserProgress();
-  }, [fetchUserProgress]); // Run whenever fetchUserProgress changes (which is once due to useCallback)
+  }, [fetchUserProgress]);
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -395,14 +547,12 @@ const Dashboard: React.FC = () => {
     const course = courses.find(c => c.id === courseId);
     if (!course || course.concepts.length === 0) return 0;
 
-    // Only count implemented topics in the total
     const implementedTopics = course.concepts.reduce((sum, concept) => {
       return sum + concept.topics.filter(topic => topic.implemented ?? true).length;
     }, 0);
     
     if (implementedTopics === 0) return 0;
 
-    // Only count completed topics that are also implemented
     const completedImplementedTopics = course.concepts.reduce((sum, concept) => {
       return sum + concept.topics.filter(topic => {
         const isImplemented = topic.implemented ?? true;
@@ -416,9 +566,8 @@ const Dashboard: React.FC = () => {
 
   // Check if a course is unlocked
   const isCourseUnlocked = useCallback((courseId: number): boolean => {
-    if (courseId === 0) return true; // First course is always unlocked
+    if (courseId === 0) return true;
     
-    // Check if previous course is completed
     const previousCourse = courses.find(c => c.id === courseId - 1);
     if (!previousCourse) return false;
     
@@ -428,24 +577,20 @@ const Dashboard: React.FC = () => {
 
   // Check if a topic/lesson is unlocked
   const isTopicUnlocked = useCallback((topicId: number): boolean => {
-    // First check if the topic is implemented (defaults to true)
-    let topicImplemented = true; // Default to true
+    let topicImplemented = true;
     for (const course of courses) {
       for (const concept of course.concepts) {
         const topic = concept.topics.find(t => t.id === topicId);
         if (topic) {
-          topicImplemented = topic.implemented ?? true; // Use nullish coalescing to default to true
+          topicImplemented = topic.implemented ?? true;
           break;
         }
       }
       if (topicImplemented !== true) break;
     }
 
-    // If not implemented, it's locked (note: this is currently the only locked state)
     if (!topicImplemented) return false;
 
-    // If implemented, check if the course is unlocked
-    // Find which course this topic belongs to
     for (const course of courses) {
       for (const concept of course.concepts) {
         const topic = concept.topics.find(t => t.id === topicId);
@@ -489,9 +634,7 @@ const Dashboard: React.FC = () => {
   /* ---------- search functionality ------------------------------- */
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Add search functionality here
     console.log('Searching for:', searchQuery);
-    // You can implement search logic here
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -499,10 +642,6 @@ const Dashboard: React.FC = () => {
   };
 
   /* ---------- profile dropdown handlers -------------------------- */
-  const toggleProfileDropdown = () => {
-    setShowProfileDropdown(!showProfileDropdown);
-  };
-
   const handleProfileClick = () => {
     setShowProfileDropdown(false);
     navigate('/profile');
@@ -510,42 +649,29 @@ const Dashboard: React.FC = () => {
 
   const handleSettingsClick = () => {
     setShowProfileDropdown(false);
-    // TODO: Implement settings functionality
     console.log('Settings clicked');
   };
 
   const handleHelpClick = () => {
     setShowProfileDropdown(false);
-    // TODO: Implement help functionality
     console.log('Help clicked');
   };
 
   const handleSignOutClick = () => {
     setShowProfileDropdown(false);
-    // TODO: Implement sign out functionality
     console.log('Sign out clicked');
   };
 
   const handleLeaveFeedbackClick = () => {
-    // TODO: Implement feedback functionality
-    console.log('Leave feedback clicked');
+    setShowFeedbackModal(true);
   };
 
   /* ---------- breadcrumb helpers --------------------------------- */
   const getCurrentTabName = () => {
-    // Determine the current tab based on the active navigation state
-    // This can be extended when more tabs are added to the dashboard
-    
-    // For now, since we're in the lessons section, check if we're in lesson-related views
     if (view === 'course-detail' || view === 'lesson' || view === 'dashboard') {
       return "Lessons";
     }
     
-    // Future tabs can be added here:
-    // if (view === 'practice' || ...) return "Practice";
-    // if (view === 'projects' || ...) return "Projects";
-    
-    // Default fallback
     return "Lessons";
   };
 
@@ -554,10 +680,8 @@ const Dashboard: React.FC = () => {
 
     const breadcrumbItems = [];
     
-    // Get the current tab name dynamically
     const rootTabName = getCurrentTabName();
     
-    // Always add the root tab as the first item (shows on course detail and lesson views)
     breadcrumbItems.push(
       <button
         key="root"
@@ -569,12 +693,10 @@ const Dashboard: React.FC = () => {
       </button>
     );
 
-    // Add separator after root tab
     breadcrumbItems.push(
       <span key="separator1" style={styles.breadcrumbSeparator}> &gt; </span>
     );
 
-    // Only add course name if we're in lesson view (not on course detail view)
     if (view === 'lesson' && currentCourse !== null) {
       const course = courses.find(c => c.id === currentCourse);
       if (course) {
@@ -589,7 +711,6 @@ const Dashboard: React.FC = () => {
           </button>
         );
         
-        // Add separator after course name
         breadcrumbItems.push(
           <span key="separator2" style={styles.breadcrumbSeparator}> &gt; </span>
         );
@@ -604,57 +725,33 @@ const Dashboard: React.FC = () => {
   };
 
   /* ---------- quiz completion ------------------------------------ */
-  const onQuizComplete = async (score: number, passed: boolean) => {
-      if (currentLesson === null) return; // Should not happen if quiz is open, but safety check
+  const onQuizComplete = async (_score: number, passed: boolean) => {
+      if (currentLesson === null) return;
 
-      setQuizOpen(false); // Close the quiz modal immediately
+      setQuizOpen(false);
 
-      // Progress is saved in ./Quiz so we just handle navigation and feedback
       try {
-          // Optionally re-fetch progress to update UI with latest state from backend
           await fetchUserProgress();
 
-          // Show feedback to user
           if (!passed) {
             alert('You need 70% or higher to pass. Keep learning and try again!');
-            // Stay in the current lesson
           } else {
             alert('Great job! Lesson completed.');
-            // Go back to course detail view to show updated progress
             if (currentCourse !== null) {
               goToCourseDetail(currentCourse);
             } else {
               goDashboard();
             }
-            // const nextLevelId = currentCourse + 1;
-            // if (unlocked.includes(nextLevelId) || nextLevelId === currentCourse + 1) {
-            //     if (nextLevelId < courses.length) {
-            //         alert(`Great job! Lesson ${courses[nextLevelId].title} unlocked.`);
-            //         // Automatically open the next lesson
-            //         // openLesson(nextLevelId);
-            //     } else {
-            //         alert("Congratulations! You've completed all available courses!");
-            //         // goDashboard(); // Go back to dashboard if all courses are done
-            //     }
-            // } else {
-            //      // This case might happen if they re-take a quiz they already passed
-            //      alert(`Great job completing the quiz for ${courses[currentCourse].title}!`);
-            //     //  goDashboard(); // Go to dashboard
-            // }
-            // goDashboard();
           }
 
       } catch (error) {
           console.error('Failed to save quiz result:', error);
           alert(`An error occurred while saving your quiz progress: ${error instanceof Error ? error.message : String(error)}. Please try again.`);
-          // Decide how to handle failed save: Maybe allow retry? Or just inform user?
           goDashboard();
       }
   };
 
-
   /* ---------- quiz availability check ---------------------------- */
-  // Check currentCourse is not null before accessing allQuizData
   const currentQuiz = currentLesson !== null ? (allQuizData[currentLesson] || []) : [];
   const currentLessonContent = currentLesson !== null ? lessonContents[currentLesson] : undefined;
 
@@ -703,7 +800,7 @@ const Dashboard: React.FC = () => {
     );
   };
 
-  // Course detail view (intermediate page)
+  // Course detail view
   const courseDetailView = () => {
     if (currentCourse === null) return <p>Loading course...</p>;
     const course = courses.find(c => c.id === currentCourse);
@@ -769,15 +866,14 @@ const Dashboard: React.FC = () => {
   const lessonView = () => {
     if (currentLesson === null) return <p>Loading lesson...</p>;
     
-    // Find the course and topic info for context
-    let courseInfo = null;
+    // let courseInfo = null;
     let topicInfo = null;
     
     for (const course of courses) {
       for (const concept of course.concepts) {
         const topic = concept.topics.find(t => t.id === currentLesson);
         if (topic) {
-          courseInfo = course;
+          // courseInfo = course;
           topicInfo = topic;
           break;
         }
@@ -787,7 +883,6 @@ const Dashboard: React.FC = () => {
 
     return (
       <div style={styles.lessonContainer}>
-        {/* Non-highlightable upper section */}
         <div className='lesson-header' style={styles.lessonHeader}>
           {renderBreadcrumb()}
 
@@ -797,16 +892,15 @@ const Dashboard: React.FC = () => {
           )}
 
           {currentQuiz.length > 0 && (
-              <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
+            <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
               TAKE QUIZ
-              </button>
+            </button>
           )}
           {currentQuiz.length === 0 && (
-              <p style={styles.noQuizText}>Quiz coming soon for this lesson!</p>
+            <p style={styles.noQuizText}>Quiz coming soon for this lesson!</p>
           )}
         </div>
 
-        {/* Highlightable content section */}
         <HighlightableInstructionsForReading
           onExplain={handleExplain}
           onViewAnalogy={handleAnalogy}
@@ -817,6 +911,17 @@ const Dashboard: React.FC = () => {
             onViewAnalogy={handleAnalogy}
           />
         </HighlightableInstructionsForReading>
+        
+        {currentQuiz.length > 0 && (
+          <div style={styles.quizPromptSection} className='lesson-header'>
+            <p style={styles.lessonDescription}>
+              Ready to see if you've grasped these concepts? Take this quiz and find out where you stand!
+            </p>
+            <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
+              START QUIZ
+            </button>
+          </div>
+        )}
       </div>
     );
   };
@@ -826,174 +931,86 @@ const Dashboard: React.FC = () => {
   /* ---------------------------------------------------------------- */
   return (
     <div style={styles.container}>
-      {/* LEFT SIDEBAR */}
-      <aside style={styles.sidebar}>
-        <div>
-          <div style={styles.logoStyle} aria-label="Quantaid Logo"></div>
-          <nav style={styles.nav}>
-              {/* Lessons Navigation Button */}
-              <button
-              style={{
-                  ...styles.navButton,
-                  ...(view === 'dashboard' || view === 'course-detail' || view === 'lesson' ? styles.navButtonActive : {}),
-              }}
-              onClick={goDashboard}
-              className={`nav-button ${view === 'dashboard' || view === 'course-detail' || view === 'lesson' ? 'nav-button-active' : ''}`}
-              >
-              <TfiBookmarkAlt size={21} color={view === 'dashboard' || view === 'course-detail' || view === 'lesson' ? colors.white : '#9D9D9D'} />
-              <span>Lessons</span>
-              </button>
-              
-              {/* Example Navigation Button (always inactive for demonstration) */}
-              {/* <button
-              style={styles.navButton}
-              onClick={() => console.log('Example clicked')}
-              className="nav-button"
-              >
-              <TfiBookmarkAlt size={21} color="#9D9D9D" />
-              <span>Example</span>
-              </button> */}
-          </nav>
-        </div>
-        
-        {/* Profile and Feedback buttons at bottom of sidebar */}
-        <div style={styles.sidebarBottom}>
-          {/* Profile Button */}
-          <button
-            ref={profileButtonRef}
-            onClick={toggleProfileDropdown}
-            style={{
-              ...styles.profileButton,
-              backgroundColor: showProfileDropdown ? '#032242' : 'transparent',
-            }}
-            className="profile-button"
-          >
-            <HiUserCircle size={21} color="#9D9D9D" />
-            <span style={styles.profileButtonText}>Profile name</span>
-            <MdKeyboardArrowUp 
-              size={20} 
-              color="#9D9D9D" 
-              style={{
-                transform: showProfileDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s ease'
-              }}
-            />
-          </button>
-          
-          {/* Leave Feedback Button */}
-          <button
-            onClick={handleLeaveFeedbackClick}
-            style={styles.sidebarFeedbackButton}
-            className="feedback-button"
-          >
-            <MdOutlineThumbsUpDown size={18} color="#9D9D9D" />
-            <span style={styles.sidebarFeedbackText}>Leave feedback</span>
-          </button>
-        </div>
 
-        {/* Profile Dropdown */}
-        {showProfileDropdown && (
-          <div
-            ref={profileDropdownRef}
-            style={styles.profileDropdown}
-          >
-            {/* Email section */}
-            <button 
-              onClick={handleProfileClick}
-              style={styles.profileDropdownItem}
-              className="profile-dropdown-item"
-            >
-              <HiUserCircle size={21} color="#9D9D9D" />
-              <span style={styles.emailText}>email@gmail.com</span>
-            </button>
-            
-            {/* Divider */}
-            <div style={styles.profileDropdownDivider} />
-            
-            {/* Menu items */}
-            
-            <button 
-              onClick={handleSettingsClick}
-              style={styles.profileDropdownItem}
-              className="profile-dropdown-item"
-            >
-              <MdOutlineSettings size={21} color="#9D9D9D" />
-              <span style={styles.profileDropdownItemText}>Settings</span>
-            </button>
-            
-            <button 
-              onClick={handleHelpClick}
-              style={styles.profileDropdownItem}
-              className="profile-dropdown-item"
-            >
-              <MdHelpOutline size={21} color="#9D9D9D" />
-              <span style={styles.profileDropdownItemText}>Help</span>
-            </button>
-            
-            <button 
-              onClick={handleSignOutClick}
-              style={styles.profileDropdownItem}
-              className="profile-dropdown-item"
-            >
-              <PiSignOutBold size={21} color="#9D9D9D" />
-              <span style={styles.profileDropdownItemText}>Sign out</span>
-            </button>
-          </div>
-        )}
-      </aside>
-
-      {/* MAIN PANEL */}
-      <main
+      {/* SIDEBAR */}
+      <Sidebar
+        currentView={view}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={handleSidebarToggle}
+        onNavigateToDashboard={handleNavigateToDashboard}
+        onCollapsedProfileClick={handleCollapsedProfileClick}
+        showProfileDropdown={showProfileDropdown}
+        setShowProfileDropdown={setShowProfileDropdown}
+        profileDropdownRef={profileDropdownRef}
+        profileButtonRef={profileButtonRef}
+        onProfileClick={handleProfileClick}
+        onSettingsClick={handleSettingsClick}
+        onHelpClick={handleHelpClick}
+        onSignOutClick={handleSignOutClick}
+        onLeaveFeedbackClick={handleLeaveFeedbackClick}
+        chatWidth={chatWidth}
+        screenWidth={screenWidth}
+        animationDuration={ANIMATION_DURATION}
+        animationEasing={ANIMATION_EASING}
+      />
+      
+      {/* HEADER */}
+      <header 
         style={{
-          ...styles.main,
-          width: chatOpen ? `calc(100vw - 250px - ${chatWidth}px)` : 'calc(100vw - 250px)',
+          ...styles.header,
+          ...getHeaderStyles(),
         }}
-        className="main-panel-animated"
+        className='main-panel-coordinated'
       >
-        <header style={styles.header}>
-          <form onSubmit={handleSearchSubmit} style={styles.headerSearch}>
-            <div style={styles.searchContainer} className="search-container">
-              <FaSearch style={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Search Quantaid"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                style={styles.searchInput}
-                className="search-input"
-              />
-            </div>
-          </form>
-        </header>
+        <form onSubmit={handleSearchSubmit} style={styles.headerSearch}>
+          <div style={styles.searchContainer} className="search-container">
+            <FaSearch style={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Search Quantaid"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              style={styles.searchInput}
+              className="search-input"
+            />
+          </div>
+        </form>
+        
         <div style={styles.headerIcons}>
           {!quizOpen && (
-              <button
+            <button
               className="chat-button"
               style={styles.chatButton}
-              onClick={() => setChatOpen((o) => !o)}
+              onClick={handleChatToggle}
               aria-label="Toggle Chat"
             >
               <MdOutlinePerson size="1.5em" /> <span>Chat</span>
             </button>
           )}
         </div>
-
+      </header>
+      
+      {/* MAIN PANEL */}
+      <main
+        style={{
+          ...styles.main,
+          ...getMainPanelStyles(),
+        }}
+        className="main-panel-coordinated"
+      >
+        
         <div
           ref={contentRef}
-          style={{
-            ...styles.content,
-            position: 'relative',
-          }}
-          className={`default-scrollbar content-animated dashboard-content`}
+          style={styles.content}
+          className="dashboard-content default-scrollbar"
         >
           {isLoadingProgress ? (
-             <p style={styles.loadingText}>Loading your progress...</p> // Show loading indicator
+             <p style={styles.loadingText}>Loading your progress...</p>
           ) : view === 'dashboard' ? (
             <>
               <h2 style={styles.title}>Lessons</h2>
               <section style={styles.rowSection}>
                 <h2 style={styles.rowTitle}>Foundations</h2>
-                {/* Render cards only if courses data is available */}
                 <div style={styles.cardGrid}>{courses.slice(0, 3).map(courseCard)}</div>
               </section>
 
@@ -1010,16 +1027,27 @@ const Dashboard: React.FC = () => {
           ) : view === 'course-detail' ? (
             courseDetailView()
           ) : (
-            // Render lessonView only if not loading and view is 'lesson'
             <>
               {lessonView()}
             </>
           )}
         </div>
       </main>
+      
+      {/* CHAT */}
+      <GlobalChat
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        highlightText={highlightText}
+        highlightMode={highlightMode}
+        onWidthChange={handleChatWidthChange}
+        sidebarWidth={currentSidebarWidth}
+        animationDuration={ANIMATION_DURATION}
+        animationEasing={ANIMATION_EASING}
+        isAnimating={isAnimating}
+      />
 
-      {/* QUIZ MODAL */}
-      {/* Ensure quizOpen is true and currentCourse is valid before rendering Quiz */}
+      {/* QUIZ */}
       {quizOpen && currentLesson !== null && currentQuiz.length > 0 && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
@@ -1027,22 +1055,17 @@ const Dashboard: React.FC = () => {
               courseId={currentLesson}
               questions={currentQuiz}
               lessonContent={currentLessonContent as any}
-              // Ensure goDashboard is stable or wrapped in useCallback if Quiz memoizes props
-              // onExit={() => { setQuizOpen(false); goDashboard(); }}
-              onExit={() => { setQuizOpen(false) }} //NOTE: keep to lesson page now
-              onComplete={onQuizComplete} // Pass the async handler
+              onExit={() => { setQuizOpen(false) }}
+              onComplete={onQuizComplete}
             />
           </div>
         </div>
       )}
 
-      {/* GLOBAL CHAT DRAWER */}
-      <GlobalChat
-        isOpen={chatOpen}
-        onClose={() => setChatOpen(false)}
-        highlightText={highlightText}
-        highlightMode={highlightMode}
-        onWidthChange={handleChatWidthChange}
+      {/* FEEDBACK */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
       />
     </div>
   );
@@ -1059,75 +1082,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
     overflow: 'hidden', // Prevent body scrolling
   },
-  sidebar: {
-    width: 250,
-    background: 'transparent',
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '20px 0',
-    borderRight: `1px solid ${colors.border}`,
-    flexShrink: 0,
-    position: 'fixed',
-    height: '100vh',
-    zIndex: 100,
-    justifyContent: 'space-between',
-  },
-  logoStyle: {
-    position: 'relative',
-    height: '38px',
-    width: '140px',
-    minHeight: '38px',
-    minWidth: '140px',
-    margin: '0 20px',
-    marginLeft: '3rem', //TODO: find better solution
-    padding: '12px 0',
-    backgroundImage: `url(${QuantaidLogo})`,
-    backgroundRepeat: 'no-repeat',
-    backgroundSize: 'contain',
-    display: 'flex',
-    alignItems: 'center',
-    boxSizing: 'border-box',
-  },
-  nav: {
-    marginTop: 40,
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    paddingBottom: 20,
-    padding: '0 20px',
-  },
-  navButton: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: '12px',
-    background: '#030E29',
-    borderLeft: 'none',
-    border: 'none',
-    color: '#9D9D9D',
-    fontSize: '18px',
-    fontWeight: '500',
-    fontFamily: "'Inter', sans-serif",
-    padding: '12px 16px',
-    textAlign: 'left',
-    cursor: 'pointer',
-    borderRadius: '8px',
-    transition: 'all 0.2s ease',
-    width: '100%',
-    marginBottom: '4px',
-  },
-  navButtonActive: {
-    backgroundColor: '#032242',
-    color: colors.white,
-  },
   main: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    marginLeft: 250,
     height: '100vh',
     overflow: 'hidden', // Prevent main from scrolling
     minWidth: 300,
+    // Transition is now handled dynamically in getMainPanelStyles
   },
   header: {
     display: 'flex',
@@ -1138,7 +1100,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: `1px solid ${colors.border}`,
     position: 'fixed',
     top: 0,
-    left: 250,
+    left: 0,
     right: 0,
     zIndex: 99,
     color: colors.white,
@@ -1179,7 +1141,7 @@ const styles: Record<string, React.CSSProperties> = {
   headerIcons: {
     display: 'flex',
     alignItems: 'center',
-    gap: 15
+    gap: 15,
   },
   chatButton: {
     position: 'fixed',
@@ -1249,51 +1211,66 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '500',
   },
   rowSection: {
-    marginBottom: 40
+    marginBottom: 40,
   },
   title: {
     margin: '0 0 20px',
     fontSize: '2rem',
     color: colors.white,
-    fontWeight: 600
+    fontWeight: 600,
   },
   rowTitle: {
     margin: '0 0 20px',
     fontSize: '1.3rem',
     color: colors.white,
-    fontWeight: 600
+    fontWeight: 600,
   },
   cardGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))',
-    gap: 25
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gap: '15px',
+    gridAutoRows: '360px',
+    alignItems: 'start',
+    justifyItems: 'stretch',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   card: {
     backgroundColor: colors.cardBackground,
     borderRadius: 10,
     overflow: 'hidden',
     position: 'relative',
-    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-    border: `1px solid ${colors.border}`,
-    height: '100%',
+    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease-in-out',border: `1px solid ${colors.border}`,
+    height: '360px',
     display: 'flex',
     flexDirection: 'column',
+    flexShrink: 0,
+    width: '100%',
+    minWidth: '300px',
+    maxWidth: '300px',
+    backfaceVisibility: 'hidden',
+    transformStyle: 'preserve-3d',
+    willChange: 'transform',
   },
   cardEnabled: {
-      cursor: 'pointer',
+    cursor: 'pointer',
   },
   cardDisabled: {
     cursor: 'not-allowed',
-    opacity: 0.5
+    opacity: 0.5,
   },
   cardImg: {
     width: 'calc(100% - 24px)',
     height: 144,
     minHeight: 144,
+    maxHeight: 144,
     objectFit: 'contain',
-    margin: '12px 12px',
+    margin: '12px 12px 0 12px',
     borderRadius: '8px',
-    display: 'block'
+    display: 'block',
+    flexShrink: 0,
+
   },
   cardContent: {
     padding: 20,
@@ -1301,7 +1278,10 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     flex: 1,
-    minHeight: 120,
+    height: 'calc(360px - 144px - 24px)', // Total height - image height - image margins
+    minHeight: 'calc(360px - 144px - 24px)',
+    maxHeight: 'calc(360px - 144px - 24px)',
+    overflow: 'hidden',
   },
   cardTitle: {
     margin: '0 0 10px',
@@ -1309,6 +1289,16 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "'Inter', sans-serif",
     fontWeight: '600',
     color: colors.white,
+    lineHeight: '1.3',
+    height: '3.25rem',
+    minHeight: '1.625rem', // Approximately 1.3 * 1.25rem
+    maxHeight: '3.25rem', // Allow for 2 lines max
+    overflow: 'hidden',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
   },
   cardDescription: {
     margin: '0 0 15px 0',
@@ -1316,7 +1306,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "'Inter', sans-serif",
     fontWeight: '400',
     color: '#A2A2B1',
-    lineHeight: 1.5
+    lineHeight: 1.5,
+    height: '4.5rem', // 3 lines * 1.5 line-height * 0.9rem font-size
+    minHeight: '4.5rem',
+    maxHeight: '4.5rem',
+    overflow: 'hidden',
+    display: '-webkit-box',
+    WebkitLineClamp: 3,
+    WebkitBoxOrient: 'vertical',
   },
   progressBarContainer: {
     position: 'absolute',
@@ -1327,6 +1324,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
+    flexShrink: 0,
   },
   progressBar: {
     position: 'relative',
@@ -1336,6 +1334,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#424E62',
     borderRadius: 4,
     overflow: 'hidden',
+    flexShrink: 0,
    },
   progressFill: {
     height: '100%',
@@ -1350,6 +1349,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.white,
     lineHeight: 1,
     whiteSpace: 'nowrap',
+    flexShrink: 0,
+    minWidth: 'fit-content',
   },
   lockOverlay: {
     position: 'absolute',
@@ -1357,11 +1358,14 @@ const styles: Record<string, React.CSSProperties> = {
     left: 0,
     right: 0,
     height: '80px',
+    minHeight: '80px',
+    maxHeight: '80px',
     background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)',
     display: 'flex',
     alignItems: 'flex-end',
     justifyContent: 'center',
     paddingBottom: '15px',
+    flexShrink: 0,
   },
   lockIcon: {
     display: 'flex',
@@ -1370,6 +1374,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#7A7C92',
     fontSize: '1.2rem',
     backgroundColor: 'transparent',
+    flexShrink: 0,
   },
   courseDetailContainer: {
     maxWidth: 1000,
@@ -1379,7 +1384,6 @@ const styles: Record<string, React.CSSProperties> = {
   courseDetailHeader: {
     textAlign: 'left', // Changed from center to left
     marginBottom: 60,
-
   },
   courseDetailTitle: {
     fontSize: '36',
@@ -1488,7 +1492,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   lessonTitle: { 
     fontSize: '36px',
-    margin: '0 auto', 
+    margin: '0 auto',
     color: colors.white, 
     fontFamily: "'Inter', sans-serif",
     fontWeight: 500,
@@ -1515,15 +1519,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     lineHeight: 1.6,
     fontFamily: "'Inter', sans-serif",
-    transition: 'background-color 0.2s ease' 
+    transition: 'background-color 0.2s ease',
   },
   noQuizText: {
     textAlign: 'center',
     marginTop: '40px',
     color: colors.primary,
     fontSize: '1rem',
-   },
-   modalOverlay: {
+  },
+  quizPromptSection: {
+    margin: '70px 0 0 0',
+    cursor: 'text',
+  },
+  modalOverlay: {
     position: 'fixed',
     inset: 0,
     backgroundColor: 'rgba(0,0,0,0.8)',
@@ -1541,105 +1549,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     background: 'transparent',
-  },
-  sidebarBottom: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    padding: '0 20px 20px 20px',
-    position: 'relative',
-  },
-  profileButton: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '10px',
-    padding: '8px 10px',
-    fontSize: '14px',
-    fontWeight: '500',
-    fontFamily: "'Inter', sans-serif",
-    color: '#9D9D9D',
-    border: `1px solid ${colors.border}`,
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    width: '100%',
-    backgroundColor: 'transparent',
-  },
-  profileButtonText: {
-    fontSize: '14px',
-    fontWeight: '500',
-    fontFamily: "'Inter', sans-serif",
-    color: '#9D9D9D',
-    flex: 1,
-    textAlign: 'left',
-  },
-  sidebarFeedbackButton: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: '8px',
-    padding: '12px 16px',
-    fontSize: '14px',
-    fontWeight: '500',
-    fontFamily: "'Inter', sans-serif",
-    color: '#9D9D9D',
-    backgroundColor: 'transparent',
-    border: 'transparent',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    width: '100%',
-  },
-  sidebarFeedbackText: {
-    fontSize: '14px',
-    fontWeight: '500',
-    fontFamily: "'Inter', sans-serif",
-    color: '#9D9D9D',
-    lineHeight: 1,
-  },
-  profileDropdown: {
-    position: 'absolute',
-    bottom: '135px', // Position above the profile button
-    left: '20px',
-    right: '20px',
-    backgroundColor: '#032242',
-    border: `1px solid ${colors.border}`,
-    borderRadius: '8px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-    padding: '8px 4px',
-    zIndex: 1000,
-  },
-  emailText: {
-    fontSize: '14px',
-    fontWeight: '400',
-    fontFamily: "'Inter', sans-serif",
-    color: '#9D9D9D',
-  },
-  profileDropdownDivider: {
-    height: '1px',
-    backgroundColor: colors.border,
-    margin: '6px 6px',
-    padding: '0 2px',
-  },
-  profileDropdownItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '6px 6px',
-    cursor: 'pointer',
-    borderRadius: '6px',
-    transition: 'background-color 0.2s ease',
-    marginBottom: '4px',
-    width: '100%',
-    border: 'none',
-    backgroundColor: 'transparent',
-  },
-  profileDropdownItemText: {
-    fontSize: '14px',
-    fontWeight: '400',
-    fontFamily: "'Inter', sans-serif",
-    color: '#9D9D9D',
   },
 };
 
@@ -1707,98 +1616,9 @@ const addAllStyles = () => {
       background-color: rgba(255, 255, 255, 0.15);
     }
 
-    /* Custom Scrollbar Styles */
-    .default-scrollbar::-webkit-scrollbar {
-      width: 8px;
-    }
-    
-    .default-scrollbar::-webkit-scrollbar-track {
-      background: rgba(42, 46, 70, 0.3);
-      border-radius: 4px;
-    }
-    
-    .default-scrollbar::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, #2A2E46 0%, #1F2336 100%);
-      border-radius: 4px;
-      transition: background 0.3s ease;
-    }
-    
-    .default-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(180deg, #353A56 0%, #2A2E46 100%);
-      border-radius: 4px;
-    }
-    
-    .default-scrollbar::-webkit-scrollbar-thumb:active {
-      background: linear-gradient(180deg, #1F2336 0%, #171A28 100%);
-      border-radius: 4px;
-    }
-
-    /* Firefox Scrollbar Support */
-    .default-scrollbar {
-      scrollbar-width: thin;
-       scrollbar-color: #2A2E46 rgba(42, 46, 70, 0.3);
-      scroll-behavior: smooth;
-      /* Add hardware acceleration for better performance */
-      transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      transform: translateZ(0);
-      backface-visibility: hidden;
-    }
-
-    // /* Custom scrollbar - hide default scrollbar for dashboard view only */
-    // .custom-scrollbar::-webkit-scrollbar {
-    //   display: none;
-    // }
-
-    // .custom-scrollbar-content {
-    //   scrollbar-width: none;
-    //   -ms-overflow-style: none;
-    // }
-    
-    /* Smooth chat button state changes */
-    .chat-button {
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    /* Nav button hover effects */
-    .nav-button:hover {
-      background-color: #032242 !important;
-    }
-
-    /* Force active nav button styles with high specificity */
-    .nav-button.nav-button-active {
-      background-color: #032242 !important;
-      color: #FFFFFF !important;
-    }
-
-    /* Keep active state on hover */
-    .nav-button.nav-button-active:hover {
-      background-color: #032242 !important;
-      color: #FFFFFF !important;
-    }
-
     /* Breadcrumb button hover effects */
     .breadcrumb-button:hover {
       text-decoration: underline !important;
-    }
-
-    /* Profile dropdown item hover effects */
-    .profile-dropdown-item:hover {
-      background-color: #0B2F54 !important;
-    }
-
-    /* Sidebar feedback button hover effects */
-    .sidebar-feedback-button:hover {
-      background-color: rgba(255, 255, 255, 0.05) !important;
-    }
-
-    /* Sidebar lower buttons hover effects */
-    .profile-button:hover {
-      background-color: #032242 !important;
-    }
-
-    .feedback-button:hover:not(:disabled) {
-      opacity: 0.9 !important;
-      transition: opacity 0.2s ease;
     }
 
     /* Topic button hover effects */
@@ -1806,28 +1626,6 @@ const addAllStyles = () => {
       background-color: #212E44 !important;
       border: 2px solid rgba(255,255,255,0.1) !important; /* Force border to stay the same on focus */
       outline: none !important; /* Remove browser default outline */
-    }
-    
-    /* GlobalChat hover effects */
-    .global-chat-close-btn:hover {
-      color: #ffffff !important;
-    }
-    
-    .global-chat-try-btn:hover {
-      background-color: rgba(86, 99, 149, 0.1) !important;
-    }
-    
-    .global-chat-send-btn:hover:not(:disabled) {
-      background-color: #6b7bb5 !important;
-    }
-    
-    .global-chat-send-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .global-chat-input:focus {
-      border-color: #8a9cdb !important;
     }
   `;
   document.head.appendChild(style);
