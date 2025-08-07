@@ -5,7 +5,6 @@ import { IoMdClose } from "react-icons/io";
 import { IoCloseOutline } from "react-icons/io5";
 import { BsThreeDots } from "react-icons/bs";
 import { MdOutlineThumbsUpDown } from "react-icons/md";
-import axios from 'axios';
 import { Question } from './QuizQuestions';
 import Questions from './Questions';
 import QuizProgressBar from './QuizProgressBar';
@@ -44,7 +43,7 @@ interface QuestionWithLesson extends Question {
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
-const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, lessonContent }) => {
+const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -67,7 +66,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [showAnswersEnabled, setShowAnswersEnabled] = useState(true);
   const [timeModeEnabled, setTimeModeEnabled] = useState(true);
-  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
+  const [, setQuestionStartTime] = useState<number>(Date.now());
   const [timeLimit] = useState(30); // 30 seconds per question in time mode
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(30);
@@ -504,7 +503,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
     return { x: 0, y: 0 };
   };
 
-  const toggleSettingsDropdown = (event: React.MouseEvent) => {
+  const toggleSettingsDropdown = (_event: React.MouseEvent) => {
     if (!showSettingsDropdown) {
       setDropdownPosition(calculateDropdownPosition());
     }

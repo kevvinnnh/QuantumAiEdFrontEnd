@@ -41,7 +41,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   isCollapsed,
-  onToggleCollapse,
   onNavigateToDashboard,
   onCollapsedProfileClick,
   showProfileDropdown,
@@ -53,8 +52,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   onHelpClick,
   onSignOutClick,
   onLeaveFeedbackClick,
-  chatWidth,
-  screenWidth,
   animationDuration,
   animationEasing
 }) => {

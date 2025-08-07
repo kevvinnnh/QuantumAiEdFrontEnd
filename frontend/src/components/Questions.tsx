@@ -20,10 +20,6 @@ interface QuestionsProps {
   wrongChoices: number[];
   questionCompleted: boolean;
   showAnswersEnabled: boolean;
-  // onSubmitAnswer: () => void;
-  // onDiscussQuestion: () => void;
-  // onNext: () => void;
-  // isLastQuestion: boolean;
   questionStyles?: React.CSSProperties;
   optionStyles?: React.CSSProperties;
   showCorrectAnswers?: boolean;
@@ -36,16 +32,10 @@ const Questions: React.FC<QuestionsProps> = ({
   currentIndex,
   question,
   selectedOption,
-  hasSubmitted,
-  // feedback,
   onSelectOption,
   wrongChoices,
   questionCompleted,
   showAnswersEnabled,
-  // onSubmitAnswer,
-  // onDiscussQuestion,
-  // onNext,
-  // isLastQuestion,
   questionStyles,
   optionStyles,
 }) => (
@@ -118,37 +108,6 @@ const Questions: React.FC<QuestionsProps> = ({
         );
       })}
     </div>
-
-    {/* {!hasSubmitted && selectedOption !== null && (
-      <button style={styles.submitBtn} onClick={onSubmitAnswer}>
-        Submit
-      </button>
-    )} */}
-
-    {/* {hasSubmitted && (
-      <div style={styles.feedbackArea}>
-        <p style={feedback.includes('Correct') ? styles.feedbackCorrect : styles.feedbackWrong}>
-          {feedback}
-        </p>
-
-        <div style={styles.answerBox}>
-          <p style={styles.answerLabel}>Correct Answer:</p>
-          <p style={{...styles.answerText, ...optionStyles}}>{question.options[question.correctAnswer]}</p>
-          {question.explanation && (
-            <p style={styles.explanationText}>{question.explanation}</p>
-          )}
-        </div>
-
-        <div style={styles.postSubmitBtns}>
-          <button style={styles.aiBtn} onClick={onDiscussQuestion}>
-            Discuss with QuantAid
-          </button>
-          <button style={styles.nextBtn} onClick={onNext}>
-            {isLastQuestion ? 'Finish Quiz' : 'Next Question'}
-          </button>
-        </div>
-      </div>
-    )} */}
   </div>
 );
 
@@ -175,8 +134,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   optionButton: {
     padding: '14px 24px',
-    // fontSize: '1.1rem',
-    // color: '#FFFFFF',
     backgroundColor: 'transparent',
     border: '2px solid #424E62',
     borderRadius: 8,
