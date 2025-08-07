@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { IoMdClose } from "react-icons/io";
 import { LiaArrowLeftSolid } from "react-icons/lia";
 import QuizProgressBar from './QuizProgressBar';
 // import welcomeVideo from '../assets/welcome.mp4';
@@ -371,8 +372,8 @@ const stepConfigs: StepConfig[] = [
                 style={{
                   ...styles.checkItem,
                   ...styles.checkItemExpanded,
-                  backgroundColor: formData.whereHeard.includes(subj) ? '#10204D' : 'transparent',
-                  borderColor: formData.whereHeard.includes(subj) ? '#1D4177' : '#434F62',
+                  backgroundColor: formData.subjects.includes(subj) ? '#10204D' : 'transparent',
+                  borderColor: formData.subjects.includes(subj) ? '#1D4177' : '#434F62',
                 }}
               >
                 <input
@@ -561,18 +562,25 @@ const DefaultStep: React.FC<{
       {showSkipModal && (
         <div style={styles.modalOverlay} onClick={handleModalOverlayClick}>
           <div style={styles.modalContent}>
-            <h2 style={styles.modalTitle}>Your answers help Quantaid teach in a way that clicks for <span style={{ fontStyle: 'italic' }}>you</span>.</h2>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>Your answers help Quantaid teach in a way that clicks for <span style={{ fontStyle: 'italic' }}>you</span>.</h2>
+              <button onClick={handleCloseSkipModal} style={styles.closeModalButton}>
+                <IoMdClose size={24} color="#FFFFFF" />
+              </button>
+            </div>
             <p style={styles.modalSubtext}>
               Skipping means you'll get a more general experience for now, but you can update your preferences anytime in your profile settings.
             </p>
             <div style={styles.modalButtons}>
-              <button 
+              <button
+                className='back-button'
                 onClick={handleCloseSkipModal}
                 style={styles.goBackButton}
               >
                 Go back
               </button>
-              <button 
+              <button
+                className='skip-button'
                 onClick={handleConfirmSkip}
                 style={styles.skipAnywayButton}
               >
@@ -925,6 +933,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     textAlign: 'center' as const,
     boxShadow: '0 15px 30px rgba(0, 0, 0, 0.5)',
   },
+  modalHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'relative',
+  },
   modalTitle: {
     fontSize: '22px',
     fontWeight: '600',
@@ -932,6 +946,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#FEFEFE',
     margin: '0 0 16px 0',
     lineHeight: '1.3',
+    flex: 1,
+    textAlign: 'center',
+  },
+  closeModalButton: {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    right: -28,
+    top: -28,
   },
   modalSubtext: {
     fontSize: '14px',
@@ -1147,19 +1175,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: '8px',
   },
   customHobbiesInput: {
-  width: '100%',
-  padding: '14px 0',              // Changed: removed horizontal padding
-  fontSize: '16px',
-  fontFamily: "'Inter', sans-serif",
-  color: '#FFFFFF',
-  backgroundColor: 'transparent',
-  border: '2px solid #424E62',
-  borderRadius: '8px',
-  borderBottom: '2px solid #424E62', // Added: bottom border only
-  outline: 'none',
-  transition: 'all 0.2s ease',
-  textAlign: 'center' as const,
-},
+    width: '100%',
+    padding: '14px 0',
+    fontSize: '16px',
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    backgroundColor: 'transparent',
+    border: '2px solid #424E62',
+    borderRadius: '8px',
+    borderBottom: '2px solid #424E62',
+    outline: 'none',
+    transition: 'all 0.2s ease',
+    textAlign: 'center' as const,
+  },
   bottomBar: {
     display: 'flex',
     alignItems: 'center',
@@ -1413,6 +1441,17 @@ const addHoverStyles = () => {
     input[style*="border-bottom: 2px solid #424E62"]::placeholder {
       color: #666 !important;
       font-style: italic;
+    }
+
+    .back-button:hover {
+      background-color: #10204D !important;
+      border-color: #1D4177 !important;
+      transition: all 0.2s ease;
+    }
+    
+    button.skip-button:hover:not(:disabled) {
+      background-color: #404A5F !important;
+      transition: all 0.2s ease;
     }
   `;
   document.head.appendChild(style);
