@@ -156,6 +156,17 @@ const Login: React.FC = () => {
             text-align: left !important;
             padding-left: 1rem !important;
           }
+
+          /* Responsive breakpoint - hide right column on screens smaller than 768px */
+          @media screen and (max-width: 768px) {
+            .right-column-responsive {
+              display: none !important;
+            }
+            .left-column-responsive {
+              flex: 1 !important;
+              width: 100% !important;
+            }
+          }
         `}
       </style>
       {/* Loading Animation Overlay */}
@@ -166,7 +177,7 @@ const Login: React.FC = () => {
       )}
       <div style={styles.container}>
         {/* LEFT COLUMN */}
-        <div style={styles.leftColumn}>
+        <div style={styles.leftColumn} className="left-column-responsive">
           <div style={styles.logoStyle} aria-label="Quantaid Logo"></div>
           <div style={styles.formContainer}>
             {/* Welcome back title for login mode */}
@@ -343,7 +354,7 @@ const Login: React.FC = () => {
         </div>
         
         {/* RIGHT COLUMN */}
-        <div style={styles.rightColumn}>
+        <div style={styles.rightColumn} className="right-column-responsive">
           <img src={LoginGraphic} style={styles.rightContent} />
         </div>
       </div>
