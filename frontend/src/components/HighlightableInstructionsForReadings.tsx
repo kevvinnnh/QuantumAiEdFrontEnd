@@ -103,8 +103,8 @@ const HighlightableInstructionsForReading: React.FC<Props> = ({
         const POPUP_HEIGHT = 48;
         
         // Your preferred offsets
-        const VERTICAL_OFFSET = 0;
-        const HORIZONTAL_OFFSET = -200;
+        const VERTICAL_OFFSET = -60;
+        const HORIZONTAL_OFFSET = -600;
         
         // Account for fixed header
         const HEADER_HEIGHT = 60;
@@ -179,7 +179,7 @@ const HighlightableInstructionsForReading: React.FC<Props> = ({
 
   // Add a global mouseup handler to catch selections that end outside our container
   useEffect(() => {
-    const globalMouseUpHandler = (event: MouseEvent) => {
+    const globalMouseUpHandler = (_event: MouseEvent) => {
       // Only handle if we don't already have a popup showing (avoid double-triggering)
       if (!showPopup) {
         handleMouseUp();
