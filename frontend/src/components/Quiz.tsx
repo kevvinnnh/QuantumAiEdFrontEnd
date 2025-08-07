@@ -1,6 +1,7 @@
 // src/components/Quiz.tsx
 
 import React, { useState, useRef, useEffect } from 'react';
+import { IoMdClose } from "react-icons/io";
 import { IoCloseOutline } from "react-icons/io5";
 import { BsThreeDots } from "react-icons/bs";
 import { MdOutlineThumbsUpDown } from "react-icons/md";
@@ -8,6 +9,7 @@ import axios from 'axios';
 import { Question } from './QuizQuestions';
 import Questions from './Questions';
 import QuizProgressBar from './QuizProgressBar';
+import FeedbackModal from './FeedbackModal';
 // import SideChat from './SideChat';
 // import { FinalResultsPopup } from './Popups';
 
@@ -71,6 +73,9 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
   const [timeRemaining, setTimeRemaining] = useState(30);
   const [timerPaused, setTimerPaused] = useState(false);
   const [pausedTimeRemaining, setPausedTimeRemaining] = useState<number | null>(null);
+
+  // Feedback state
+  const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
 
   // Refs for options
   const settingsDropdownRef = useRef<HTMLDivElement>(null);
@@ -428,11 +433,16 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
   };
 
   const handleModalOverlayClick = (event: React.MouseEvent) => {
-  // Only close if clicking on the overlay itself, not the modal content
-  if (event.target === event.currentTarget) {
-    setShowExitModal(false);
-  }
-};
+    // Only close if clicking on the overlay itself, not the modal content
+    if (event.target === event.currentTarget) {
+      setShowExitModal(false);
+    }
+  };
+
+  // Feedback modal handler
+  const handleLeaveFeedbackClick = () => {
+    setShowFeedbackModal(true);
+  };
 
   // Settings handlers
   const handleSoundToggle = (enabled: boolean) => {
@@ -725,7 +735,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
           {showExitModal && (
             <div style={styles.modalOverlay} onClick={handleModalOverlayClick}>
               <div style={styles.modalContent}>
-                <h2 style={styles.modalTitle}>Exit Quiz?</h2>
+                <div style={styles.modalHeader}>
+                  <h2 style={styles.modalTitle}>Exit Quiz?</h2>
+                  <button onClick={handleCloseExitModal} style={styles.closeButton}>
+                    <IoMdClose size={24} color="#FFFFFF" />
+                  </button>
+                </div>
                 <p style={styles.modalSubtext}>
                   Leaving now will reset your progress. You'll start fresh next time.
                 </p>
@@ -891,10 +906,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
               // Show Leave Feedback button on results screen
               <button
                 className="quiz-bottom-buttons"
-                onClick={() => {
-                  // Handle feedback click - you can add your feedback logic here
-                  console.log('Leave feedback clicked');
-                }}
+                onClick={handleLeaveFeedbackClick}
                 style={styles.leaveFeedbackButton}
               >
                 <MdOutlineThumbsUpDown size={17} color="#9D9D9D" />
@@ -1038,6 +1050,13 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, onComplete, courseId, le
           // style={styles.sideChatOverlay}
         />
       )} */}
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        initialCategory="Quizzes"
+      />
     </div>
   );
 };
@@ -1122,12 +1141,33 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center' as const,
     boxShadow: '0 15px 30px rgba(0, 0, 0, 0.5)',
   },
+  modalHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '24px',
+    position: 'relative',
+  },
   modalTitle: {
     fontSize: '28px',
     fontWeight: '600',
     fontFamily: "'Inter', sans-serif",
     color: '#FFFFFF',
-    margin: '0 0 16px 0',
+    margin: 0,
+    flex: 1,
+    textAlign: 'center',
+  },
+  closeButton: {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    right: -28,
+    top: -28,
   },
   modalSubtext: {
     fontSize: '16px',
