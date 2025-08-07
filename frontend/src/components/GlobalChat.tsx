@@ -33,74 +33,110 @@ interface Props {
   onClose: () => void;
   highlightText: string | null;
   highlightMode: 'explain' | 'analogy' | null;
-  onWidthChange?: (width: number) => void;
+  onWidthChange?: (width: number, isResizing?: boolean) => void;
+  sidebarWidth?: number;
+  animationDuration?: number;
+  animationEasing?: string;
+  isAnimating?: boolean;
 }
 
-const GlobalChat: React.FC<Props> = ({ isOpen, onClose, highlightText, highlightMode, onWidthChange }) => {
+const GlobalChat: React.FC<Props> = ({
+  isOpen,
+  onClose,
+  highlightText,
+  highlightMode,
+  onWidthChange,
+  sidebarWidth = 250,
+  animationDuration = 300,
+  animationEasing = 'cubic-bezier(0.4, 0, 0.2, 1)',
+}) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [lastTopic, setLastTopic] = useState<string | null>(null);
+  const [width, setWidth] = useState(420);
+  const [isResizing, setIsResizing] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastKey = useRef<string>('');
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Resizing state
-  const [chatWidth, setChatWidth] = useState(420);
-  const [resizing, setResizing] = useState(false);
-  const startX = useRef(0);
-  const startWidth = useRef(chatWidth);
+  // Handle resizing with parent notification
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const newWidth = window.innerWidth - e.clientX;
+      const minWidth = 300;
+      const maxWidth = Math.min(600, window.innerWidth - sidebarWidth - 100);
+      
+      const constrainedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+      setWidth(constrainedWidth);
 
-  // Notify parent component of width changes
+      // Notify parent that we're actively resizing
+      if (onWidthChange) {
+        onWidthChange(constrainedWidth, true); // isResizing = true
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+
+      // Notify parent that resizing has stopped
+      if (onWidthChange) {
+        onWidthChange(width, false); // isResizing = false
+      }
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'ew-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, sidebarWidth, width, onWidthChange]);
+
+  // Notify parent of width changes
   useEffect(() => {
     if (onWidthChange) {
-      onWidthChange(isOpen ? chatWidth : 0);
+      onWidthChange(isOpen ? width : 0, false); // isResizing = false for open/close
     }
-  }, [chatWidth, isOpen, onWidthChange]);
+  }, [isOpen, width, onWidthChange]);
 
-  // Handle resizing
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    setResizing(true);
-    startX.current = e.clientX;
-    startWidth.current = chatWidth;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    e.preventDefault(); // Prevent text selection during resize
-  };
-
-  useEffect(() => {
-    const onMove = (e: PointerEvent) => {
-      if (resizing) {
-        const delta = startX.current - e.clientX;
-        const newWidth = Math.max(300, Math.min(startWidth.current + delta, 600));
-        setChatWidth(newWidth);
-      }
-    };
-    
-    const onUp = () => {
-      if (resizing) {
-        setResizing(false);
-      }
-    };
-    
-    if (resizing) {
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
-      window.addEventListener('pointercancel', onUp);
-    }
-    
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
-    };
-  }, [resizing]);
-
-  // Auto-scroll when open or new message arrives
+  // Auto-scroll when new messages arrive or chat opens
   useEffect(() => {
     if (!isOpen) return;
-    bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight });
-    inputRef.current?.focus();
-  }, [messages, isOpen]);
+    
+    // Use setTimeout to ensure DOM has updated after state changes
+    const scrollToBottom = () => {
+      if (bodyRef.current) {
+        bodyRef.current.scrollTo({ 
+          top: bodyRef.current.scrollHeight, 
+          behavior: 'smooth' 
+        });
+      }
+    };
+    
+    // Immediate scroll
+    scrollToBottom();
+    
+    // Delayed scroll to handle any async rendering
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    
+    // Focus input when chat is open
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+    
+    return () => clearTimeout(timeoutId);
+  }, [messages, isOpen, isLoading]);
 
   // Trigger on highlight changes
   useEffect(() => {
@@ -120,9 +156,9 @@ const GlobalChat: React.FC<Props> = ({ isOpen, onClose, highlightText, highlight
     setMessages(prev => prev.concat(msg));
 
   const requestExplanation = async (text: string) => {
+    append({ role: 'user', content: 'Explain', type: 'explanation' });
+
     setIsLoading(true);
-    // Don't add user message for highlights - just process directly
-    // append({ role: 'user', content: text, type: 'general' });
     try {
       const res = await axios.post(
         `${backendUrl}/explain_text`,
@@ -141,9 +177,9 @@ const GlobalChat: React.FC<Props> = ({ isOpen, onClose, highlightText, highlight
   };
 
   const requestAnalogy = async (text: string) => {
+    append({ role: 'user', content: 'View Analogy', type: 'analogy' });
+
     setIsLoading(true);
-    // Don't add user message for highlights - just process directly
-    // append({ role: 'user', content: text, type: 'general' });
     try {
       const res = await axios.post(
         `${backendUrl}/generate_analogy`,
@@ -162,20 +198,42 @@ const GlobalChat: React.FC<Props> = ({ isOpen, onClose, highlightText, highlight
   };
 
   const tryAnotherAnalogy = async () => {
-    if (lastTopic) await requestAnalogy(lastTopic);
+    if (!lastTopic) return;
+    
+    append({ role: 'user', content: 'Try another analogy', type: 'analogy' });
+    
+    setIsLoading(true);
+    try {
+      const res = await axios.post(
+        `${backendUrl}/generate_analogy`,
+        { text: lastTopic },
+        { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
+      );
+      const analogy = res.data.analogy;
+      append({ role: 'assistant', content: analogy, type: 'analogy' });
+      // Keep lastTopic the same since we're generating another analogy for the same topic
+    } catch (err) {
+      console.error('Analogy error:', err);
+      alert(`Unable to generate analogy: ${err instanceof Error ? err.message : err}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const sendFreeForm = async () => {
     if (!draft.trim() || isLoading) return;
     const userMsg = draft.trim();
     setDraft('');
-    append({ role: 'user', content: userMsg, type: 'general' });
+    
+    // Add user message
+    const newUserMessage = { role: 'user' as const, content: userMsg, type: 'general' as const };
+    append(newUserMessage);
 
     setIsLoading(true);
     try {
       const res = await axios.post(
         `${backendUrl}/chat_about_text`,
-        { highlighted_text: lastTopic ?? '', messages: messages.concat({ role: 'user', content: userMsg }) },
+        { highlighted_text: lastTopic ?? '', messages: messages.concat(newUserMessage) },
         { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
       );
       const reply = res.data.assistant_reply;
@@ -190,40 +248,51 @@ const GlobalChat: React.FC<Props> = ({ isOpen, onClose, highlightText, highlight
   };
 
   const handleChatHistoryClick = () => {
-    // TODO: Implement chat history functionality
     console.log('Chat history clicked');
   };
 
-  if (!isOpen) return null;
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  const getContainerStyles = (): React.CSSProperties => ({
+    ...styles.container,
+    width: width,
+    transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+    transition: `transform ${animationDuration}ms ${animationEasing}`,
+    backfaceVisibility: 'hidden' as const,
+    willChange: 'transform',
+  });
 
   return (
     <>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
-      <div style={{
-          ...styles.container,
-          width: chatWidth,
-          zIndex: 2000,
-          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-          visibility: isOpen ? 'visible' : 'hidden',
-          opacity: isOpen ? 1 : 0,
-        }}>
-        <div 
-          style={{
-            ...styles.resizer,
-            backgroundColor: resizing ? colors.primary : colors.border,
-          }} 
-          onPointerDown={handlePointerDown}
-        />
+      <div ref={containerRef} style={getContainerStyles()} className="global-chat-coordinated">
+        {isOpen && (
+          <div
+            style={styles.resizer}
+            onMouseDown={handleResizeStart}
+            className="resizer"
+          />
+        )}
+
         <div style={styles.header}>
           <button 
             style={styles.historyBtn} 
             onClick={handleChatHistoryClick} 
             aria-label="Chat History"
+            className="global-chat-icon-btn"
           >
             <MdHistory size={24} />
           </button>
-          <button style={styles.closeBtn} onClick={onClose} aria-label="Close">
+          <button 
+            style={styles.closeBtn} 
+            onClick={onClose} 
+            aria-label="Close"
+            className="global-chat-icon-btn"
+          >
             <MdClose size={24} />
           </button>
         </div>
@@ -250,10 +319,13 @@ const GlobalChat: React.FC<Props> = ({ isOpen, onClose, highlightText, highlight
             )}
           </div>
 
-          {/* Try Another Analogy Button - positioned at bottom */}
           {!isLoading && lastTopic && messages.slice(-1)[0]?.type === 'analogy' && (
             <div style={styles.tryWrap}>
-              <button style={styles.tryBtn} onClick={tryAnotherAnalogy}>
+              <button 
+                style={styles.tryBtn} 
+                onClick={tryAnotherAnalogy}
+                className="global-chat-try-btn"
+              >
                 Try another analogy
               </button>
             </div>
@@ -270,12 +342,14 @@ const GlobalChat: React.FC<Props> = ({ isOpen, onClose, highlightText, highlight
               disabled={isLoading}
               onChange={e => setDraft(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendFreeForm()}
+              className="global-chat-input"
             />
             <button
               style={styles.sendBtn}
               onClick={sendFreeForm}
               disabled={isLoading || !draft.trim()}
               aria-label="Send"
+              className="global-chat-send-btn"
             >
               <MdArrowUpward size={20} />
             </button>
@@ -302,16 +376,17 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     minWidth: 300,
     maxWidth: 600,
-    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   },
   resizer: {
-    width: 1,
+    width: 4,
     cursor: 'ew-resize',
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
-    transition: 'background-color 0.2s ease',
+    backgroundColor: 'transparent',
+    transition: 'background-color 150ms ease',
+    zIndex: 1,
   },
   header: {
     flexShrink: 0,
@@ -414,7 +489,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '15px 20px',
     display: 'flex', 
     justifyContent: 'flex-start',
-    pointerEvents: 'none', // Allow clicks to pass through gradient
+    pointerEvents: 'none',
   },
   tryBtn: {
     background: colors.chatBackground,
@@ -429,7 +504,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     transition: 'all 0.2s ease',
-    pointerEvents: 'auto', // Re-enable clicks for the button
+    pointerEvents: 'auto',
   },
   placeholder: { 
     textAlign: 'center', 
@@ -451,7 +526,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   input: {
     width: '100%',
-    padding: '14px 50px 14px 15px', // Right padding for send button
+    padding: '14px 50px 14px 15px',
     borderRadius: 8,
     border: 'none',
     background: colors.inputBackground,
