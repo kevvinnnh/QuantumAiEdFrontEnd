@@ -102,6 +102,7 @@ const Login: React.FC = () => {
   
   return (
     <>
+      
       {/* Global style for spinner animation and input consistency */}
       <style>
         {`
@@ -178,7 +179,11 @@ const Login: React.FC = () => {
       <div style={styles.container}>
         {/* LEFT COLUMN */}
         <div style={styles.leftColumn} className="left-column-responsive">
-          <div style={styles.logoStyle} aria-label="Quantaid Logo"></div>
+        <div
+          style={styles.logoStyle}
+          role="img"
+          aria-label="Quantaid logo"
+        />
           <div style={styles.formContainer}>
             {/* Welcome back title for login mode */}
             {!isSignUpMode && (
@@ -355,7 +360,11 @@ const Login: React.FC = () => {
         
         {/* RIGHT COLUMN */}
         <div style={styles.rightColumn} className="right-column-responsive">
-          <img src={LoginGraphic} style={styles.rightContent} />
+        <img
+          src={LoginGraphic}
+          alt="Illustration of a student using QuantAid"
+          style={styles.rightContent}
+        />
         </div>
       </div>
     </>
@@ -510,7 +519,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   dividerText: {
     margin: '0 1rem',
-    color: '#888',
+    color: '#BFC3D9',          // was #888
     fontSize: '.7rem',
     whiteSpace: 'nowrap',
     backgroundColor: '#1F305F',
@@ -605,8 +614,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: '400',
   },
   linkStyle: {
-    color: '#7093CD',
-    textDecoration: 'none',
+    color: '#A4C5FF',          // was #7093CD
+    textDecoration: 'underline',   // always underlined for WCAG
     fontWeight: '400',
   },
   rightContent: {
