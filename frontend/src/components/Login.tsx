@@ -309,12 +309,8 @@ const Login: React.FC = () => {
             <button
               style={styles.signupButton}
               onClick={handleManualSignupOrLogin}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#2C5CE6';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#3B73FF';
-              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1F4ADB'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2C5CE6'; }}
             >
               {isSignUpMode ? 'SIGN UP' : 'LOG IN'}
             </button>
@@ -551,7 +547,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#1F1A2A',
   },
   signupButton: {
-    backgroundColor: '#3B73FF',
+    backgroundColor: '#2C5CE6',      // rgb(44, 92, 230)
     color: '#fff',
     padding: '1.2rem',
     width: '100%',
@@ -587,7 +583,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   forgotPasswordLink: {
     background: 'none',
     border: 'none',
-    color: '#7093CD',
+    color: '#A4C5FF',                // rgb(164, 197, 255)
     textDecoration: 'underline',
     fontSize: '0.9rem',
     cursor: 'pointer',
@@ -605,7 +601,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   toggleButton: {
     background: 'none',
     border: 'none',
-    color: '#7093CD',
+    color: '#A4C5FF',
     textDecoration: 'none',
     fontSize: '1rem',
     cursor: 'pointer',
