@@ -23,7 +23,7 @@ body {
   padding: 0;
   text-align: left;
   overflow-x: hidden;
-  overflow-y: auto;
+  /* overflow-y: auto; */
 }
 
 /* ------------------------ */
@@ -704,4 +704,257 @@ body {
 .side-chat-message a {
   color: #566395;
   text-decoration: underline;
+}
+
+/* --------------------------------------- */
+/*      Dashboard Coordinated Animations   */
+/* --------------------------------------- */
+
+/* Hardware acceleration for coordinated elements */
+.sidebar-coordinated,
+.main-panel-coordinated,
+.global-chat-coordinated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, width, margin-left;
+}
+
+/* Sidebar width transitions */
+.sidebar-coordinated {
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Default transition for main panel */
+.main-panel-coordinated {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* GlobalChat slide animation */
+.global-chat-coordinated {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* -------------------------------- */
+/*      Dashboard Hover Effects     */
+/* -------------------------------- */
+
+/* Nav button hover effects */
+.nav-button:hover {
+  background-color: #032242 !important;
+}
+
+/* Force active nav button styles with high specificity */
+.nav-button.nav-button-active {
+  background-color: #032242 !important;
+  color: #FFFFFF !important;
+}
+
+/* Keep active state on hover */
+.nav-button.nav-button-active:hover {
+  background-color: #032242 !important;
+  color: #FFFFFF !important;
+}
+
+/* Breadcrumb button hover effects */
+.breadcrumb-button:hover {
+  text-decoration: underline !important;
+}
+
+/* Profile dropdown item hover effects */
+.profile-dropdown-item:hover {
+  background-color: #0B2F54 !important;
+}
+
+/* Sidebar feedback button hover effects */
+.feedback-button:hover:not(:disabled) {
+  opacity: 0.9 !important;
+  transition: opacity 0.2s ease;
+}
+
+/* Profile button hover effects */
+.profile-button:hover {
+  background-color: #032242 !important;
+}
+
+/* Topic button hover effects */
+.topic-button:hover:not(:disabled) {
+  background-color: #212E44 !important;
+  border: 2px solid rgba(255,255,255,0.1) !important;
+  outline: none !important;
+}
+
+/* GlobalChat hover effects */
+.global-chat-icon-btn:hover {
+  color: #dddddd !important;
+}
+
+.global-chat-send-btn:hover:not(:disabled) {
+  background-color: #6b7bb5 !important;
+}
+
+.global-chat-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.global-chat-input:focus {
+  border-color: #8a9cdb !important;
+}
+
+/* Resizer hover effect */
+.resizer:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ----------------------------------- */
+/*      Dashboard Search Component     */
+/* ----------------------------------- */
+
+/* Search Input Styles */
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.search-input:focus::placeholder {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.search-container:focus-within {
+  border-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* --------------------------------- */
+/*      Custom Scrollbar Styles      */
+/* --------------------------------- */
+
+.default-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.default-scrollbar::-webkit-scrollbar-track {
+  background: rgba(42, 46, 70, 0.3);
+  border-radius: 4px;
+}
+
+.default-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2A2E46 0%, #1F2336 100%);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.default-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #353A56 0%, #2A2E46 100%);
+  border-radius: 4px;
+}
+
+.default-scrollbar::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #1F2336 0%, #171A28 100%);
+  border-radius: 4px;
+}
+
+/* Firefox Scrollbar Support */
+.default-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #2A2E46 rgba(42, 46, 70, 0.3);
+  scroll-behavior: smooth;
+  /* Add hardware acceleration for better performance */
+  transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* --------------------------------- */
+/*      Responsive Breakpoints       */
+/* --------------------------------- */
+
+/* Responsive breakpoints for coordinated behavior */
+@media (max-width: 1199px) {
+  .sidebar-coordinated {
+    transition-duration: 300ms;
+  }
+  
+  .global-chat-coordinated {
+    transition-duration: 300ms;
+  }
+}
+
+@media (max-width: 768px) {
+  .global-chat-coordinated {
+    width: calc(100vw - 90px) !important;
+    max-width: none;
+  }
+}
+
+/* ------------------------------- */
+/*      Animation Performance      */
+/* ------------------------------- */
+
+/* Performance optimizations */
+.sidebar-coordinated,
+.main-panel-coordinated,
+.global-chat-coordinated {
+  transform: translate3d(0, 0, 0); /* Force GPU acceleration */
+}
+
+/* Prevent overflow layout shifts during animation */
+.dashboard-content {
+  contain: layout style;
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+/* Card grid responsiveness for narrow panels */
+.main-panel-coordinated .cardGrid {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* Responsive safety for very narrow screens */
+@media (max-width: 800px) {
+  .main-panel-coordinated {
+    min-width: 250px;
+  }
+  
+  .dashboard-content {
+    padding: 1rem 2rem;
+  }
+}
+
+/* ----------------------- */
+/*      Accessibility      */
+/* ----------------------- */
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-coordinated,
+  .main-panel-coordinated,
+  .global-chat-coordinated {
+    transition-duration: 0.1s !important;
+  }
+
+  /* For reduced motion users, always keep some transition */
+  .main-panel-coordinated {
+    transition: all 0.1s ease !important;
+  }
+}
+
+/* Focus states for accessibility */
+.sidebar-coordinated button:focus-visible,
+.global-chat-coordinated button:focus-visible {
+  outline: 2px solid #3B89FF;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .sidebar-coordinated {
+    border-right: 2px solid;
+  }
+  
+  .global-chat-coordinated {
+    border-left: 2px solid;
+  }
 }

@@ -7,6 +7,7 @@ interface Question {
   options: string[];
   correctAnswer: number;
   explanation?: string;
+  lessonContentIndices?: number[];
 }
 
 interface QuestionsProps {
@@ -16,116 +17,125 @@ interface QuestionsProps {
   hasSubmitted: boolean;
   feedback: string;
   onSelectOption: (index: number) => void;
-  onSubmitAnswer: () => void;
-  onDiscussQuestion: () => void;
-  onNext: () => void;
-  isLastQuestion: boolean;
+  wrongChoices: number[];
+  questionCompleted: boolean;
+  showAnswersEnabled: boolean;
+  questionStyles?: React.CSSProperties;
+  optionStyles?: React.CSSProperties;
+  showCorrectAnswers?: boolean;
+  timeMode?: boolean;
+  timeLimit?: number;
+  questionStartTime?: number;
 }
 
 const Questions: React.FC<QuestionsProps> = ({
   currentIndex,
   question,
   selectedOption,
-  hasSubmitted,
-  feedback,
   onSelectOption,
-  onSubmitAnswer,
-  onDiscussQuestion,
-  onNext,
-  isLastQuestion,
+  wrongChoices,
+  questionCompleted,
+  showAnswersEnabled,
+  questionStyles,
+  optionStyles,
 }) => (
   <div style={styles.container}>
-    <h2 style={styles.questionText}>{question.question}</h2>
+    <div style={styles.questionContainer}>
+      <h2 style={{...styles.questionText, ...questionStyles}}>
+        {question.question}
+      </h2>
+    </div>
 
     <div style={styles.optionsContainer}>
+      {/* Try Again Indicator */}
+      {showAnswersEnabled && wrongChoices.length > 0 && !questionCompleted && (
+        <div style={styles.tryAgainIndicator}>
+          Try again
+        </div>
+      )}
+
       {question.options.map((opt, idx) => {
         let btnStyle = { ...styles.optionButton };
+        let isDisabled = false;
 
-        if (!hasSubmitted) {
-          // Pre-submit: highlight selection
+        // Determine the state and styling for each option
+        if (!questionCompleted) {
+          // Question is still in progress
           if (selectedOption === idx) {
+            // Currently selected option (before submission or between attempts)
             btnStyle = { ...btnStyle, ...styles.optionSelected };
+          } else if (wrongChoices.includes(idx)) {
+            // Previously chosen wrong option - mark as wrong and disable
+            btnStyle = { ...btnStyle, ...styles.optionWrong };
+            isDisabled = true;
           }
         } else {
-          // Post-submit: style correct, wrong, and unselected
+          // Question is completed (correct answer found or max attempts reached)
           if (idx === question.correctAnswer) {
+            // Always highlight the correct answer when question is completed
             btnStyle = { ...btnStyle, ...styles.optionCorrect };
-          } else if (selectedOption === idx && idx !== question.correctAnswer) {
+          } else if (wrongChoices.includes(idx)) {
+            // Mark all wrong choices as incorrect
             btnStyle = { ...btnStyle, ...styles.optionWrong };
           } else {
-            // unselected choices remain transparent with white border
+            // Unselected options remain in default disabled state
             btnStyle = { ...btnStyle, ...styles.optionUnselectedDisabled };
           }
+          isDisabled = true; // All options are disabled when question is completed
+        }
+
+        // also apply font styles to each option button
+        btnStyle = { ...btnStyle, ...optionStyles };
+
+        // Override cursor style for disabled options
+        if (isDisabled) {
+          btnStyle = { ...btnStyle, cursor: 'not-allowed' };
         }
 
         return (
           <button
             key={`q${currentIndex}-opt${idx}`}
             style={btnStyle}
-            disabled={hasSubmitted}
-            onClick={() => !hasSubmitted && onSelectOption(idx)}
+            disabled={isDisabled}
+            onClick={() => {
+              if (!isDisabled) {
+                onSelectOption(idx);
+              }
+            }}
           >
             {opt}
           </button>
         );
       })}
     </div>
-
-    {!hasSubmitted && selectedOption !== null && (
-      <button style={styles.submitBtn} onClick={onSubmitAnswer}>
-        Submit
-      </button>
-    )}
-
-    {hasSubmitted && (
-      <div style={styles.feedbackArea}>
-        <p style={feedback.includes('Correct') ? styles.feedbackCorrect : styles.feedbackWrong}>
-          {feedback}
-        </p>
-
-        <div style={styles.answerBox}>
-          <p style={styles.answerLabel}>Correct Answer:</p>
-          <p style={styles.answerText}>{question.options[question.correctAnswer]}</p>
-          {question.explanation && (
-            <p style={styles.explanationText}>{question.explanation}</p>
-          )}
-        </div>
-
-        <div style={styles.postSubmitBtns}>
-          <button style={styles.aiBtn} onClick={onDiscussQuestion}>
-            Discuss with QuantAid
-          </button>
-          <button style={styles.nextBtn} onClick={onNext}>
-            {isLastQuestion ? 'Finish Quiz' : 'Next Question'}
-          </button>
-        </div>
-      </div>
-    )}
   </div>
 );
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
     width: '100%',
-    maxWidth: 700,
+    maxWidth: 900,
     textAlign: 'center',
   },
-  questionText: {
-    fontSize: '2rem',
-    marginBottom: 24,
-    lineHeight: 1.3,
+  questionContainer: {
+    width: '100%',
+    maxWidth: '900px',
+    margin: '0 auto',
+    textAlign: 'center',
   },
   optionsContainer: {
     display: 'flex',
     flexDirection: 'column',
     gap: 16,
+    width: '100%',
+    maxWidth: '600px',
+    margin: '0 auto',
+    position: 'relative',
   },
   optionButton: {
-    padding: '16px 24px',
-    fontSize: '1.1rem',
-    color: '#FFFFFF',
+    padding: '14px 24px',
     backgroundColor: 'transparent',
-    border: '2px solid #FFFFFF',
+    border: '2px solid #424E62',
     borderRadius: 8,
     cursor: 'pointer',
     transition: 'background-color 0.2s',
@@ -134,20 +144,20 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 1,
   },
   optionSelected: {
-    backgroundColor: 'rgba(86,99,149,0.8)',
-    border: '2px solid #FFFFFF',
+    backgroundColor: '#253462',
+    border: '2px solid #414D61',
   },
   optionCorrect: {
-    backgroundColor: 'rgba(0,200,0,0.8)',
-    border: '2px solid #00c800',
+    backgroundColor: 'rgba(29, 55, 35, 0.8)',
+    border: '2px solid #407440',
   },
   optionWrong: {
-    backgroundColor: 'rgba(200,0,0,0.8)',
-    border: '2px solid #c80000',
+    backgroundColor: 'rgba(51, 24, 27, 0.8)',
+    border: '2px solid #85131E',
   },
   optionUnselectedDisabled: {
     backgroundColor: 'transparent',
-    border: '2px solid #FFFFFF',
+    border: '2px solid #414D61',
     opacity: 1,
   },
   submitBtn: {
@@ -219,6 +229,19 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     borderRadius: 6,
     cursor: 'pointer',
+  },
+  tryAgainIndicator: {
+    position: 'absolute',
+    top: '-50px',
+    left: '0',
+    backgroundColor: '#A25313',
+    color: '#FFFFFF',
+    padding: '4px 8px',
+    borderRadius: 16,
+    fontSize: '16px',
+    fontWeight: '400',
+    fontFamily: "'Inter', sans-serif",
+    zIndex: 10,
   },
 };
 

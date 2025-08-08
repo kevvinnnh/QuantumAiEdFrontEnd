@@ -11,6 +11,9 @@ import QuantaidLogo from '../assets/quantaid-logo.svg';
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
+  // State to track if user is signing up (true) or logging in (false)
+  const [isSignUpMode, setIsSignUpMode] = useState(true);
   
   // Local state for manual sign-up fields (if needed)
   const [email, setEmail] = useState("");
@@ -32,6 +35,13 @@ const Login: React.FC = () => {
         });
         const userData = res.data;
         const userEmail = userData.email || '';
+        localStorage.setItem('loggedInUserEmail', userEmail);
+
+        // Dev route to profile creation
+        if (String(import.meta.env.VITE_FORCE_PROFILE_CREATION).toLowerCase() === 'true') {
+          navigate('/profile-creation');
+          return;
+        }
         
         // Send user info to the backend
         const backendResponse = await axios.post(
@@ -47,7 +57,6 @@ const Login: React.FC = () => {
           }
         );
         const redirectTo = backendResponse.data.redirect_to;
-        localStorage.setItem('loggedInUserEmail', userEmail);
         
         // If admin, redirect to admin dashboard
         if (userEmail.toLowerCase() === 'kh78@rice.edu') {
@@ -68,19 +77,95 @@ const Login: React.FC = () => {
     },
   });
   
-  const handleManualSignup = () => {
-    console.log("Manual signup with:", { email, fullName, password });
-    alert("Manual signup is not yet implemented.");
+  const handleManualSignupOrLogin = () => {
+    if (isSignUpMode) {
+      console.log("Manual signup with:", { email, fullName, password });
+      alert("Manual signup is not yet implemented.");
+    } else {
+      console.log("Manual login with:", { email, password });
+      alert("Manual login is not yet implemented.");
+    }
+  };
+
+  const handleForgotPassword = () => {
+    console.log("Forgot password for:", email);
+    alert("Forgot password functionality is not yet implemented.");
+  };
+
+  const toggleMode = () => {
+    setIsSignUpMode(!isSignUpMode);
+    // Clear form fields when switching modes
+    setEmail("");
+    setFullName("");
+    setPassword("");
   };
   
   return (
     <>
-      {/* Global style for spinner animation */}
+      {/* Global style for spinner animation and input consistency */}
       <style>
         {`
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+          
+          /* Force consistent input styling and alignment */
+          input[type="text"], input[type="email"], input[type="password"] {
+            background-color: rgba(116, 142, 203, 1) !important;
+            color: #1F1A2A !important;
+            outline: none !important;
+            border: none !important;
+            font-style: normal !important;
+            text-align: left !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            box-sizing: border-box !important;
+          }
+          
+          input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
+            background-color: rgba(116, 142, 203, 1) !important;
+            color: #1F1A2A !important;
+            outline: none !important;
+            border: none !important;
+            font-style: normal !important;
+            text-align: left !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+          
+          /* Fix placeholder text styling and alignment */
+          input[type="text"]::placeholder, input[type="email"]::placeholder, input[type="password"]::placeholder {
+            color: #1F1A2A !important;
+            opacity: 0.6 !important;
+            font-style: normal !important;
+            font-weight: normal !important;
+            text-align: left !important;
+            padding-left: 0 !important;
+            text-indent: 0 !important;
+          }
+          
+          /* Prevent browser autofill styling */
+          input:-webkit-autofill,
+          input:-webkit-autofill:hover,
+          input:-webkit-autofill:focus,
+          input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px rgba(116, 142, 203, 1) inset !important;
+            -webkit-text-fill-color: #1F1A2A !important;
+            background-color: rgba(116, 142, 203, 1) !important;
+            text-align: left !important;
+            padding-left: 1rem !important;
+          }
+
+          /* Responsive breakpoint - hide right column on screens smaller than 768px */
+          @media screen and (max-width: 768px) {
+            .right-column-responsive {
+              display: none !important;
+            }
+            .left-column-responsive {
+              flex: 1 !important;
+              width: 100% !important;
+            }
           }
         `}
       </style>
@@ -92,12 +177,15 @@ const Login: React.FC = () => {
       )}
       <div style={styles.container}>
         {/* LEFT COLUMN */}
-        <div style={styles.leftColumn}>
-          <div style={styles.logoStyle} aria-label="QuantAid Logo"></div>
+        <div style={styles.leftColumn} className="left-column-responsive">
+          <div style={styles.logoStyle} aria-label="Quantaid Logo"></div>
           <div style={styles.formContainer}>
-            {/* <h1 style={styles.brandTitle}>QuantAid</h1> */}
+            {/* Welcome back title for login mode */}
+            {!isSignUpMode && (
+              <h1 style={styles.welcomeTitle}>Welcome back!</h1>
+            )}
             
-            {/* Sign up with Google */}
+            {/* Sign up/Continue with Google */}
             <button
               style={styles.googleButton}
               onClick={() => login()}
@@ -109,7 +197,7 @@ const Login: React.FC = () => {
               }}
             >
               <img src={GoogleIcon} alt="Google icon" style={styles.googleIcon} />
-              <span>Sign up with Google</span>
+              <span>{isSignUpMode ? 'Sign up with Google' : 'Continue with Google'}</span>
             </button>
             
             {/* Divider */}
@@ -130,19 +218,26 @@ const Login: React.FC = () => {
                 style={styles.input}
               />
             </div>
-            <div style={styles.inputContainer}>
-              <label style={styles.label}>Name</label>
-              <p style={styles.labelText}>
-              This name will appear on your profile
-            </p>
-              <input
-                type="text"
-                placeholder="John/Jane Doe"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                style={styles.input}
-              />
-            </div>
+
+            {/* Name field - only show in sign up mode */}
+            {isSignUpMode && (
+              <div style={styles.inputContainer}>
+                <label style={styles.label}>Name</label>
+                <p style={styles.labelText}>
+                  This name will appear on your profile
+                </p>
+                <input
+                  key="name-input"
+                  type="text"
+                  placeholder="John/Jane Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  style={styles.input}
+                  autoComplete="name"
+                />
+              </div>
+            )}
+
             <div style={styles.inputContainer}>
               <label style={styles.label}>Password</label>
               <input
@@ -154,43 +249,61 @@ const Login: React.FC = () => {
               />
             </div>
 
-            <p style={styles.termsText}>
-              By clicking SIGN UP, you acknowledge that you have read and agree to QuantAid’s{' '}
-              <a
-                href="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={styles.linkStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.textDecoration = 'underline';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.textDecoration = 'none';
-                }}
-              >
-                Terms of Use
-              </a>{' '}
-              and{' '}
-              <a
-                href="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={styles.linkStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.textDecoration = 'underline';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.textDecoration = 'none';
-                }}
-              >
-                Privacy Policy
-              </a>.
-            </p>
+            {/* Terms text for sign up mode, Forgot password for login mode */}
+            {isSignUpMode ? (
+              <p style={styles.termsText}>
+                By clicking SIGN UP, you acknowledge that you have read and agree to QuantAid's{' '}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={styles.linkStyle}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.textDecoration = 'underline';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.textDecoration = 'none';
+                  }}
+                >
+                  Terms of Use
+                </a>{' '}
+                and{' '}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={styles.linkStyle}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.textDecoration = 'underline';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.textDecoration = 'none';
+                  }}
+                >
+                  Privacy Policy
+                </a>.
+              </p>
+            ) : (
+              <div style={styles.forgotPasswordContainer}>
+                <button
+                  onClick={handleForgotPassword}
+                  style={styles.forgotPasswordLink}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.textDecoration = 'underline';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.textDecoration = 'none';
+                  }}
+                >
+                  Forgot my password
+                </button>
+              </div>
+            )}
             
-            {/* Sign Up Button */}
+            {/* Sign Up/Log In Button */}
             <button
               style={styles.signupButton}
-              onClick={handleManualSignup}
+              onClick={handleManualSignupOrLogin}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#2C5CE6';
               }}
@@ -198,29 +311,50 @@ const Login: React.FC = () => {
                 e.currentTarget.style.backgroundColor = '#3B73FF';
               }}
             >
-              SIGN UP
+              {isSignUpMode ? 'SIGN UP' : 'LOG IN'}
             </button>
 
+            {/* Toggle between sign up and log in */}
             <p style={styles.loginLink}>
-              Already have an account?{' '}
-              <a 
-                href="/login" 
-                style={styles.linkStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.textDecoration = 'underline';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.textDecoration = 'none';
-                }}
-              >
-                Log in
-              </a>
+              {isSignUpMode ? (
+                <>
+                  Already have an account?{' '}
+                  <button 
+                    onClick={toggleMode}
+                    style={styles.toggleButton}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.textDecoration = 'underline';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.textDecoration = 'none';
+                    }}
+                  >
+                    Log in
+                  </button>
+                </>
+              ) : (
+                <>
+                  Don't have an account?{' '}
+                  <button 
+                    onClick={toggleMode}
+                    style={styles.toggleButton}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.textDecoration = 'underline';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.textDecoration = 'none';
+                    }}
+                  >
+                    Sign up
+                  </button>
+                </>
+              )}
             </p>
           </div>
         </div>
         
         {/* RIGHT COLUMN */}
-        <div style={styles.rightColumn}>
+        <div style={styles.rightColumn} className="right-column-responsive">
           <img src={LoginGraphic} style={styles.rightContent} />
         </div>
       </div>
@@ -261,6 +395,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     left: '15px',
     height: '19px',
     width: '70px',
+    minHeight: '19px',
+    minWidth: '70px',
     zIndex: 1000,
     backgroundColor: '#F1E0E0',
     mask: `url(${QuantaidLogo}) no-repeat center`,
@@ -289,6 +425,14 @@ const styles: { [key: string]: React.CSSProperties } = {
   formContainer: {
     maxWidth: '480px',
     width: '100%',
+  },
+  welcomeTitle: {
+    marginBottom: '3rem',
+    fontSize: '2.2rem',
+    fontWeight: '400',
+    color: '#F1E0E0',
+    textAlign: 'center',
+    fontFamily: "'Inter', sans-serif",
   },
   brandTitle: {
     marginBottom: '3rem',
@@ -427,11 +571,37 @@ const styles: { [key: string]: React.CSSProperties } = {
     lineHeight: 1.4,
     textAlign: 'left',
   },
+  forgotPasswordContainer: {
+    textAlign: 'left',
+    marginBottom: '0.5rem',
+  },
+  forgotPasswordLink: {
+    background: 'none',
+    border: 'none',
+    color: '#7093CD',
+    textDecoration: 'underline',
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+    fontFamily: "'Inter', sans-serif",
+    padding: 0,
+    fontWeight: '400',
+  },
   loginLink: {
     marginTop: '0rem',
     fontSize: '1rem',
     color: '#C1C5D6',
     textAlign: 'center',
+    fontWeight: '400',
+  },
+  toggleButton: {
+    background: 'none',
+    border: 'none',
+    color: '#7093CD',
+    textDecoration: 'none',
+    fontSize: '1rem',
+    cursor: 'pointer',
+    fontFamily: "'Inter', sans-serif",
+    padding: 0,
     fontWeight: '400',
   },
   linkStyle: {

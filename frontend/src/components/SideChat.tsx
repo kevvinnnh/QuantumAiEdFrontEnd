@@ -238,7 +238,7 @@ const SideChat: React.FC<SideChatProps> = ({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    position: 'absolute',
+    position: 'fixed',
     top: 0,
     right: 0,
     bottom: 0,
