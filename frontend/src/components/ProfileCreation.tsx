@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { IoMdClose } from "react-icons/io";
 import { LiaArrowLeftSolid } from "react-icons/lia";
 import QuizProgressBar from './QuizProgressBar';
-// import welcomeVideo from '../assets/welcome.mp4';
+import welcomeVideo from '../assets/welcome.mp4';
 // import assistantImage from '../assets/assistant.png';
 
 /** STEP DATA:
@@ -634,7 +634,7 @@ const DefaultStep: React.FC<{
 const ProfileCreation: React.FC = () => {
   const [userId, setUserId] = useState<string>('');
   const [step, setStep] = useState<number>(0);
-  // const [showVideoPopup, setShowVideoPopup] = useState<boolean>(false);
+  const [showVideoPopup, setShowVideoPopup] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
@@ -765,8 +765,8 @@ const ProfileCreation: React.FC = () => {
       .then((response) => {
         console.log('Profile saved:', response.data);
         navigate('/map')
-        // // Show the welcome video popup
-        // setShowVideoPopup(true);
+        // Show the welcome video popup
+        setShowVideoPopup(true);
       })
       .catch((error) => {
         console.error('Error saving profile:', error);
@@ -799,32 +799,32 @@ const ProfileCreation: React.FC = () => {
   }
 
   /** ------------------ VIDEO POPUP ------------------ **/
-  // if (showVideoPopup) {
-  //   return (
-  //     <div style={styles.videoOverlay}>
-  //       <h2 style={{ color: '#fff', marginBottom: '20px', fontSize: '2rem' }}>
-  //         Welcome to QuantumAiEd!
-  //       </h2>
-  //       <video
-  //         width="80%"
-  //         autoPlay
-  //         playsInline
-  //         controls
-  //         onEnded={() => navigate('/map')}
-  //         style={{ borderRadius: '8px' }}
-  //       >
-  //         <source src={welcomeVideo} type="video/mp4" />
-  //         Your browser does not support the video tag.
-  //       </video>
-  //       <button
-  //         onClick={() => navigate('/map')}
-  //         style={styles.skipVideoButton}
-  //       >
-  //         Skip Video
-  //       </button>
-  //     </div>
-  //   );
-  // }
+  if (showVideoPopup) {
+    return (
+      <div style={styles.videoOverlay}>
+        <h2 style={{ color: '#fff', marginBottom: '20px', fontSize: '2rem' }}>
+          Welcome to QuantumAiEd!
+        </h2>
+        <video
+          width="80%"
+          autoPlay
+          playsInline
+          controls
+          onEnded={() => navigate('/map')}
+          style={{ borderRadius: '8px' }}
+        >
+          <source src={welcomeVideo} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        <button
+          onClick={() => navigate('/map')}
+          style={styles.skipVideoButton}
+        >
+          Skip Video
+        </button>
+      </div>
+    );
+  }
 
   // Render current step
     const currentStepConfig = stepConfigs[step];
@@ -1311,7 +1311,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     maxWidth: '700px',
     marginBottom: '2rem',
   },
-  /** Video Overlay **/
   videoOverlay: {
     position: 'fixed',
     top: 0,
