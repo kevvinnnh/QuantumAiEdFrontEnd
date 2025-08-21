@@ -3,6 +3,8 @@
 import React, { useState, useRef } from 'react';
 import { MdClose, MdArrowBackIos } from 'react-icons/md';
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 interface FeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -83,16 +85,46 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    // Here you would typically send the feedback to your backend
-    console.log('Submitting feedback:', {
-      category: selectedCategory,
-      feedback: feedbackText,
-      screenshot: selectedFile
-    });
-    
-    // For now, just close the modal
-    alert('Thank you for your feedback!');
-    handleClose();
+    try {
+      let response;
+      if (selectedFile) {
+        // Send as multipart/form-data if screenshot is included
+        const formData = new FormData();
+        formData.append('category', selectedCategory);
+        formData.append('feedback', feedbackText);
+        formData.append('screenshot', selectedFile);
+
+        response = await fetch(`${BACKEND_URL}/submit_feedback`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        });
+      } else {
+        // Send as JSON if no screenshot
+        response = await fetch(`${BACKEND_URL}/submit_feedback`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            category: selectedCategory,
+            feedback: feedbackText,
+          }),
+        });
+      }
+
+      const result = await response.json();
+      if (response.ok) {
+        alert('Thank you for your feedback!');
+        handleClose();
+      } else {
+        alert(result.error || 'Failed to submit feedback.');
+      }
+    } catch (err) {
+      alert('An error occurred while submitting feedback.');
+      console.error(err);
+    }
   };
 
   if (!isOpen) return null;

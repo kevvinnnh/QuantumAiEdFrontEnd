@@ -721,42 +721,22 @@ const ProfileCreation: React.FC = () => {
 
   /** ------------------ SUBMIT PROFILE ------------------ **/
   const handleSubmit = () => {
-    // Example data transformation if your backend expects certain fields:
-    let finalEducationLevel = '';
-    let finalMajor = formData.subjects.join(', ');
-    let finalKnowsQuantum = 'No'; // Example placeholder
-    let finalCodingExp = formData.codingExperience;
-    let finalHobbies = formData.favoriteHobbies || [];
-
-    // If user selected "HighSchool"
-    if (formData.educationCategory === 'HighSchool') {
-      finalEducationLevel = formData.educationLevel;
-    } else if (formData.educationCategory === 'College') {
-      finalEducationLevel = formData.educationLevel;
-    } else {
-      finalEducationLevel = formData.otherEducationLevel;
-    }
-
-    if (
-      formData.subjects.includes('Other (please specify)') &&
-      formData.otherSubject
-    ) {
-      finalMajor += `, ${formData.otherSubject}`;
-    }
-
     const dataToSend = {
       user_id: userId,
       whereHeard: formData.whereHeard,
       otherWhereHeard: formData.otherWhereHeard,
-      educationLevel: finalEducationLevel,
-      major: finalMajor,
-      knowsQuantumComputing: finalKnowsQuantum,
-      codingExperience: finalCodingExp,
-      favoriteHobbies: finalHobbies,
+      educationCategory: formData.educationCategory,
+      educationLevel: formData.educationLevel,
+      otherEducationLevel: formData.otherEducationLevel,
+      subjects: formData.subjects,
+      otherSubject: formData.otherSubject,
+      favoriteHobbies: formData.favoriteHobbies,
       customHobbies: formData.customHobbies,
+      codingExperience: formData.codingExperience,
+      //TODO: hardcoded defaults below should get added to the form? 
+      // knowsQuantumComputing: 'No',
+      // use_generic_analogies: true,
     };
-
-    console.log('DEBUG: Submitting profile =>', dataToSend);
 
     axios
       .post(`${backendUrl}/save_profile`, dataToSend, {
@@ -764,8 +744,7 @@ const ProfileCreation: React.FC = () => {
       })
       .then((response) => {
         console.log('Profile saved:', response.data);
-        navigate('/map')
-        // Show the welcome video popup
+        navigate('/map');
         setShowVideoPopup(true);
       })
       .catch((error) => {
