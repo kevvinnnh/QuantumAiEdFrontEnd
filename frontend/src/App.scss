@@ -1,0 +1,180 @@
+/**
+ * APP.SCSS
+ */
+
+@use './styles/variables' as *;
+
+// .concept-book {
+//   text-align: left;
+
+//   h3, h4, h5, h6 {
+//     text-align: center;
+//   }
+// }
+
+// .interactive-word {
+//   position: relative;
+//   color: color(secondary);
+//   text-decoration: underline dotted;
+//   cursor: pointer;
+
+//   &:hover::after {
+//     content: attr(data-term);
+//     position: absolute;
+//     top: 110%;
+//     left: 50%;
+//     transform: translateX(-50%);
+//     background-color: color(secondary);
+//     color: color(background-light);
+//     padding: space(sm) space(md);
+//     border-radius: 5px;
+//     max-width: 200px;
+//     text-align: center;
+//     white-space: normal;
+//     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+//     z-index: z(dropdown);
+//     font-size: font-size(sm);
+//   }
+// }
+
+// ==========================================
+// COORDINATION STYLES FOR DASHBOARD
+// ==========================================
+
+// Hardware acceleration for coordinated elements
+.sidebar-coordinated,
+.main-panel-coordinated,
+.global-chat-coordinated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, width, margin-left;
+}
+
+.sidebar-coordinated {
+  transition: width transition(normal) map-get($transitions, easing);
+}
+
+.main-panel-coordinated {
+  transition: all transition(normal) map-get($transitions, easing) !important;
+}
+
+.global-chat-coordinated {
+  transition: transform transition(normal) map-get($transitions, easing);
+}
+
+// ==========================================  
+// COORDINATED DASHBOARD HOVER EFFECTS
+// ==========================================
+
+.nav-button:hover {
+  background-color: color(background-dark-secondary) !important;
+}
+
+.nav-button.nav-button-active {
+  background-color: color(background-dark-secondary) !important;
+  color: color(text-primary) !important;
+
+  &:hover {
+    background-color: color(background-dark-secondary) !important;
+    color: color(text-primary) !important;
+  }
+}
+
+.breadcrumb-button:hover {
+  text-decoration: underline !important;
+}
+
+.profile-dropdown-item:hover {
+  background-color: darken-color(color(background-dark-secondary), 10%) !important;
+}
+
+.feedback-button:hover:not(:disabled) {
+  opacity: 0.9 !important;
+  transition: opacity transition(fast) ease;
+}
+
+.profile-button:hover {
+  background-color: color(background-dark-secondary) !important;
+}
+
+.topic-button:hover:not(:disabled) {
+  background-color: color(hover-dark) !important;
+  border: 2px solid color(border-dark) !important;
+  outline: none !important;
+}
+
+.global-chat-icon-btn:hover {
+  color: #dddddd !important;
+}
+
+.global-chat-send-btn:hover:not(:disabled) {
+  background-color: lighten-color(color(secondary), 10%) !important;
+}
+
+.global-chat-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.global-chat-input:focus {
+  border-color: lighten-color(color(secondary), 20%) !important;
+}
+
+.resizer:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+// ==========================================
+// SEARCH COMPONENT STYLES
+// ==========================================
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: font-weight(normal);
+  font-size: font-size(sm);
+}
+
+.search-input:focus::placeholder {
+  opacity: 0;
+  transition: opacity transition(fast) ease;
+}
+
+.search-container:focus-within {
+  border-color: color(border-dark-hover);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+// ==========================================
+// RESPONSIVE BREAKPOINTS
+// ==========================================
+
+@include breakpoint(wide) {
+  .sidebar-coordinated,
+  .global-chat-coordinated {
+    transition-duration: transition(normal);
+  }
+}
+
+@include breakpoint(tablet) {
+  .global-chat-coordinated {
+    width: calc(100vw - 90px) !important;
+    max-width: none;
+  }
+}
+
+// Performance optimizations
+.dashboard-content {
+  contain: layout style;
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+@include breakpoint(desktop) {
+  .main-panel-coordinated {
+    min-width: 250px;
+  }
+  
+  .dashboard-content {
+    padding: space(lg) space(xxxl);
+  }
+}

@@ -1,0 +1,239 @@
+// ======================================================
+// src/components/TutorialPopup/TutorialPopup.module.scss
+// ======================================================
+
+@use '../../styles/variables' as *;
+
+.container {
+  position: fixed;
+  width: 300px;
+  border: 1px solid #2F3C57;
+  border-radius: 10px;
+  z-index: z(tutorial);
+  pointer-events: auto;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.arrowWrapper {
+  position: absolute;
+  top: 35px;
+  left: 290px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.arrowOuter {
+  position: absolute;
+  top: 0;
+  left: 8px;
+  border-left: 16px solid #2B3854;
+  border-top: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-bottom: 12px solid transparent;
+}
+
+.arrowInner {
+  position: absolute;
+  top: 0;
+  left: 6px;
+  border-left: 16px solid #030C34;
+  border-top: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-bottom: 12px solid transparent;
+}
+
+.popup {
+  position: relative;
+  align-items: center;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: z(base);
+  transition: transform transition(fast) ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.imageContainer {
+  min-height: 200px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: #030C34;
+}
+
+.image {
+  width: calc(100% - 48px);
+  height: 128px;
+  min-height: 128px;
+  max-height: 128px;
+  margin: space(md) auto;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
+}
+
+.contentContainer {
+  padding: space(md) space(md) space(lg) space(md);
+  background: #253655;
+}
+
+.tutorialText {
+  margin-bottom: space(lg);
+}
+
+.tutorialTitle {
+  color: #F2F2F2;
+  font-family: font-family(primary);
+  font-weight: font-weight(medium);
+  font-size: font-size(base);
+  margin-bottom: space(sm);
+}
+
+.tutorialDescription {
+  color: #9CB0BC;
+  font-family: font-family(primary);
+  font-size: font-size(sm);
+  line-height: map-get($line-heights, relaxed);
+}
+
+.navRow {
+  display: flex;
+  position: relative;
+  justify-content: space-between;
+  min-height: 40px;
+}
+
+.buttonContainer {
+  min-width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.backButton {
+  background: transparent;
+  color: #A8BAD8;
+  border: 1px solid #A8BAD8;
+  border-radius: 6px;
+  padding: 6px space(sm);
+  font-family: font-family(primary);
+  font-weight: font-weight(medium);
+  font-size: font-size(base);
+  cursor: pointer;
+  transition: all transition(fast) ease;
+
+  &:hover {
+    background-color: rgba(168, 186, 216, 0.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.nextButton {
+  background: #A8BAD8;
+  color: #030C34;
+  border: none;
+  border-radius: 4px;
+  padding: 6px space(sm);
+  font-family: font-family(primary);
+  font-weight: font-weight(medium);
+  font-size: font-size(base);
+  cursor: pointer;
+  transition: all transition(fast) ease;
+
+  &:hover {
+    background-color: lighten-color(#A8BAD8, 5%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.dotsRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  margin: space(xxxl) 0 0 0;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #525D67;
+  transition: background transition(fast) ease;
+  display: inline-block;
+
+  &.active {
+    background: #A8BAD8;
+  }
+}
+
+// Hidden image preloader
+.hiddenImage {
+  display: none;
+}
+
+// Responsive design
+@include breakpoint(mobile) {
+  .container {
+    width: 280px;
+    margin: 0 space(sm);
+  }
+
+  .arrowWrapper {
+    left: 270px;
+  }
+
+  .image {
+    width: calc(100% - 32px);
+    height: 112px;
+    min-height: 112px;
+    max-height: 112px;
+  }
+
+  .imageContainer {
+    min-height: 180px;
+  }
+
+  .tutorialTitle {
+    font-size: font-size(sm);
+  }
+
+  .tutorialDescription {
+    font-size: font-size(xs);
+  }
+
+  .backButton,
+  .nextButton {
+    font-size: font-size(sm);
+    padding: 4px 6px;
+  }
+}

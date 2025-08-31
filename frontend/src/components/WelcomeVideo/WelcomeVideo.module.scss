@@ -1,0 +1,53 @@
+// ====================================================
+// src/components/WelcomeVideo/WelcomeVideo.module.scss
+// ====================================================
+
+@use '../../styles/variables' as *;
+
+.container {
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: z(tutorial);
+  padding: space(xl);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.video {
+  width: 80%;
+  height: 100%;
+  border-radius: 8px;
+  max-width: layout(max-content-width);
+}
+
+.skipButton {
+  margin-top: space(xl);
+  padding: space(sm) space(xl);
+  background-color: color(secondary);
+  color: color(text-primary);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  transition: all transition(normal) map-get($transitions, bounce);
+
+  &:hover {
+    background-color: color(secondary-light);
+    transform: scale(1.05);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}

@@ -1,0 +1,255 @@
+// ==============================================
+// src/components/Questions/Questions.module.scss
+// ==============================================
+
+@use '../../styles/variables' as *;
+
+.container {
+  width: 100%;
+  max-width: 900px;
+  text-align: center;
+}
+
+.questionContainer {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.questionText {
+  font-family: font-family(primary);
+  color: color(text-primary);
+  font-size: font-size(xl);
+  line-height: map-get($line-heights, relaxed);
+  margin-bottom: space(xl);
+}
+
+.optionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: space(lg);
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.optionButton {
+  padding: space(md) space(xxxl);
+  background-color: transparent;
+  border: 2px solid #424E62;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color transition(fast) ease;
+  text-align: left;
+  appearance: none;
+  opacity: 1;
+  font-family: font-family(primary);
+  font-size: font-size(base);
+  color: color(text-primary);
+
+  &:hover:not(:disabled) {
+    background-color: rgba(66, 78, 98, 0.2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.optionSelected {
+  background-color: #253462;
+  border: 2px solid #414D61;
+}
+
+.optionCorrect {
+  background-color: rgba(29, 55, 35, 0.8);
+  border: 2px solid #407440;
+}
+
+.optionWrong {
+  background-color: rgba(51, 24, 27, 0.8);
+  border: 2px solid #85131E;
+}
+
+.optionUnselectedDisabled {
+  background-color: transparent;
+  border: 2px solid #414D61;
+  opacity: 1;
+}
+
+.submitBtn {
+  margin-top: space(xxxl);
+  padding: space(md) 28px;
+  font-size: font-size(lg);
+  background-color: color(primary);
+  color: color(text-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: font-family(primary);
+  transition: background-color transition(fast) ease;
+
+  &:hover {
+    background-color: darken-color(color(primary), 10%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.feedbackArea {
+  margin-top: space(xxxl);
+}
+
+.feedbackCorrect {
+  color: #00c800;
+  font-size: 1.3rem;
+  font-weight: font-weight(semibold);
+  font-family: font-family(primary);
+}
+
+.feedbackWrong {
+  color: #c80000;
+  font-size: 1.3rem;
+  font-weight: font-weight(semibold);
+  font-family: font-family(primary);
+}
+
+.answerBox {
+  margin-top: space(xl);
+  padding: space(lg);
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  text-align: left;
+}
+
+.answerLabel {
+  margin: 0;
+  margin-bottom: 4px;
+  font-weight: font-weight(semibold);
+  color: color(text-primary);
+  font-family: font-family(primary);
+}
+
+.answerText {
+  margin: 0;
+  margin-bottom: space(sm);
+  color: color(text-primary);
+  font-size: font-size(lg);
+  font-family: font-family(primary);
+}
+
+.explanationText {
+  margin: 0;
+  color: #DDDDDD;
+  font-size: 0.95rem;
+  line-height: map-get($line-heights, relaxed);
+  font-family: font-family(primary);
+}
+
+.postSubmitBtns {
+  margin-top: space(xxxl);
+  display: flex;
+  justify-content: center;
+  gap: space(lg);
+}
+
+.aiBtn {
+  padding: space(sm) space(xl);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: color(text-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: font-family(primary);
+  transition: background-color transition(fast) ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.nextBtn {
+  padding: space(sm) space(xl);
+  background-color: color(primary);
+  color: color(text-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: font-family(primary);
+  transition: background-color transition(fast) ease;
+
+  &:hover {
+    background-color: darken-color(color(primary), 10%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.tryAgainIndicator {
+  position: absolute;
+  top: -50px;
+  left: 0;
+  background-color: #A25313;
+  color: color(text-primary);
+  padding: 4px space(sm);
+  border-radius: 16px;
+  font-size: font-size(base);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  z-index: z(base);
+}
+
+// Responsive design
+@include breakpoint(tablet) {
+  .container {
+    max-width: 100%;
+    padding: 0 space(lg);
+  }
+
+  .optionsContainer {
+    max-width: 100%;
+  }
+
+  .optionButton {
+    padding: space(sm) space(xl);
+  }
+
+  .postSubmitBtns {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+@include breakpoint(mobile) {
+  .questionText {
+    font-size: font-size(lg);
+  }
+
+  .optionButton {
+    padding: space(sm) space(lg);
+    font-size: font-size(sm);
+  }
+
+  .tryAgainIndicator {
+    top: -40px;
+    font-size: font-size(sm);
+  }
+}

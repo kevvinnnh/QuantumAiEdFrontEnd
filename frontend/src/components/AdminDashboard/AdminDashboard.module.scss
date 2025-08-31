@@ -1,0 +1,193 @@
+// ========================================================
+// src/components/AdminDashboard/AdminDashboard.module.scss
+// ========================================================
+
+@use '../../styles/variables' as *;
+
+.container {
+  padding: space(xl);
+  background: color(background-light);
+  color: color(text-dark);
+  min-height: 100vh;
+  font-family: font-family(primary);
+}
+
+.title {
+  font-size: font-size(xxxl);
+  color: color(text-dark);
+  margin-bottom: space(lg);
+  font-weight: font-weight(semibold);
+}
+
+.subtitle {
+  font-size: font-size(base);
+  color: color(text-medium);
+  margin-bottom: space(huge);
+}
+
+.section {
+  margin-bottom: space(xxxxl);
+  background: color(background-light-card);
+  padding: space(xxxl);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+  font-size: font-size(xxl);
+  color: color(text-dark);
+  margin-bottom: space(xl);
+  font-weight: font-weight(semibold);
+}
+
+.input {
+  width: 100%;
+  padding: space(sm);
+  margin-bottom: space(sm);
+  border: 1px solid color(border-light);
+  border-radius: 4px;
+  font-size: font-size(base);
+  font-family: font-family(primary);
+  color: color(text-dark);
+  background: color(background-light-card);
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: color(secondary);
+    box-shadow: 0 0 0 2px rgba(86, 99, 149, 0.2);
+  }
+
+  &::placeholder {
+    color: color(text-light);
+  }
+}
+
+.textarea {
+  width: 100%;
+  padding: space(sm);
+  margin-bottom: space(sm);
+  border: 1px solid color(border-light);
+  border-radius: 4px;
+  font-size: font-size(base);
+  font-family: font-family(primary);
+  color: color(text-dark);
+  background: color(background-light-card);
+  resize: vertical;
+  min-height: 100px;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: color(secondary);
+    box-shadow: 0 0 0 2px rgba(86, 99, 149, 0.2);
+  }
+
+  &::placeholder {
+    color: color(text-light);
+  }
+}
+
+.textareaLarge {
+  height: 150px;
+}
+
+.fileInput {
+  margin-bottom: space(sm);
+  padding: space(sm);
+  border: 1px solid color(border-light);
+  border-radius: 4px;
+  background: color(background-light-card);
+  font-family: font-family(primary);
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: color(secondary);
+    box-shadow: 0 0 0 2px rgba(86, 99, 149, 0.2);
+  }
+}
+
+.button {
+  padding: space(sm) space(xl);
+  background-color: color(secondary);
+  color: color(text-primary);
+  border: none;
+  border-radius: 4px;
+  font-size: font-size(base);
+  font-family: font-family(primary);
+  font-weight: font-weight(medium);
+  cursor: pointer;
+  transition: all transition(fast) ease;
+
+  &:hover {
+    background-color: darken-color(color(secondary), 10%);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(86, 99, 149, 0.3);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  margin-top: space(xl);
+  padding: space(sm);
+  background-color: #e0ffe0;
+  border: 1px solid #4caf50;
+  border-radius: 4px;
+  color: #2e7d2e;
+  font-family: font-family(primary);
+}
+
+// Responsive design
+@include breakpoint(tablet) {
+  .container {
+    padding: space(lg);
+  }
+
+  .section {
+    padding: space(xl);
+  }
+
+  .title {
+    font-size: font-size(xxl);
+  }
+
+  .sectionTitle {
+    font-size: font-size(xl);
+  }
+}
+
+@include breakpoint(mobile) {
+  .container {
+    padding: space(md);
+  }
+
+  .section {
+    padding: space(lg);
+    margin-bottom: space(xxxl);
+  }
+
+  .title {
+    font-size: font-size(xl);
+  }
+
+  .sectionTitle {
+    font-size: font-size(lg);
+  }
+
+  .button {
+    width: 100%;
+    padding: space(md) space(lg);
+  }
+}

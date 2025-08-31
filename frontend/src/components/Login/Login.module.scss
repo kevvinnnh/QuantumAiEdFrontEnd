@@ -1,0 +1,350 @@
+// ======================================
+// src/components/Login/Login.module.scss
+// ======================================
+
+@use '../../styles/variables' as *;
+
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: z(modal);
+}
+
+.spinner {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #010117;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  background-color: transparent;
+  height: 100vh;
+}
+
+.logoStyle {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  height: 19px;
+  width: 70px;
+  min-height: 19px;
+  min-width: 70px;
+  z-index: z(header);
+  background-color: #F1E0E0;
+}
+
+.leftColumn {
+  position: relative;
+  flex: 1;
+  background-color: #1F305F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: space(xxxxl);
+}
+
+.rightColumn {
+  flex: 1;
+  background-color: color(background-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: color(text-primary);
+  padding: space(xxxxl);
+}
+
+.formContainer {
+  max-width: 480px;
+  width: 100%;
+}
+
+.welcomeTitle {
+  margin-bottom: space(huge);
+  font-size: 2.2rem;
+  font-weight: font-weight(normal);
+  color: #F1E0E0;
+  text-align: center;
+  font-family: font-family(primary);
+}
+
+// Google Sign-In button following GSI guidelines
+.googleButton {
+  user-select: none;
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  background-color: #F2F2F2;
+  background-image: none;
+  border: none;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #1F1F1F;
+  font-family: font-family(roboto);
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  letter-spacing: 0.25px;
+  text-align: center;
+  white-space: nowrap;
+  height: 48px;
+  width: 400px;
+  max-width: 400px;
+  min-width: min-content;
+  padding: 0 space(md);
+  position: relative;
+  vertical-align: middle;
+  cursor: pointer;
+  outline: none;
+  overflow: hidden;
+  transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s;
+
+  &:hover {
+    background-color: #DFE1E3;
+  }
+}
+
+.googleIcon {
+  margin-right: 0.7rem;
+  height: 26px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: space(xxxl) 0;
+  margin-top: 3.4rem;
+  margin-bottom: 3.4rem;
+  width: 100%;
+}
+
+.line {
+  flex: 1;
+  height: 1px;
+  background-color: #ccc;
+  margin: 0 -1rem;
+  margin-top: 0.03rem;
+}
+
+.dividerText {
+  margin: 0 space(lg);
+  color: #BFC3D9;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  background-color: #1F305F;
+  padding: 0 space(sm);
+  position: relative;
+  z-index: z(base);
+}
+
+.inputContainer {
+  text-align: left;
+  margin-bottom: space(xxl);
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #F1E0E0;
+  font-size: 1.3rem;
+}
+
+.input {
+  width: 100%;
+  padding: space(lg);
+  border-radius: 4px;
+  border: none;
+  font-size: 1.2rem;
+  font-family: font-family(primary);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  background-color: rgba(116, 142, 203, 1);
+  color: #1F1A2A;
+  outline: none;
+  box-sizing: border-box;
+
+  &:focus {
+    background-color: rgba(116, 142, 203, 1);
+    color: #1F1A2A;
+    outline: none;
+    border: none;
+  }
+
+  &::placeholder {
+    color: #1F1A2A;
+    opacity: 0.6;
+    font-style: normal;
+    font-weight: normal;
+  }
+
+  // Prevent browser autofill styling
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus,
+  &:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px rgba(116, 142, 203, 1) inset;
+    -webkit-text-fill-color: #1F1A2A;
+    background-color: rgba(116, 142, 203, 1);
+  }
+}
+
+.signupButton {
+  background-color: #2C5CE6;
+  color: color(text-primary);
+  padding: 1.2rem;
+  width: 100%;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 1.3rem;
+  font-family: font-family(primary);
+  font-weight: font-weight(medium);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: space(xxxl) 0;
+  transition: all 0.1s ease 0.05s;
+
+  &:hover {
+    background-color: #1F4ADB;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.labelText {
+  font-size: 0.85rem;
+  color: #F1E0E0;
+  line-height: 1.4;
+  margin-top: -0.4rem;
+  margin-bottom: 0.4rem;
+  text-align: left;
+}
+
+.termsText {
+  font-size: 0.9rem;
+  color: #B4B6BE;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.forgotPasswordContainer {
+  text-align: left;
+  margin-bottom: space(sm);
+}
+
+.forgotPasswordLink {
+  background: none;
+  border: none;
+  color: #A4C5FF;
+  text-decoration: underline;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: font-family(primary);
+  padding: 0;
+  font-weight: font-weight(normal);
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.loginLink {
+  margin-top: 0;
+  font-size: font-size(base);
+  color: #C1C5D6;
+  text-align: center;
+  font-weight: font-weight(normal);
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  color: #A4C5FF;
+  text-decoration: none;
+  font-size: font-size(base);
+  cursor: pointer;
+  font-family: font-family(primary);
+  padding: 0;
+  font-weight: font-weight(normal);
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.linkStyle {
+  color: #A4C5FF;
+  text-decoration: underline;
+  font-weight: font-weight(normal);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.rightContent {
+  text-align: center;
+  max-width: 480px;
+}
+
+// Responsive breakpoints
+@include breakpoint(tablet) {
+  .rightColumn {
+    display: none;
+  }
+  
+  .leftColumn {
+    flex: 1;
+    width: 100%;
+  }
+}
+
+@include breakpoint(mobile) {
+  .leftColumn {
+    padding: space(xl);
+  }
+
+  .googleButton {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .welcomeTitle {
+    font-size: font-size(xxxl);
+    margin-bottom: space(xxxl);
+  }
+
+  .divider {
+    margin: space(xxl) 0;
+  }
+}

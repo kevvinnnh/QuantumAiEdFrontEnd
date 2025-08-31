@@ -1,0 +1,336 @@
+/**
+ * VARIABLES.SCSS
+ * 
+ * Design token definitions for the Quantaid application.
+ * 
+ * This file consolidates all design decisions from your existing components:
+ * - Dashboard (primary dark theme): #030E29 background, #3B89FF primary
+ * - Login/Profile (secondary light theme): #E8E3F3 background, #566395 accent  
+ * - Legacy Vite colors: Maintained for migration compatibility
+ * 
+ * DESIGN DECISIONS MADE:
+ * 1. Dashboard dark theme is PRIMARY (most complex component)
+ * 2. Login light theme becomes secondary for auth flows
+ * 3. Consistent spacing scale extracted from existing patterns
+ * 4. Animation values standardized from coordinated behavior patterns
+ * 5. Z-index scale prevents overlay conflicts
+ * 
+ * USAGE:
+ * @use 'variables' as *;
+ * color: color(primary);
+ * margin: space(lg);
+ */
+
+@use 'sass:map';
+@use 'sass:color';
+
+// ===========================================
+// COLOR SYSTEM
+// ===========================================
+
+$colors: (
+  // PRIMARY: Dashboard Theme Colors (Dark)
+  primary: #3B89FF,                    
+  primary-light: #8CBAFF,              
+  primary-dark: #071746,               
+  
+  // SECONDARY: Auth Theme Colors (Light)  
+  secondary: #566395,                  
+  secondary-light: #A487AE,            
+  
+  // BACKGROUND SYSTEM
+  // Dark theme (Dashboard)
+  background-dark: #030E29,            
+  background-dark-secondary: #032242,  
+  background-dark-card: transparent,   
+  background-dark-modal: #FFFFFF,      
+  
+  // Light theme (Login/Profile)  
+  background-light: #E8E3F3,           
+  background-light-card: #FFFFFF,      
+  background-light-gradient-start: #f0f2f5,  
+  background-light-gradient-end: #ffffff,    
+  
+  // Chat specific
+  chat-background: #f8f8f8,            
+  chat-header: #eee,                   
+  chat-messages: #fefefe,              
+  chat-bubble-default: #e1e1e1,        
+  chat-bubble-assistant: #d1e7dd,      
+  chat-bubble-user: #f8d7da,           
+  
+  // TEXT SYSTEM
+  // Dark theme text
+  text-primary: #FFFFFF,               
+  text-secondary: #F5F5FB,             
+  text-muted: #A2A2B1,                 
+  text-placeholder: #7A7C92,           
+  text-icon: #9D9D9D,                  
+  
+  // Light theme text
+  text-dark: #2a2a2a,                  
+  text-medium: #555555,                
+  text-light: #888888,                 
+  text-form: #070F14,                  
+  
+  // Legacy (maintain during migration)
+  text-legacy: #333333,                
+  text-vite: rgba(255, 255, 255, 0.87), 
+  
+  // INTERACTIVE COLORS  
+  border-dark: rgba(255, 255, 255, 0.1),     
+  border-dark-hover: rgba(255, 255, 255, 0.4), 
+  border-light: #A487AE,                      
+  
+  // Interactive states
+  hover-dark: #212E44,                 
+  hover-light: #e2d4f0,                
+  selection: #23316A,                  
+  focus-ring: #3B89FF,                 
+  
+  // Status colors
+  success: #d1e7dd,
+  warning: #f8d7da,
+  error: #dc3545,
+  
+  // Legacy Vite colors (phase out gradually)
+  vite-primary: #646cff,
+  vite-primary-hover: #535bf2,
+  vite-light-hover: #747bff,
+  vite-button-bg: #1a1a1a,
+  vite-button-light: #f9f9f9,
+);
+
+// ===========================================
+// SPACING SYSTEM  
+// ===========================================
+
+$spacing: (
+  xs: 0.25rem,     // 4px  
+  sm: 0.5rem,      // 8px  
+  md: 0.75rem,     // 12px 
+  lg: 1rem,        // 16px 
+  xl: 1.25rem,     // 20px 
+  xxl: 1.5rem,     // 24px 
+  xxxl: 2rem,      // 32px 
+  xxxxl: 2.5rem,   // 40px 
+  huge: 4rem,      // 64px 
+  massive: 6.25rem, // 100px
+);
+
+// ===========================================
+// TYPOGRAPHY SYSTEM
+// ===========================================
+
+$font-families: (
+  primary: ('Inter', system-ui, Avenir, Helvetica, Arial, sans-serif),
+  secondary: ('Segoe UI', Tahoma, Geneva, Verdana, sans-serif),
+  roboto: ('Roboto', Arial, sans-serif),
+  sarabun: ('Sarabun', system-ui, sans-serif),
+);
+
+$font-sizes: (
+  xs: 0.75rem,     // 12px
+  sm: 0.875rem,    // 14px
+  base: 1rem,      // 16px
+  lg: 1.125rem,    // 18px
+  xl: 1.25rem,     // 20px
+  xxl: 1.5rem,     // 24px
+  xxxl: 2rem,      // 32px
+  xxxxl: 2.25rem,  // 36px
+  massive: 3.2rem, // 51px
+);
+
+$font-weights: (
+  normal: 400,
+  medium: 500,     
+  semibold: 600,   
+  bold: 700,
+);
+
+$line-heights: (
+  tight: 1.1,      
+  normal: 1.3,     
+  relaxed: 1.5,    
+  loose: 1.6,      
+);
+
+// ===========================================
+// LAYOUT CONSTANTS
+// ===========================================
+
+$layout: (
+  // Sidebar dimensions
+  sidebar-expanded: 250px,             
+  sidebar-collapsed: 70px,             
+  
+  // Header and content
+  header-height: 60px,                 
+  
+  // Content constraints
+  max-content-width: 1000px,           
+  card-min-width: 280px,               
+  card-max-width: 300px,               
+  card-height: 360px,                  
+  
+  // Chat dimensions
+  chat-width: 350px,                   
+  chat-profile-pic: 36px,              
+  
+  // Interactive elements
+  search-min-width: 300px,             
+  button-min-height: 44px,             
+  
+  // Responsive breakpoint
+  collapsible-breakpoint: 1500px,      
+);
+
+// ===========================================
+// ANIMATION SYSTEM
+// ===========================================
+
+$transitions: (
+  fast: 200ms,                         
+  normal: 300ms,                       
+  slow: 500ms,                         
+  easing: cubic-bezier(0.4, 0, 0.2, 1), 
+  bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55), 
+);
+
+// ===========================================
+// Z-INDEX SCALE
+// ===========================================
+
+$z-index: (
+  base: 1,
+  dropdown: 100,
+  sticky: 200,
+  fixed: 300,
+  modal-backdrop: 1000,
+  modal: 1500,                         
+  header: 1900,                        
+  chat-button: 1900,                   
+  chat: 2000,                          
+  tutorial: 3000,                      
+);
+
+// ===========================================
+// BREAKPOINTS
+// ===========================================
+
+$breakpoints: (
+  mobile: 600px,                       
+  tablet: 768px,                       
+  desktop: 1024px,                     
+  wide: 1200px,                        
+  ultra-wide: 1500px,                  
+);
+
+// ===========================================
+// UTILITY FUNCTIONS - FIXED FOR MODERN DART SASS
+// ===========================================
+
+@function color($name) {
+  @if map.has-key($colors, $name) {
+    @return map.get($colors, $name);
+  } @else {
+    @warn "Color `#{$name}` not found in $colors map";
+    @return null;
+  }
+}
+
+@function space($size) {
+  @if map.has-key($spacing, $size) {
+    @return map.get($spacing, $size);
+  } @else {
+    @warn "Spacing `#{$size}` not found in $spacing map";
+    @return null;
+  }
+}
+
+@function font-size($size) {
+  @if map.has-key($font-sizes, $size) {
+    @return map.get($font-sizes, $size);
+  } @else {
+    @warn "Font size `#{$size}` not found in $font-sizes map";
+    @return null;
+  }
+}
+
+@function font-weight($weight) {
+  @if map.has-key($font-weights, $weight) {
+    @return map.get($font-weights, $weight);
+  } @else {
+    @warn "Font weight `#{$weight}` not found in $font-weights map";
+    @return null;
+  }
+}
+
+@function font-family($family) {
+  @if map.has-key($font-families, $family) {
+    @return map.get($font-families, $family);
+  } @else {
+    @warn "Font family `#{$family}` not found in $font-families map";
+    @return null;
+  }
+}
+
+@function layout($property) {
+  @if map.has-key($layout, $property) {
+    @return map.get($layout, $property);
+  } @else {
+    @warn "Layout property `#{$property}` not found in $layout map";
+    @return null;
+  }
+}
+
+@function transition($speed) {
+  @if map.has-key($transitions, $speed) {
+    @return map.get($transitions, $speed);
+  } @else {
+    @warn "Transition speed `#{$speed}` not found in $transitions map";
+    @return null;
+  }
+}
+
+@function z($layer) {
+  @if map.has-key($z-index, $layer) {
+    @return map.get($z-index, $layer);
+  } @else {
+    @warn "Z-index layer `#{$layer}` not found in $z-index map";
+    @return null;
+  }
+}
+
+// ===========================================
+// MODERN COLOR MANIPULATION FUNCTIONS
+// ===========================================
+
+// Replacement for deprecated lighten() function
+@function lighten-color($color, $amount) {
+  @return color.scale($color, $lightness: $amount);
+}
+
+// Replacement for deprecated darken() function  
+@function darken-color($color, $amount) {
+  @return color.scale($color, $lightness: -$amount);
+}
+
+// Convenience function for common color adjustments
+@function adjust-color($color, $lightness: 0%, $saturation: 0%) {
+  @return color.adjust($color, $lightness: $lightness, $saturation: $saturation);
+}
+
+// ===========================================
+// BREAKPOINT MIXIN
+// ===========================================
+
+@mixin breakpoint($size) {
+  @if map.has-key($breakpoints, $size) {
+    @media (max-width: map.get($breakpoints, $size)) {
+      @content;
+    }
+  } @else {
+    @warn "Breakpoint `#{$size}` not found in $breakpoints map";
+  }
+}

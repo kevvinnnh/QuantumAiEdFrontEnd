@@ -1,0 +1,700 @@
+// ======================================
+// src/components/Dashboard/Dashboard.module.scss
+// ======================================
+
+/**
+ * Dashboard Component Styles
+ * 
+ * All styles specific to the Dashboard component and its coordinated behavior.
+ * This includes the main layout, course cards, lesson views, and animation coordination
+ * between sidebar, main panel, and global chat.
+ */
+
+@use '../../styles/variables' as *;
+
+// ==========================================
+// LAYOUT FOUNDATION
+// ==========================================
+
+.container {
+  display: flex;
+  height: 100vh;
+  background: color(background-dark);
+  font-family: font-family(secondary);
+  overflow: hidden;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  min-width: 300px;
+  
+  // Coordinated animations with sidebar and chat
+  transition: all transition(normal) map-get($transitions, easing);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9rem space(huge);
+  background: color(background-dark);
+  border-bottom: 1px solid color(border-dark);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: z(header);
+  color: color(text-primary);
+  
+  // Coordinated with sidebar animations
+  transition: all transition(normal) map-get($transitions, easing);
+}
+
+.content {
+  padding: space(xxxl) space(huge);
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-top: layout(header-height);
+  height: calc(100vh - #{layout(header-height) + 20px});
+  
+  // Custom scrollbar
+  scrollbar-width: thin;
+  scrollbar-color: color(border-dark) transparent;
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: color(border-dark);
+    border-radius: 4px;
+    transition: background-color transition(fast) ease;
+
+    &:hover {
+      background-color: lighten-color(color(border-dark), 20%);
+    }
+  }
+}
+
+// ==========================================
+// SEARCH HEADER COMPONENT
+// ==========================================
+
+.searchForm {
+  display: flex;
+  align-items: center;
+}
+
+.searchContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  font-size: font-size(lg);
+  font-family: font-family(primary);
+  font-weight: font-weight(medium);
+  color: color(text-placeholder);
+  background-color: color(background-dark-secondary);
+  border-radius: 8px;
+  padding: space(sm) space(md);
+  min-width: layout(search-min-width);
+  border: transparent;
+  transition: border-color transition(fast) ease, background-color transition(fast) ease;
+
+  &:focus-within {
+    border-color: color(border-dark-hover);
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
+.searchIcon {
+  color: color(text-placeholder);
+  font-size: font-size(sm);
+  margin-right: space(sm);
+}
+
+.searchInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: color(text-primary);
+  font-size: font-size(sm);
+  flex: 1;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: font-weight(normal);
+    font-size: font-size(sm);
+  }
+
+  &:focus::placeholder {
+    opacity: 0;
+    transition: opacity transition(fast) ease;
+  }
+}
+
+.headerIcons {
+  display: flex;
+  align-items: center;
+  gap: space(lg);
+}
+
+.chatButton {
+  position: fixed;
+  top: 0.9rem;
+  right: space(huge);
+  z-index: z(header);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px space(sm);
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-icon);
+  background-color: color(background-dark-secondary);
+  border: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  height: auto;
+
+  &:hover {
+    background-color: lighten-color(color(background-dark-secondary), 10%);
+    color: color(text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+// ==========================================
+// DASHBOARD CONTENT
+// ==========================================
+
+.title {
+  margin: 0 0 space(xl);
+  font-size: font-size(xxxl);
+  color: color(text-primary);
+  font-weight: font-weight(semibold);
+  font-family: font-family(primary);
+}
+
+.rowSection {
+  margin-bottom: space(xxxxl);
+}
+
+.rowTitle {
+  margin: 0 0 space(xl);
+  font-size: font-size(xl);
+  color: color(text-primary);
+  font-weight: font-weight(semibold);
+  font-family: font-family(primary);
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(layout(card-min-width), 1fr));
+  gap: 15px;
+  grid-auto-rows: layout(card-height);
+  align-items: start;
+  justify-items: stretch;
+  transition: all transition(normal) map-get($transitions, easing);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.loadingText {
+  color: color(text-primary);
+  font-size: font-size(lg);
+  text-align: center;
+  margin-top: space(xxxl);
+}
+
+// ==========================================
+// COURSE CARDS
+// ==========================================
+
+.card {
+  background-color: color(background-dark-card);
+  border-radius: 10px;
+  border: 1px solid color(border-dark);
+  overflow: hidden;
+  position: relative;
+  transition: transform transition(normal) map-get($transitions, easing), 
+              box-shadow transition(fast) ease-in-out;
+  height: layout(card-height);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: layout(card-min-width);
+  max-width: layout(card-max-width);
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  &.cardEnabled {
+    cursor: pointer;
+  }
+
+  &.cardDisabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.cardImg {
+  width: calc(100% - 24px);
+  height: 144px;
+  min-height: 144px;
+  max-height: 144px;
+  object-fit: contain;
+  margin: space(md) space(md) 0 space(md);
+  border-radius: 8px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.cardContent {
+  padding: space(xl);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: calc(#{layout(card-height)} - 144px - 24px);
+  min-height: calc(#{layout(card-height)} - 144px - 24px);
+  max-height: calc(#{layout(card-height)} - 144px - 24px);
+  overflow: hidden;
+}
+
+.cardTitle {
+  margin: 0 0 10px;
+  font-size: font-size(xl);
+  font-family: font-family(primary);
+  font-weight: font-weight(semibold);
+  color: color(text-primary);
+  line-height: map-get($line-heights, normal);
+  height: 3.25rem;
+  min-height: 1.625rem;
+  max-height: 3.25rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.cardDescription {
+  margin: 0 0 space(lg) 0;
+  font-size: font-size(sm);
+  font-family: font-family(primary);
+  font-weight: font-weight(normal);
+  color: color(text-muted);
+  line-height: map-get($line-heights, relaxed);
+  height: 4.5rem;
+  min-height: 4.5rem;
+  max-height: 4.5rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.progressContainer {
+  position: absolute;
+  bottom: 5px;
+  left: space(xl);
+  right: space(xl);
+  height: 25px;
+  display: flex;
+  align-items: center;
+  gap: space(md);
+  flex-shrink: 0;
+}
+
+.progressBar {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  width: 65%;
+  background: #424E62;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.progressFill {
+  height: 100%;
+  background: color(primary);
+  border-radius: 4px;
+  transition: width transition(slow) ease-in-out;
+}
+
+.progressText {
+  font-size: font-size(xs);
+  font-family: font-family(primary);
+  font-weight: font-weight(normal);
+  color: color(text-primary);
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+
+.lockOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  min-height: 80px;
+  max-height: 80px;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.6) 40%,
+    rgba(0, 0, 0, 0.2) 70%,
+    transparent 100%
+  );
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: space(lg);
+  flex-shrink: 0;
+}
+
+.lockIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: color(text-placeholder);
+  font-size: font-size(lg);
+  background-color: transparent;
+  flex-shrink: 0;
+}
+
+// ==========================================
+// BREADCRUMB NAVIGATION
+// ==========================================
+
+.breadcrumbContainer {
+  display: flex;
+  align-items: center;
+  margin-bottom: space(xxl);
+  font-size: font-size(base);
+  font-family: font-family(primary);
+}
+
+.breadcrumbButton {
+  background: none;
+  border: none;
+  color: color(text-primary);
+  cursor: pointer;
+  font-size: font-size(base);
+  font-family: font-family(primary);
+  font-weight: font-weight(medium);
+  padding: 0;
+  text-decoration: none;
+  transition: text-decoration transition(fast) ease;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.breadcrumbSeparator {
+  color: color(text-primary);
+  margin: 0 space(md);
+  font-size: font-size(sm);
+  cursor: default;
+}
+
+// ==========================================
+// COURSE DETAIL VIEW
+// ==========================================
+
+.courseDetailContainer {
+  max-width: layout(max-content-width);
+  margin: 0 auto;
+  padding: space(xl) 0;
+}
+
+.courseDetailHeader {
+  text-align: left;
+  margin-bottom: 60px;
+}
+
+.courseDetailTitle {
+  font-size: font-size(xxxxl);
+  color: color(text-primary);
+  font-weight: font-weight(medium);
+  margin-bottom: space(lg);
+  font-family: font-family(primary);
+  cursor: text;
+}
+
+.courseDetailDescription {
+  font-size: font-size(base);
+  color: color(text-secondary);
+  line-height: map-get($line-heights, loose);
+  margin: 0;
+  font-family: font-family(primary);
+  cursor: text;
+}
+
+.conceptsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: space(xxxxl);
+}
+
+.conceptHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 25px;
+}
+
+.conceptIcon {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background-color: color(primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 10px;
+  cursor: default;
+}
+
+.conceptNumber {
+  color: color(background-dark);
+  font-size: font-size(xxl);
+  font-weight: font-weight(bold);
+  font-family: font-family(primary);
+}
+
+.conceptTitle {
+  flex: 1;
+  font-size: font-size(xxl);
+  color: color(text-primary);
+  font-weight: font-weight(medium);
+  margin-bottom: space(sm);
+  font-family: font-family(primary);
+  line-height: 1;
+  cursor: text;
+}
+
+.topicsList {
+  display: flex;
+  flex-direction: column;
+  gap: space(md);
+}
+
+.topicButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: space(lg) space(xl);
+  background-color: transparent;
+  border: 2px solid color(border-dark);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  font-family: font-family(primary);
+  width: 100%;
+  margin-bottom: 10px;
+
+  &:hover:not(:disabled) {
+    background-color: color(hover-dark);
+    border-color: color(border-dark);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.topicTitle {
+  font-size: font-size(base);
+  color: color(text-primary);
+  font-weight: font-weight(normal);
+  text-align: left;
+  flex: 1;
+}
+
+.topicCheckmark {
+  color: color(primary);
+  font-size: font-size(base);
+}
+
+.topicLock {
+  color: color(text-placeholder);
+  font-size: font-size(base);
+}
+
+// ==========================================
+// LESSON VIEW
+// ==========================================
+
+.lessonContainer {
+  max-width: layout(max-content-width);
+  margin: 0 auto;
+  padding: space(xl) 0;
+}
+
+.lessonHeader {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  margin-bottom: space(xxxl);
+  pointer-events: auto;
+
+  // Ensure buttons remain clickable
+  button {
+    pointer-events: auto;
+    user-select: none;
+  }
+}
+
+.lessonTitle {
+  font-size: font-size(xxxxl);
+  margin: 0 auto;
+  color: color(text-primary);
+  font-family: font-family(primary);
+  font-weight: font-weight(medium);
+  cursor: text;
+}
+
+.lessonDescription {
+  font-size: font-size(lg);
+  color: color(text-primary);
+  line-height: map-get($line-heights, loose);
+  font-family: font-family(primary);
+  font-weight: font-weight(normal);
+  cursor: text;
+}
+
+.takeQuizButton {
+  display: block;
+  margin: 25px 0 70px 0;
+  padding: space(sm) space(md);
+  background: color(primary-light);
+  color: color(background-dark);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: font-size(lg);
+  font-weight: font-weight(semibold);
+  line-height: map-get($line-heights, loose);
+  font-family: font-family(primary);
+  transition: background-color transition(fast) ease;
+
+  &:hover {
+    background-color: lighten-color(color(primary-light), 5%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.noQuizText {
+  text-align: center;
+  margin-top: space(xxxxl);
+  color: color(primary);
+  font-size: font-size(base);
+}
+
+.quizPromptSection {
+  margin: 70px 0 0 0;
+  cursor: text;
+}
+
+// ==========================================
+// MODAL OVERLAY
+// ==========================================
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: z(modal);
+}
+
+.modalContent {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+// ==========================================
+// COORDINATION CLASSES
+// ==========================================
+// These coordinate animations between Dashboard, Sidebar, and GlobalChat
+
+.mainPanelCoordinated {
+  // Applied to elements that need coordinated animation
+  transition: all transition(normal) map-get($transitions, easing) !important;
+}
+
+// Performance optimizations
+.dashboardContent {
+  contain: layout style;
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+// Responsive safety
+@include breakpoint(desktop) {
+  .mainPanelCoordinated {
+    min-width: 250px;
+  }
+  
+  .dashboardContent {
+    padding: space(lg) space(xxxl);
+  }
+  
+  .cardGrid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}

@@ -1,46 +1,28 @@
-// src/components/Dashboard.tsx
+// src/components/Dashboard/Dashboard.tsx
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { FaSearch, FaLock, FaCheckCircle } from 'react-icons/fa';
 import { MdOutlinePerson } from "react-icons/md";
-import Sidebar from './Sidebar';
-import Reading from './Reading';
-import Quiz from './Quiz';
-import GlobalChat from './GlobalChat';
-import FeedbackModal from './FeedbackModal';
-import HighlightableInstructionsForReading from './HighlightableInstructionsForReadings';
-import { allQuizData } from './QuizQuestion';
-import { lessonContents } from './LessonContents';
-import lesson0Img from '../assets/lessonIcons/lesson-0.svg';
-import lesson1Img from '../assets/lessonIcons/lesson-1.svg';
-import lesson2Img from '../assets/lessonIcons/lesson-2.svg';
 import { useNavigate } from 'react-router-dom';
-import TutorialPopup from './TutorialPopup';
+import styles from './Dashboard.module.scss';
+import Sidebar from '../Sidebar/Sidebar';
+import Reading from '../Reading/Reading';
+import Quiz from '../Quiz/Quiz';
+import GlobalChat from '../GlobalChat/GlobalChat';
+import FeedbackModal from '../FeedbackModal/FeedbackModal';
+import HighlightableInstructionsForReading from '../HighlightableInstructionsForReading/HighlightableInstructionsForReading';
+import TutorialPopup from '../TutorialPopup/TutorialPopup';
+import { allQuizData } from '../QuizQuestion';
+import { lessonContents } from '../LessonContents';
+import lesson0Img from '../../assets/lessonIcons/lesson-0.svg';
+import lesson1Img from '../../assets/lessonIcons/lesson-1.svg';
+import lesson2Img from '../../assets/lessonIcons/lesson-2.svg';
 
 // Define BACKEND_URL - Replace with your actual backend URL
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'; // Use environment variable
 
 /* ------------------------------------------------------------------ */
-/* THEME COLORS                                                       */
-/* ------------------------------------------------------------------ */
-const colors = {
-  dark: '#010117',
-  accent: '#071746',
-  primary: '#3B89FF',
-  light: '#f8f9fa',
-  white: '#FFFFFF',
-  cardBackground: 'transparent',
-  lessonBackground: 'rgba(255,255,255,0.03)',
-  modalBackground: '#FFFFFF',
-  modalTextColor: '#111111',
-  border: 'rgba(255,255,255,0.1)',
-};
-
-/* ------------------------------------------------------------------ */
-/* STATIC COURSE DATA                                                 */
-/* ------------------------------------------------------------------ */
-/* ------------------------------------------------------------------ */
-/* ENHANCED COURSE DATA STRUCTURE                                     */
+/* COURSE DATA                                                        */
 /* ------------------------------------------------------------------ */
 
 // Define topic structure
@@ -68,7 +50,15 @@ interface Course {
   concepts: Concept[];
 }
 
-// Ensure IDs match the backend logic (0-based indexing)
+// Interface for quiz completion data from backend (optional but good practice)
+interface CompletedQuiz {
+    courseId: number;
+    score: number;
+    passed: boolean;
+    timestamp: string; // ISO date string
+}
+
+// Ensure IDs match the backend logic
 const courses: Course[] = [
   {
     id: 0,
@@ -261,27 +251,18 @@ const courses: Course[] = [
   },
 ];
 
-// Interface for quiz completion data from backend (optional but good practice)
-interface CompletedQuiz {
-    courseId: number;
-    score: number;
-    passed: boolean;
-    timestamp: string; // ISO date string
-}
-
 const Dashboard: React.FC = () => {
-  /* ---------- dev state ----------------------------------------- */
   const DEV_LOGIN_EMAIL = import.meta.env.DEV_LOGIN_EMAIL;
   const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  /* ---------- animation state ------------------------------------ */
+  
+  // Animation state
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const collapsibleSidebarWidth = 1500;
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  /* ---------- view / lesson state -------------------------------- */
+  // View/lesson state
   const [view, setView] = useState<'dashboard' | 'course-detail' | 'lesson'>('dashboard');
   const [currentCourse, setCurrentCourse] = useState<number | null>(null);
   const [currentLesson, setCurrentLesson] = useState<number | null>(null);
@@ -290,34 +271,31 @@ const Dashboard: React.FC = () => {
   const [isLoadingProgress, setIsLoadingProgress] = useState<boolean>(true);
   const [completedQuizzes, setCompletedQuizzes] = useState<CompletedQuiz[]>([]);
 
-  /* ---------- first lesson tutorial state ------------------------ */
+  // Tutorial state
   const [hasViewedFirstLesson, setHasViewedFirstLesson] = useState<boolean>(false);
   const [showOnboardingPopup, setShowOnboardingPopup] = useState<boolean>(false);
   const [tutorialStep, setTutorialStep] = useState<1 | 2 | 3>(1);
   const [, setTutorialAnchor] = useState<{ top: number; left: number } | null>(null);
   const lessonContentsRef = useRef<HTMLDivElement>(null);
 
-  /* ---------- feedback state ------------------------------------- */
+  // Feedback state
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
 
-  /* ---------- search state --------------------------------------- */
+  // Search state
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  /* ---------- chat & highlight state and callback ---------------- */
+  // Chat & highlight state
   const [chatOpen, setChatOpen] = useState<boolean>(false);
   const [chatWidth, setChatWidth] = useState<number>(0);
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [highlightMode, setHighlightMode] = useState<'explain' | 'analogy' | null>(null);
 
-  /* ---------- profile dropdown state ------------------------------ */
+  // Profile dropdown state
   const [showProfileDropdown, setShowProfileDropdown] = useState<boolean>(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
-  /* ---------- navigation helpers --------------------------------- */
   const navigate = useNavigate();
-
-  /* ---------- scrolling content ref --------------------------------- */
   const contentRef = useRef<HTMLDivElement>(null);
 
   const goDashboard = useCallback(() => {
@@ -680,7 +658,7 @@ const Dashboard: React.FC = () => {
     setChatOpen(false);
   };
 
-  /* ---------- highlight callbacks -------------------------------- */
+  // Highlight callbacks
   const handleExplain = (text: string) => {
     setHighlightText(text);
     setHighlightMode('explain');
@@ -693,7 +671,7 @@ const Dashboard: React.FC = () => {
     setChatOpen(true);
   };
 
-  /* ---------- search functionality ------------------------------- */
+  // Search functionality
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Searching for:', searchQuery);
@@ -703,7 +681,7 @@ const Dashboard: React.FC = () => {
     setSearchQuery(e.target.value);
   };
 
-  /* ---------- popup tutorial handlers ---------------------------- */
+  // Popup tutorial handlers
   const handleTutorialNext = () => {
     setTutorialStep(prev => (prev < 3 ? (prev + 1) as 1 | 2 | 3 : prev));
   };
@@ -715,7 +693,7 @@ const Dashboard: React.FC = () => {
     setTutorialStep(1);
   };
 
-  /* ---------- profile dropdown handlers -------------------------- */
+  // Profile dropdown handlers
   const handleProfileClick = () => {
     setShowProfileDropdown(false);
     navigate('/profile');
@@ -740,7 +718,7 @@ const Dashboard: React.FC = () => {
     setShowFeedbackModal(true);
   };
 
-  /* ---------- breadcrumb helpers --------------------------------- */
+  // Breadcrumb helpers
   const getCurrentTabName = () => {
     if (view === 'course-detail' || view === 'lesson' || view === 'dashboard') {
       return "Lessons";
@@ -749,56 +727,7 @@ const Dashboard: React.FC = () => {
     return "Lessons";
   };
 
-  const renderBreadcrumb = () => {
-    if (view === 'dashboard') return null;
-
-    const breadcrumbItems = [];
-    
-    const rootTabName = getCurrentTabName();
-    
-    breadcrumbItems.push(
-      <button
-        key="root"
-        style={styles.breadcrumbButton}
-        onClick={goDashboard}
-        className="breadcrumb-button"
-      >
-        {rootTabName}
-      </button>
-    );
-
-    breadcrumbItems.push(
-      <span key="separator1" style={styles.breadcrumbSeparator}> &gt; </span>
-    );
-
-    if (view === 'lesson' && currentCourse !== null) {
-      const course = courses.find(c => c.id === currentCourse);
-      if (course) {
-        breadcrumbItems.push(
-          <button
-            key="course"
-            style={styles.breadcrumbButton}
-            onClick={() => goToCourseDetail(currentCourse)}
-            className="breadcrumb-button"
-          >
-            {course.title}
-          </button>
-        );
-        
-        breadcrumbItems.push(
-          <span key="separator2" style={styles.breadcrumbSeparator}> &gt; </span>
-        );
-      }
-    }
-
-    return (
-      <div style={styles.breadcrumbContainer}>
-        {breadcrumbItems}
-      </div>
-    );
-  };
-
-  /* ---------- quiz completion ------------------------------------ */
+  // Quiz completion
   const onQuizComplete = async (_score: number, passed: boolean) => {
       if (currentLesson === null) return;
 
@@ -825,7 +754,7 @@ const Dashboard: React.FC = () => {
       }
   };
 
-  /* ---------- quiz availability check ---------------------------- */
+  // Quiz availability check
   const currentQuiz = currentLesson !== null ? (allQuizData[currentLesson] || []) : [];
   const currentLessonContent = currentLesson !== null ? lessonContents[currentLesson] : undefined;
 
@@ -836,7 +765,7 @@ const Dashboard: React.FC = () => {
     }
   }, [quizOpen, currentQuiz, currentLesson]);
 
-  /* ---------- render helpers ------------------------------------- */
+  // Dashboard course card
   const courseCard = (c: Course) => {
     const isUnlocked = isCourseUnlocked(c.id);
     const progress = getCourseProgress(c.id);
@@ -844,32 +773,83 @@ const Dashboard: React.FC = () => {
     return (
       <div
         key={c.id}
-        style={{
-          ...styles.card,
-          ...(isUnlocked ? styles.cardEnabled : styles.cardDisabled),
-        }}
+        className={`${styles.card} ${
+          isUnlocked ? styles.cardEnabled : styles.cardDisabled
+        }`}
         onClick={() => isUnlocked && goToCourseDetail(c.id)}
       >
-        <img src={c.image} alt={c.title} style={styles.cardImg} />
-        <div style={styles.cardContent}>
-          <h4 style={styles.cardTitle}>{c.title}</h4>
-          <p style={styles.cardDescription}>{c.description}</p>
+        <img src={c.image} alt={c.title} className={styles.cardImg} />
+        <div className={styles.cardContent}>
+          <h4 className={styles.cardTitle}>{c.title}</h4>
+          <p className={styles.cardDescription}>{c.description}</p>
           {isUnlocked && progress > 0 && (
-            <div style={styles.progressBarContainer}>
-                <div style={styles.progressBar}>
-                  <div style={{ ...styles.progressFill, width: `${progress}%` }} />
-                </div>
-                <span style={styles.progressText}>{progress}% complete</span>
+            <div className={styles.progressContainer}>
+              <div className={styles.progressBar}>
+                <div 
+                  className={styles.progressFill}
+                  style={{ width: `${progress}%` }}
+                />
               </div>
+              <span className={styles.progressText}>
+                {progress}% complete
+              </span>
+            </div>
           )}
         </div>
-        {!isUnlocked &&
-          (<div style={styles.lockOverlay}>
-            <div style={styles.lockIcon}>
+        {!isUnlocked && (
+          <div className={styles.lockOverlay}>
+            <div className={styles.lockIcon}>
               <FaLock />
             </div>
           </div>
         )}
+      </div>
+    );
+  };
+
+  // Breadcrumb navigation (Dashboard > Course > Lesson)
+  const renderBreadcrumb = () => {
+    if (view === 'dashboard') return null;
+
+    const breadcrumbItems = [];
+    const rootTabName = getCurrentTabName();
+    
+    breadcrumbItems.push(
+      <button
+        key="root"
+        className={styles.breadcrumbButton}
+        onClick={goDashboard}
+      >
+        {rootTabName}
+      </button>
+    );
+
+    breadcrumbItems.push(
+      <span key="separator1" className={styles.breadcrumbSeparator}> &gt; </span>
+    );
+
+    if (view === 'lesson' && currentCourse !== null) {
+      const course = courses.find(c => c.id === currentCourse);
+      if (course) {
+        breadcrumbItems.push(
+          <button
+            key="course"
+            className={styles.breadcrumbButton}
+            onClick={() => goToCourseDetail(currentCourse)}
+          >
+            {course.title}
+          </button>
+        );
+        
+        breadcrumbItems.push(
+          <span key="separator2" className={styles.breadcrumbSeparator}> &gt; </span>
+        );
+      }
+    }
+
+    return (
+      <div className={styles.breadcrumbContainer}>
+        {breadcrumbItems}
       </div>
     );
   };
@@ -881,50 +861,46 @@ const Dashboard: React.FC = () => {
     if (!course) return <p>Course not found.</p>;
 
     return (
-      <div style={styles.courseDetailContainer}>
+      <div className={styles.courseDetailContainer}>
         {renderBreadcrumb()}
 
-        <div style={styles.courseDetailHeader}>
-          <h1 style={styles.courseDetailTitle}>{course.title}</h1>
-          <p style={styles.courseDetailDescription}>{course.description}</p>
+        <div className={styles.courseDetailHeader}>
+          <h1 className={styles.courseDetailTitle}>{course.title}</h1>
+          <p className={styles.courseDetailDescription}>{course.description}</p>
         </div>
 
-        <div style={styles.conceptsContainer}>
+        <div className={styles.conceptsContainer}>
           {course.concepts.map((concept, conceptIndex) => (
             <div key={concept.id}>
-              <div style={styles.conceptHeader}>
-                <div style={styles.conceptIcon}>
+              <div className={styles.conceptHeader}>
+                <div className={styles.conceptIcon}>
                   {concept.icon ? (
                     <img src={concept.icon} alt={concept.title} style={{ width: '20px', height: '20px' }} />
                   ) : (
-                    <span style={styles.conceptNumber}>{conceptIndex + 1}</span>
+                    <span className={styles.conceptNumber}>{conceptIndex + 1}</span>
                   )}
                 </div>
-                <h3 style={styles.conceptTitle}>{concept.title}</h3>
+                <h3 className={styles.conceptTitle}>{concept.title}</h3>
               </div>
               
-              <div style={styles.topicsList}>
+              <div className={styles.topicsList}>
                 {concept.topics.map((topic) => {
                   const isTopicCompleted = completedQuizzes.some(quiz => quiz.courseId === topic.id && quiz.passed);
                   const isUnlocked = isTopicUnlocked(topic.id);
                   
                   return (
                     <button
-                      className='topic-button'
                       key={topic.id}
-                      style={{
-                        ...styles.topicButton,
-                        ...(!isUnlocked ? styles.topicButtonDisabled : {}),
-                      }}
+                      className={styles.topicButton}
                       onClick={() => isUnlocked && openLesson(topic.id)}
                       disabled={!isUnlocked}
                     >
-                      <span style={styles.topicTitle}>{topic.title}</span>
+                      <span className={styles.topicTitle}>{topic.title}</span>
                       {isTopicCompleted && (
-                        <FaCheckCircle size={24} style={styles.topicCheckmark} />
+                        <FaCheckCircle size={24} className={styles.topicCheckmark} />
                       )}
                       {!isUnlocked && (
-                        <FaLock size={24} style={styles.topicLock} />
+                        <FaLock size={24} className={styles.topicLock} />
                       )}
                     </button>
                   );
@@ -940,14 +916,11 @@ const Dashboard: React.FC = () => {
   const lessonView = () => {
     if (currentLesson === null) return <p>Loading lesson...</p>;
     
-    // let courseInfo = null;
     let topicInfo = null;
-    
     for (const course of courses) {
       for (const concept of course.concepts) {
         const topic = concept.topics.find(t => t.id === currentLesson);
         if (topic) {
-          // courseInfo = course;
           topicInfo = topic;
           break;
         }
@@ -956,22 +929,22 @@ const Dashboard: React.FC = () => {
     }
 
     return (
-      <div style={styles.lessonContainer}>
-        <div className='lesson-header' style={styles.lessonHeader}>
+      <div className={styles.lessonContainer}>
+        <div className={styles.lessonHeader}>
           {renderBreadcrumb()}
 
-          <h2 style={styles.lessonTitle}>{topicInfo?.title || 'Lesson'}</h2>
+          <h2 className={styles.lessonTitle}>{topicInfo?.title || 'Lesson'}</h2>
           {topicInfo?.description && (
-            <p style={styles.lessonDescription}>{topicInfo.description}</p>
+            <p className={styles.lessonDescription}>{topicInfo.description}</p>
           )}
 
           {currentQuiz.length > 0 && (
-            <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
+            <button className={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
               TAKE QUIZ
             </button>
           )}
           {currentQuiz.length === 0 && (
-            <p style={styles.noQuizText}>Quiz coming soon for this lesson!</p>
+            <p className={styles.noQuizText}>Quiz coming soon for this lesson!</p>
           )}
         </div>
         
@@ -989,11 +962,11 @@ const Dashboard: React.FC = () => {
         </div>
         
         {currentQuiz.length > 0 && (
-          <div style={styles.quizPromptSection} className='lesson-header'>
-            <p style={styles.lessonDescription}>
+          <div className={styles.quizPromptSection}>
+            <p className={styles.lessonDescription}>
               Ready to see if you've grasped these concepts? Take this quiz and find out where you stand!
             </p>
-            <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
+            <button className={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
               START QUIZ
             </button>
           </div>
@@ -1006,7 +979,7 @@ const Dashboard: React.FC = () => {
   /* JSX                                                              */
   /* ---------------------------------------------------------------- */
   return (
-    <div style={styles.container}>
+    <div className={styles.container}>
 
       {/* SIDEBAR */}
       <Sidebar
@@ -1032,31 +1005,26 @@ const Dashboard: React.FC = () => {
       
       {/* HEADER */}
       <header 
-        style={{
-          ...styles.header,
-          ...getHeaderStyles(),
-        }}
-        className='main-panel-coordinated'
+        className={`${styles.header} ${styles.mainPanelCoordinated}`}
+        style={getHeaderStyles()}
       >
-        <form onSubmit={handleSearchSubmit} style={styles.headerSearch}>
-          <div style={styles.searchContainer} className="search-container">
-            <FaSearch style={styles.searchIcon} />
+        <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
+          <div className={styles.searchContainer}>
+            <FaSearch className={styles.searchIcon} />
             <input
               type="text"
               placeholder="Search Quantaid"
               value={searchQuery}
               onChange={handleSearchChange}
-              style={styles.searchInput}
-              className="search-input"
+              className={styles.searchInput}
             />
           </div>
         </form>
         
-        <div style={styles.headerIcons}>
+        <div className={styles.headerIcons}>
           {view === 'lesson' && !quizOpen && (
             <button
-              className="chat-button"
-              style={styles.chatButton}
+              className={styles.chatButton}
               onClick={handleChatToggle}
               aria-label="Toggle Chat"
             >
@@ -1068,44 +1036,38 @@ const Dashboard: React.FC = () => {
       
       {/* MAIN PANEL */}
       <main
-        style={{
-          ...styles.main,
-          ...getMainPanelStyles(),
-        }}
-        className="main-panel-coordinated"
+        className={`${styles.main} ${styles.mainPanelCoordinated}`}
+        style={getMainPanelStyles()}
       >
         
         <div
           ref={contentRef}
-          style={styles.content}
-          className="dashboard-content default-scrollbar"
+          className={`${styles.content} ${styles.dashboardContent}`}
         >
           {isLoadingProgress ? (
-             <p style={styles.loadingText}>Loading your progress...</p>
+             <p className={styles.loadingText}>Loading your progress...</p>
           ) : view === 'dashboard' ? (
             <>
-              <h2 style={styles.title}>Lessons</h2>
-              <section style={styles.rowSection}>
-                <h2 style={styles.rowTitle}>Foundations</h2>
-                <div style={styles.cardGrid}>{courses.slice(0, 3).map(courseCard)}</div>
+              <h2 className={styles.title}>Lessons</h2>
+              <section className={styles.rowSection}>
+                <h2 className={styles.rowTitle}>Foundations</h2>
+                <div className={styles.cardGrid}>{courses.slice(0, 3).map(courseCard)}</div>
               </section>
 
-              <section style={styles.rowSection}>
-                <h2 style={styles.rowTitle}>Quantum computing in action</h2>
-                <div style={styles.cardGrid}>{courses.slice(3, 6).map(courseCard)}</div>
+              <section className={styles.rowSection}>
+                <h2 className={styles.rowTitle}>Quantum computing in action</h2>
+                <div className={styles.cardGrid}>{courses.slice(3, 6).map(courseCard)}</div>
               </section>
 
-              <section style={styles.rowSection}>
-                <h2 style={styles.rowTitle}>Deep dive into quantum theory</h2>
-                <div style={styles.cardGrid}>{courses.slice(6, 9).map(courseCard)}</div>
+              <section className={styles.rowSection}>
+                <h2 className={styles.rowTitle}>Deep dive into quantum theory</h2>
+                <div className={styles.cardGrid}>{courses.slice(6, 9).map(courseCard)}</div>
               </section>
             </>
           ) : view === 'course-detail' ? (
             courseDetailView()
           ) : (
-            <>
-              {lessonView()}
-            </>
+            lessonView()
           )}
         </div>
       </main>
@@ -1127,8 +1089,8 @@ const Dashboard: React.FC = () => {
 
       {/* QUIZ */}
       {quizOpen && currentLesson !== null && currentQuiz.length > 0 && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalContent}>
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
             <Quiz
               courseId={currentLesson}
               questions={currentQuiz}
@@ -1159,568 +1121,5 @@ const Dashboard: React.FC = () => {
     </div>
   );
 };
-/* ------------------------------------------------------------------ */
-/* INLINE STYLES                                                     */
-/* ------------------------------------------------------------------ */
-// Updated styles for fixed header/sidebar with scrollable content
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    height: '100vh',
-    background: '#030E29',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    overflow: 'hidden', // Prevent body scrolling
-  },
-  main: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100vh',
-    overflow: 'hidden', // Prevent main from scrolling
-    minWidth: 300,
-    // Transition is now handled dynamically in getMainPanelStyles
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '0.9rem 4rem',
-    background: 'transparent',
-    borderBottom: `1px solid ${colors.border}`,
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 99,
-    color: colors.white,
-    backgroundColor: '#030E29',
-  },
-  headerSearch: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  searchContainer: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    fontSize: '1.3rem',
-    fontFamily: "'Inter', sans-serif",
-    fontWeight: '500',
-    color: '#7A7C92',
-    backgroundColor: '#032242',
-    borderRadius: '8px',
-    padding: '8px 12px',
-    minWidth: '300px',
-    border: 'transparent',
-    transition: 'border-color 0.2s ease, background-color 0.2s ease',
-  },
-  searchIcon: {
-    color: '#7A7C92',
-    fontSize: '14px',
-    marginRight: '8px',
-  },
-  searchInput: {
-    background: 'transparent',
-    border: 'none',
-    outline: 'none',
-    color: colors.white,
-    fontSize: '14px',
-    flex: 1,
-  },
-  headerIcons: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 15,
-  },
-  chatButton: {
-    position: 'fixed',
-    top: '0.9rem',
-    right: '4rem',
-    zIndex: 1900, // 1900 over header, 3000 over GlobalChat
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
-    padding: '6px 14px',
-    fontSize: '16px',
-    fontWeight: '500',
-    fontFamily: "'Inter', sans-serif",
-    color: '#9D9D9D',
-    backgroundColor: '#032242',
-    border: 'transparent',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    height: 'auto',
-  },
-  content: {
-    padding: '2rem 4rem',
-    flex: 1,
-    overflowY: 'auto', // Enable vertical scrolling for content only
-    overflowX: 'hidden', // Prevent horizontal scrolling
-    marginTop: 60, // Account for fixed header height
-    height: 'calc(100vh - 80px)',
-    transition: 'padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  },
-  loadingText: {
-    color: colors.white,
-    fontSize: '1.2rem',
-    textAlign: 'center',
-    marginTop: '2rem',
-  },
-  breadcrumbContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: 25,
-    fontSize: '1rem',
-    fontFamily: "'Inter', sans-serif",
-  },
-  breadcrumbButton: {
-    background: 'none',
-    border: 'none',
-    color: colors.white,
-    cursor: 'pointer',
-    fontSize: '1rem',
-    fontFamily: "'Inter', sans-serif",
-    fontWeight: '500',
-    padding: '0 0',
-    textDecoration: 'none',
-    transition: 'text-decoration 0.2s ease',
-  },
-  breadcrumbSeparator: {
-    color: colors.white,
-    margin: '0 12px',
-    fontSize: '0.9rem',
-    cursor: 'default',
-  },
-  breadcrumbCurrent: {
-    color: colors.white,
-    fontSize: '1rem',
-    fontFamily: "'Inter', sans-serif",
-    fontWeight: '500',
-  },
-  rowSection: {
-    marginBottom: 40,
-  },
-  title: {
-    margin: '0 0 20px',
-    fontSize: '2rem',
-    color: colors.white,
-    fontWeight: 600,
-  },
-  rowTitle: {
-    margin: '0 0 20px',
-    fontSize: '1.3rem',
-    color: colors.white,
-    fontWeight: 600,
-  },
-  cardGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: '15px',
-    gridAutoRows: '360px',
-    alignItems: 'start',
-    justifyItems: 'stretch',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    width: '100%',
-    boxSizing: 'border-box',
-  },
-  card: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: 10,
-    overflow: 'hidden',
-    position: 'relative',
-    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease-in-out',border: `1px solid ${colors.border}`,
-    height: '360px',
-    display: 'flex',
-    flexDirection: 'column',
-    flexShrink: 0,
-    width: '100%',
-    minWidth: '300px',
-    maxWidth: '300px',
-    backfaceVisibility: 'hidden',
-    transformStyle: 'preserve-3d',
-    willChange: 'transform',
-  },
-  cardEnabled: {
-    cursor: 'pointer',
-  },
-  cardDisabled: {
-    cursor: 'not-allowed',
-    opacity: 0.5,
-  },
-  cardImg: {
-    width: 'calc(100% - 24px)',
-    height: 144,
-    minHeight: 144,
-    maxHeight: 144,
-    objectFit: 'contain',
-    margin: '12px 12px 0 12px',
-    borderRadius: '8px',
-    display: 'block',
-    flexShrink: 0,
-  },
-  cardContent: {
-    padding: 20,
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    height: 'calc(360px - 144px - 24px)', // Total height - image height - image margins
-    minHeight: 'calc(360px - 144px - 24px)',
-    maxHeight: 'calc(360px - 144px - 24px)',
-    overflow: 'hidden',
-  },
-  cardTitle: {
-    margin: '0 0 10px',
-    fontSize: '1.25rem',
-    fontFamily: "'Inter', sans-serif",
-    fontWeight: '600',
-    color: colors.white,
-    lineHeight: '1.3',
-    height: '3.25rem',
-    minHeight: '1.625rem', // Approximately 1.3 * 1.25rem
-    maxHeight: '3.25rem', // Allow for 2 lines max
-    overflow: 'hidden',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
-  },
-  cardDescription: {
-    margin: '0 0 15px 0',
-    fontSize: '0.9rem',
-    fontFamily: "'Inter', sans-serif",
-    fontWeight: '400',
-    color: '#A2A2B1',
-    lineHeight: 1.5,
-    height: '4.5rem', // 3 lines * 1.5 line-height * 0.9rem font-size
-    minHeight: '4.5rem',
-    maxHeight: '4.5rem',
-    overflow: 'hidden',
-    display: '-webkit-box',
-    WebkitLineClamp: 3,
-    WebkitBoxOrient: 'vertical',
-  },
-  progressBarContainer: {
-    position: 'absolute',
-    bottom: 5,
-    left: 20,
-    right: 20,
-    height: 25,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    flexShrink: 0,
-  },
-  progressBar: {
-    position: 'relative',
-    flex: 1,
-    height: 8,
-    width: '65%',
-    background: '#424E62',
-    borderRadius: 4,
-    overflow: 'hidden',
-    flexShrink: 0,
-   },
-  progressFill: {
-    height: '100%',
-    background: colors.primary,
-    borderRadius: 4,
-    transition: 'width 0.5s ease-in-out',
-  },
-  progressText: {
-    fontSize: '0.75rem',
-    fontFamily: "'Inter', sans-serif",
-    fontWeight: '400',
-    color: colors.white,
-    lineHeight: 1,
-    whiteSpace: 'nowrap',
-    flexShrink: 0,
-    minWidth: 'fit-content',
-  },
-  lockOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '80px',
-    minHeight: '80px',
-    maxHeight: '80px',
-    background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)',
-    display: 'flex',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    paddingBottom: '15px',
-    flexShrink: 0,
-  },
-  lockIcon: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#7A7C92',
-    fontSize: '1.2rem',
-    backgroundColor: 'transparent',
-    flexShrink: 0,
-  },
-  courseDetailContainer: {
-    maxWidth: 1000,
-    margin: '0 auto',
-    padding: '20px 0',
-  },
-  courseDetailHeader: {
-    textAlign: 'left', // Changed from center to left
-    marginBottom: 60,
-  },
-  courseDetailTitle: {
-    fontSize: '36',
-    color: colors.white,
-    fontWeight: 500,
-    marginBottom: 15,
-    fontFamily: "'Inter', sans-serif",
-    cursor: 'text',
-  },
-  courseDetailDescription: {
-    fontSize: '16',
-    color: '#F5F5FB',
-    lineHeight: 1.6,
-    margin: 0,
-    fontFamily: "'Inter', sans-serif",
-    cursor: 'text',
-  },
-  conceptsContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 40,
-  },
-  conceptHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 14,
-    marginBottom: 25,
-  },
-  conceptIcon: {
-    width: 35,
-    height: 35,
-    borderRadius: '50%',
-    backgroundColor: colors.primary,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    marginTop: 10,
-    cursor: 'default',
-  },
-  conceptNumber: {
-    color: '#030E29',
-    fontSize: '24',
-    fontWeight: 'bold',
-    fontFamily: "'Inter', sans-serif",
-  },
-  conceptTitle: {
-    flex: 1,
-    fontSize: '24',
-    color: colors.white,
-    fontWeight: 500,
-    marginBottom: 8,
-    fontFamily: "'Inter', sans-serif",
-    lineHeight: 1,
-    cursor: 'text',
-  },
-  topicsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-  },
-  topicButton: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '16px 20px',
-    backgroundColor: 'transparent',
-    border: `2px solid ${colors.border}`,
-    borderRadius: 8,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    fontFamily: "'Inter', sans-serif",
-    width: '100%',
-    marginBottom: 10,
-  },
-  topicButtonDisabled: {
-    cursor: 'not-allowed',
-    opacity: 0.6,
-  },
-  topicTitle: {
-    fontSize: '1rem',
-    color: colors.white,
-    fontWeight: 400,
-    textAlign: 'left',
-    flex: 1,
-  },
-  topicCheckmark: {
-    color: colors.primary,
-    fontSize: '1rem',
-  },
-  topicLock: {
-    color: '#7A7C92',
-    fontSize: '1rem',
-  },
-  lessonContainer: { 
-    maxWidth: 1000,
-    margin: '0 auto',
-    padding: '20px 0',
-  },
-  lessonHeader: {
-    userSelect: 'none', // Make this section non-selectable
-    WebkitUserSelect: 'none',
-    MozUserSelect: 'none',
-    msUserSelect: 'none',
-    marginBottom: '2rem',
-  },
-  lessonTitle: { 
-    fontSize: '36px',
-    margin: '0 auto',
-    color: colors.white, 
-    fontFamily: "'Inter', sans-serif",
-    fontWeight: 500,
-    cursor: 'text',
-  },
-  lessonDescription: { 
-    fontSize: '18px',
-    color: colors.white, 
-    lineHeight: 1.6,
-    fontFamily: "'Inter', sans-serif",
-    fontWeight: 400,
-    cursor: 'text',
-  },
-  takeQuizButton: { 
-    display: 'block', 
-    margin: '25px 0 70px 0', 
-    padding: '8px 12px', 
-    background: '#8CBAFF', 
-    color: '#030E29', 
-    border: 'none', 
-    borderRadius: 8, 
-    cursor: 'pointer', 
-    fontSize: '1.15rem', 
-    fontWeight: 600,
-    lineHeight: 1.6,
-    fontFamily: "'Inter', sans-serif",
-    transition: 'background-color 0.2s ease',
-  },
-  noQuizText: {
-    textAlign: 'center',
-    marginTop: '40px',
-    color: colors.primary,
-    fontSize: '1rem',
-  },
-  quizPromptSection: {
-    margin: '70px 0 0 0',
-    cursor: 'text',
-  },
-  modalOverlay: {
-    position: 'fixed',
-    inset: 0,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1500,
-  },
-  modalContent: {
-    position: 'relative',
-    width: '100vw',
-    height: '100vh',
-    borderRadius: 0,
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-    background: 'transparent',
-  },
-};
-
-// Add all styles and hover effects
-const addAllStyles = () => {
-  const style = document.createElement('style');
-  style.textContent = `
-    /* Make lesson header non-selectable */
-    .lesson-header {
-      user-select: none !important;
-      -webkit-user-select: none !important;
-      -moz-user-select: none !important;
-      -ms-user-select: none !important;
-      pointer-events: auto; /* Keep interactions like button clicks */
-    }
-
-    .lesson-header * {
-      user-select: none !important;
-      -webkit-user-select: none !important;
-      -moz-user-select: none !important;
-      -ms-user-select: none !important;
-    }
-
-    /* Ensure buttons in header remain clickable */
-    .lesson-header button {
-      pointer-events: auto !important;
-    }
-
-    /* Text selection highlighting */
-    ::selection {
-      background-color: #23316A !important;
-      color: white !important;
-    }
-
-    ::-moz-selection {
-      background-color: #23316A !important;
-      color: white !important;
-    }
-
-    /* Hover effects for the popup buttons */
-    .highlight-explain-btn:hover {
-      background-color: #d6e7f7 !important;
-      transform: translateY(-1px);
-    }
-
-    .highlight-analogy-btn:hover {
-      background-color: #9bb0dd !important;
-      transform: translateY(-1px);
-    }
-
-    /* Search Input Styles */
-    .search-input::placeholder {
-      color: rgba(255, 255, 255, 0.5);
-      font-weight: 400;
-      font-size: 14px;
-    }
-    
-    .search-input:focus::placeholder {
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    
-    .search-container:focus-within {
-      border-color: rgba(255, 255, 255, 0.4);
-      background-color: rgba(255, 255, 255, 0.15);
-    }
-
-    /* Breadcrumb button hover effects */
-    .breadcrumb-button:hover {
-      text-decoration: underline !important;
-    }
-
-    /* Topic button hover effects */
-    .topic-button:hover:not(:disabled) {
-      background-color: #212E44 !important;
-      border: 2px solid rgba(255,255,255,0.1) !important; /* Force border to stay the same on focus */
-      outline: none !important; /* Remove browser default outline */
-    }
-  `;
-  document.head.appendChild(style);
-};
-
-if (typeof document !== 'undefined') {
-  addAllStyles();
-}
 
 export default Dashboard;

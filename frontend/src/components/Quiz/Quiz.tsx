@@ -1,16 +1,16 @@
-// src/components/Quiz.tsx
+// src/components/Quiz/Quiz.tsx
 
 import React, { useState, useRef, useEffect } from 'react';
 import { IoMdClose } from "react-icons/io";
 import { IoCloseOutline } from "react-icons/io5";
 import { BsThreeDots } from "react-icons/bs";
 import { MdOutlineThumbsUpDown } from "react-icons/md";
-import { Question } from './QuizQuestions';
-import Questions from './Questions';
-import QuizProgressBar from './QuizProgressBar';
-import FeedbackModal from './FeedbackModal';
-// import SideChat from './SideChat';
-// import { FinalResultsPopup } from './Popups';
+import { Question } from '../QuizQuestions';
+import Questions from '../Questions/Questions';
+import QuizProgressBar from '../QuizProgressBar/QuizProgressBar';
+import FeedbackModal from '../FeedbackModal/FeedbackModal';
+import styles from './Quiz.module.scss';
+// import SideChat from '../SideChat/SideChat';
 
 // interface ChatMessage {
 //   role: 'user' | 'assistant';
@@ -44,6 +44,7 @@ interface QuestionWithLesson extends Question {
 const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent }) => {
+  // Quiz state
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -638,14 +639,14 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
     const strokeDashoffsetResults = circumferenceResults * (1 - (percent / 100));
 
     return (
-      <div style={styles.resultsContainer}>
-        <h1 style={styles.resultsTitle}>Lesson complete!</h1>
+      <div className={styles.resultsContainer}>
+        <h1 className={styles.resultsTitle}>Lesson complete!</h1>
         
-        <div style={styles.resultsContent}>
+        <div className={styles.resultsContent}>
           {/* Accuracy Circle */}
-          <div style={styles.accuracySection}>
-            <div style={styles.accuracyCircle}>
-              <svg width="70" height="70" style={styles.accuracySvg}>
+          <div className={styles.accuracySection}>
+            <div className={styles.accuracyCircle}>
+              <svg width="70" height="70" className={styles.accuracySvg}>
                 {/* Background circle */}
                 <circle
                   cx="35"
@@ -675,23 +676,23 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
                   } as React.CSSProperties}
                 />
               </svg>
-              <div style={styles.percentageText}>{percent}%</div>
+              <div className={styles.percentageText}>{percent}%</div>
             </div>
-            <p style={styles.accuracyLabel}>Accuracy</p>
+            <p className={styles.accuracyLabel}>Accuracy</p>
           </div>
 
           {/* Time Section */}
-          <div style={styles.timeSection}>
-            <div style={styles.timeDisplay}>
+          <div className={styles.timeSection}>
+            <div className={styles.timeDisplay}>
               {duration && (
                 <>
-                  <span style={styles.timeNumber}>
+                  <span className={styles.timeNumber}>
                     {duration.minutes}:{duration.seconds.toString().padStart(2, '0')}
                   </span>
                 </>
               )}
             </div>
-            <p style={styles.timeLabel}>Minutes</p>
+            <p className={styles.timeLabel}>Minutes</p>
           </div>
         </div>
       </div>
@@ -699,18 +700,18 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
   };
 
   return (
-    <div style={styles.container}>
+    <div className={styles.container}>
       {showResultsScreen ? (
-        <div style={styles.resultsScreenContainer}>
+        <div className={styles.resultsScreenContainer}>
           <ResultsScreen />
         </div>
       ) : (
         <>
-          <div style={styles.topBar}>
+          <div className={styles.topBar}>
             <button 
               ref={settingsButtonRef}
               onClick={toggleSettingsDropdown} 
-              style={styles.dotsButton}
+              className={styles.dotsButton}
             >
               <BsThreeDots size={24} color={'#424E62'} />
             </button>
@@ -720,39 +721,39 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
               totalQuestions={questions.length}
               isLastQuestion={currentIndex === questions.length - 1}
               hasSubmittedLastAnswer={hasSubmitted && currentIndex === questions.length - 1}
-              style={styles.progressBar}
+              className={styles.progressBar}
               fillColor="#7BA8ED"
               animationDuration={600}
             />
 
-            <button onClick={progressSaved ? onExit : handleBackButtonClick} style={styles.backButton}>
+            <button onClick={progressSaved ? onExit : handleBackButtonClick} className={styles.backButton}>
               <IoCloseOutline size={24} color={'#424E62'} />
             </button>
           </div>
 
           {/* Exit Confirmation Modal */}
           {showExitModal && (
-            <div style={styles.modalOverlay} onClick={handleModalOverlayClick}>
-              <div style={styles.modalContent}>
-                <div style={styles.modalHeader}>
-                  <h2 style={styles.modalTitle}>Exit Quiz?</h2>
-                  <button onClick={handleCloseExitModal} style={styles.closeButton}>
+            <div className={styles.modalOverlay} onClick={handleModalOverlayClick}>
+              <div className={styles.modalContent}>
+                <div className={styles.modalHeader}>
+                  <h2 className={styles.modalTitle}>Exit Quiz?</h2>
+                  <button onClick={handleCloseExitModal} className={styles.closeButton}>
                     <IoMdClose size={24} color="#FFFFFF" />
                   </button>
                 </div>
-                <p style={styles.modalSubtext}>
+                <p className={styles.modalSubtext}>
                   Leaving now will reset your progress. You'll start fresh next time.
                 </p>
-                <div style={styles.modalButtons}>
+                <div className={styles.modalButtons}>
                   <button 
                     onClick={handleCloseExitModal}
-                    style={styles.goBackButton}
+                    className={styles.goBackButton}
                   >
                     Go back
                   </button>
                   <button 
                     onClick={handleConfirmExit}
-                    style={styles.exitQuizButton}
+                    className={styles.exitQuizButton}
                   >
                     Exit quiz
                   </button>
@@ -764,8 +765,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
           {showSettingsDropdown && (
             <div
               ref={settingsDropdownRef}
+              className={styles.settingsDropdown}
               style={{
-                ...styles.settingsDropdown,
                 position: 'fixed',
                 left: dropdownPosition.x - 30, // Align the 250px wide dropdown
                 top: dropdownPosition.y,
@@ -774,92 +775,104 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
             >
               {/* Sound Effects Option */}
               <div 
-                style={styles.settingsOption}
+                className={styles.settingsOption}
                 onClick={() => handleSettingToggle('sound', soundEnabled)}
               >
-                <div style={styles.optionLeft}>
-                  <span style={styles.optionText}>Sound effects</span>
+                <div className={styles.optionLeft}>
+                  <span className={styles.optionText}>Sound effects</span>
                 </div>
-                <div style={styles.toggle}>
-                  <div style={{
-                    ...styles.toggleTrack,
-                    backgroundColor: soundEnabled ? '#7BA8ED' : '#424E62'
-                  }}>
-                    <div style={{
-                      ...styles.toggleThumb,
-                      transform: soundEnabled ? 'translateX(16px)' : 'translateX(2px)'
-                    }} />
+                <div className={styles.toggle}>
+                  <div 
+                    className={styles.toggleTrack}
+                    style={{
+                      backgroundColor: soundEnabled ? '#7BA8ED' : '#424E62'
+                    }}
+                  >
+                    <div 
+                      className={styles.toggleThumb}
+                      style={{
+                        transform: soundEnabled ? 'translateX(16px)' : 'translateX(2px)'
+                      }}
+                    />
                   </div>
                 </div>
               </div>
 
               {/* Show Correct Answers Option */}
               <div 
-                style={styles.settingsOption}
+                className={styles.settingsOption}
                 onClick={() => handleSettingToggle('answers', showAnswersEnabled)}
               >
-                <div style={styles.optionLeft}>
-                  <span style={styles.optionText}>Show correct answers</span>
+                <div className={styles.optionLeft}>
+                  <span className={styles.optionText}>Show correct answers</span>
                 </div>
-                <div style={styles.toggle}>
-                  <div style={{
-                    ...styles.toggleTrack,
-                    backgroundColor: showAnswersEnabled ? '#7BA8ED' : '#424E62'
-                  }}>
-                    <div style={{
-                      ...styles.toggleThumb,
-                      transform: showAnswersEnabled ? 'translateX(16px)' : 'translateX(2px)'
-                    }} />
+                <div className={styles.toggle}>
+                  <div 
+                    className={styles.toggleTrack}
+                    style={{
+                      backgroundColor: showAnswersEnabled ? '#7BA8ED' : '#424E62'
+                    }}
+                  >
+                    <div 
+                      className={styles.toggleThumb}
+                      style={{
+                        transform: showAnswersEnabled ? 'translateX(16px)' : 'translateX(2px)'
+                      }}
+                    />
                   </div>
                 </div>
               </div>
 
               {/* Time Mode Option */}
               <div 
-                style={styles.settingsOption}
+                className={styles.settingsOption}
                 onClick={() => handleSettingToggle('time', timeModeEnabled)}
               >
-                <div style={styles.optionLeft}>
-                  <span style={styles.optionText}>Time mode</span>
+                <div className={styles.optionLeft}>
+                  <span className={styles.optionText}>Time mode</span>
                 </div>
-                <div style={styles.toggle}>
-                  <div style={{
-                    ...styles.toggleTrack,
-                    backgroundColor: timeModeEnabled ? '#7BA8ED' : '#424E62'
-                  }}>
-                    <div style={{
-                      ...styles.toggleThumb,
-                      transform: timeModeEnabled ? 'translateX(16px)' : 'translateX(2px)'
-                    }} />
+                <div className={styles.toggle}>
+                  <div 
+                    className={styles.toggleTrack}
+                    style={{
+                      backgroundColor: timeModeEnabled ? '#7BA8ED' : '#424E62'
+                    }}
+                  >
+                    <div 
+                      className={styles.toggleThumb}
+                      style={{
+                        transform: timeModeEnabled ? 'translateX(16px)' : 'translateX(2px)'
+                      }}
+                    />
                   </div>
                 </div>
               </div>
             </div>
           )}
-          <div style={styles.quizPane}>
+          
+          <div className={styles.quizPane}>
             {showReviewConcept ? (
               // Review Concept Content Display
-              <div style={styles.reviewConceptContainer}>
-                <div style={styles.reviewConceptContent}>
+              <div className={styles.reviewConceptContainer}>
+                <div className={styles.reviewConceptContent}>
                   {(() => {
                     const content = getRelevantLessonContent();
                     if (!content) return <p>No lesson content available.</p>;
                     
                     return (
                       <>
-                        <h2 style={styles.reviewConceptTitle}>{content.title}</h2>
-                        <div style={styles.reviewConceptParagraphs}>
+                        <h2>{content.title}</h2>
+                        <div className={styles.reviewConceptParagraphs}>
                           {content.paragraphs.map((paragraph, index) => (
-                            <p key={index} style={styles.reviewConceptParagraph}>
+                            <p key={index} className={styles.reviewConceptParagraph}>
                               {paragraph}
                             </p>
                           ))}
                         </div>
-                        <div style={styles.revisitLessonContainer}>
+                        <div className={styles.revisitLessonContainer}>
                           <span 
                             onClick={progressSaved ? onExit : handleBackButtonClick}
-                            className="revisit-lesson-link"
-                            style={styles.revisitLessonLink}
+                            className={styles.revisitLessonLink}
                           >
                             Revisit full lesson
                           </span>
@@ -881,10 +894,6 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
                   wrongChoices={wrongChoices}
                   questionCompleted={questionCompleted}
                   showAnswersEnabled={showAnswersEnabled}
-                  // onSubmitAnswer={handleSubmitAnswer}
-                  // onDiscussQuestion={handleDiscussQuestion}
-                  // onNext={handleNext}
-                  // isLastQuestion={currentIndex === questions.length - 1}
                   questionStyles={styles.questionStyles}
                   optionStyles={styles.optionStyles}
                 />
@@ -894,27 +903,28 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
         </>
       )}
 
-      <div style={{
-        ...styles.bottomBar,
-        backgroundColor: !showResultsScreen && hasSubmitted ? '#1A2540' : 'transparent'
-      }}>
-        <div style={styles.footer}>
+      <div 
+        className={styles.bottomBar}
+        style={{
+          backgroundColor: !showResultsScreen && hasSubmitted ? '#1A2540' : 'transparent'
+        }}
+      >
+        <div className={styles.footer}>
           {/* Left side - Timer, Result Icon, or Leave Feedback */}
-          <div style={styles.timerSection}>
+          <div className={styles.timerSection}>
             {showResultsScreen ? (
               // Show Leave Feedback button on results screen
               <button
-                className="quiz-bottom-buttons"
+                className={`quiz-bottom-buttons ${styles.leaveFeedbackButton}`}
                 onClick={handleLeaveFeedbackClick}
-                style={styles.leaveFeedbackButton}
               >
                 <MdOutlineThumbsUpDown size={17} color="#9D9D9D" />
-                <span style={styles.leaveFeedbackText}>Leave Feedback</span>
+                <span className={styles.leaveFeedbackText}>Leave Feedback</span>
               </button>
             ) : questionCompleted && showAnswersEnabled ? (
               // Show result icon when submitted
-              <div style={styles.resultIconContainer}>
-                <svg width="60" height="60" style={styles.resultSvg}>
+              <div className={styles.resultIconContainer}>
+                <svg width="60" height="60" className={styles.resultSvg}>
                   <circle
                     cx="30"
                     cy="30"
@@ -944,8 +954,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
               </div>
             ) : (
             timeModeEnabled && (
-              <div style={styles.timerContainer}>
-                <svg width="40" height="40" style={styles.timerSvg}>
+              <div className={styles.timerContainer}>
+                <svg width="40" height="40" className={styles.timerSvg}>
                   <defs>
                     {/* Define a mask that drains the timer */}
                     <mask id="timer-mask">
@@ -995,13 +1005,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
           </div>
 
           {/* Right side - Action buttons */}
-          <div style={styles.actionsSection}>
+          <div className={styles.actionsSection}>
             <button
-              className="quiz-bottom-buttons"
+              className={`quiz-bottom-buttons ${styles.actionButton}`}
               onClick={showResultsScreen ? onExit : 
                       ((!questionCompleted && showAnswersEnabled) || (!showAnswersEnabled && !showResultsScreen)) ? handleSkip : 
                       (showReviewConcept ? handleCloseReviewConcept : handleReviewConcept)}
-              style={styles.actionButton}
             >
               {showResultsScreen ? 'REVIEW LESSON' : 
               ((!questionCompleted && showAnswersEnabled) || (!showAnswersEnabled && !showResultsScreen)) ? 'SKIP' : 
@@ -1009,11 +1018,10 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
             </button>
             
             <button
-              className={`quiz-bottom-buttons ${showResultsScreen ? 'results-continue' : ''}`}
+              className={`quiz-bottom-buttons ${styles.continueButton} ${showResultsScreen ? 'results-continue' : ''}`}
               onClick={showResultsScreen ? onExit : handleContinue}
               disabled={!canContinue && !questionCompleted}
               style={{
-                ...styles.continueButton,
                 opacity: (!canContinue && !questionCompleted) ? 0.5 : 1,
                 cursor: (!canContinue && !questionCompleted) ? 'not-allowed' : 'pointer',
                 color: showResultsScreen ? '#0D103F' : (canContinue || questionCompleted ? '#FFFFFF' : '#AAABAF'),
@@ -1032,24 +1040,6 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
         </div>
       </div>
 
-      {/* SideChat only appears after submitting an answer */}
-      {/* {!showResultsPopup && !chatHidden && hasSubmitted && (
-        <SideChat
-          sideChatMessages={sideChatMessages}
-          sideChatInput={sideChatInput}
-          setSideChatInput={setSideChatInput}
-          handleSideChatSubmit={handleSideChatSubmit}
-          messagesEndRef={messagesEndRef}
-          messagesContainerRef={messagesContainerRef}
-          chatHidden={chatHidden}
-          revealChat={() => setChatHidden(false)}
-          showHistory={showHistory}
-          toggleHistory={() => setShowHistory(h => !h)}
-          chatHistory={chatHistory}
-          // style={styles.sideChatOverlay}
-        />
-      )} */}
-
       {/* Feedback Modal */}
       <FeedbackModal
         isOpen={showFeedbackModal}
@@ -1059,515 +1049,5 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
     </div>
   );
 };
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    width: '100%',
-    height: '100%',
-    position: 'relative',
-    background: '#030E29',
-    color: '#FFFFFF',
-    overflow: 'hidden',
-    margin: '0 auto',
-  },
-  topBar: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    width: '70%',
-    maxWidth: '1350px',
-    zIndex: 10,
-    marginTop: '3rem',
-    marginBottom: '4rem',
-  },
-  backButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'transparent',
-    border: 'none',
-    padding: 0,
-    width: '24px',
-    height: '24px',
-    cursor: 'pointer',
-    zIndex: 10,
-  },
-  progressBar: {
-    width: '90%',
-    height: 10,
-    backgroundColor: '#424E62',
-    borderRadius: 6,
-    border: 'none',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-    marginRight: '2.5rem',
-  },
-  dotsButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'transparent',
-    border: 'none',
-    padding: 0,
-    width: '24px',
-    height: '24px',
-    cursor: 'pointer',
-    zIndex: 10,
-    marginRight: '2.5rem',
-  },
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 9999,
-  },
-  modalContent: {
-    backgroundColor: '#182549',
-    borderRadius: '16px',
-    padding: '40px',
-    maxWidth: '440px',
-    width: '90%',
-    textAlign: 'center' as const,
-    boxShadow: '0 15px 30px rgba(0, 0, 0, 0.5)',
-  },
-  modalHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '24px',
-    position: 'relative',
-  },
-  modalTitle: {
-    fontSize: '28px',
-    fontWeight: '600',
-    fontFamily: "'Inter', sans-serif",
-    color: '#FFFFFF',
-    margin: 0,
-    flex: 1,
-    textAlign: 'center',
-  },
-  closeButton: {
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '4px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
-    right: -28,
-    top: -28,
-  },
-  modalSubtext: {
-    fontSize: '16px',
-    fontWeight: '400',
-    fontFamily: "'Inter', sans-serif",
-    color: '#AAAAC1',
-    margin: '0 0 32px 0',
-    lineHeight: '1.5',
-  },
-  modalButtons: {
-    display: 'flex',
-    gap: '16px',
-    justifyContent: 'center',
-  },
-  goBackButton: {
-    padding: '12px 24px',
-    fontSize: '16px',
-    fontWeight: '500',
-    fontFamily: "'Inter', sans-serif",
-    color: '#FFFFFF',
-    backgroundColor: 'transparent',
-    border: '2px solid #424E62',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    minWidth: '120px',
-  },
-  exitQuizButton: {
-    padding: '12px 24px',
-    fontSize: '16px',
-    fontWeight: '500',
-    fontFamily: "'Inter', sans-serif",
-    color: '#FFFFFF',
-    backgroundColor: '#3D4C65',
-    border: 'none',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    minWidth: '120px',
-  },
-  quizPane: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    padding: '60px 40px 40px',
-    boxSizing: 'border-box',
-    width: '62%',
-    maxWidth: '1195px',
-    margin: '0 auto',
-  },
-  questionStyles: {
-    fontFamily: "'Inter', sans-serif",
-    fontSize: '28px',
-    fontWeight: '400',
-    lineHeight: '1.6',
-    letterSpacing: '.02em',
-    color: '#FFFFFF',
-    textAlign: 'left' as const,
-    maxWidth: '1195px',
-    width: '100%',
-    margin: '0 auto 5.5rem auto' ,
-  },
-  optionStyles: {
-    fontFamily: "'Inter', sans-serif",
-    fontSize: '18px',
-    fontWeight: 'normal',
-    lineHeight: '1.4',
-    color: '#AAAAC1',
-  },
-  header: {
-    fontSize: '1.8rem',
-    margin: 0,
-    marginBottom: 8,
-  },
-  subheader: {
-    fontSize: '1rem',
-    margin: 0,
-    marginBottom: 32,
-    opacity: 0.8,
-  },
-  settingsDropdown: {
-    backgroundColor: '#1a2332',
-    border: '1px solid #424E62',
-    borderRadius: '8px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-    padding: '12px',
-    minWidth: '250px',
-    zIndex: 1000,
-  },
-  settingsOption: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '2px 2px',
-    cursor: 'pointer',
-    borderRadius: '6px',
-    transition: 'background-color 0.2s ease',
-    marginBottom: '4px',
-  },
-  optionLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  optionText: {
-    color: '#7A7C92',
-    fontSize: '14px',
-    fontWeight: '400',
-    fontFamily: "'Inter', sans-serif",
-  },
-  toggle: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  toggleTrack: {
-    width: '32px',
-    height: '16px',
-    borderRadius: '8px',
-    position: 'relative',
-    transition: 'background-color 0.2s ease',
-  },
-  toggleThumb: {
-    width: '12px',
-    height: '12px',
-    backgroundColor: '#FFFFFF',
-    borderRadius: '50%',
-    position: 'absolute',
-    top: '2px',
-    transition: 'transform 0.2s ease',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
-  },
-  bottomBar: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    width: '100%',
-    zIndex: 10,
-    borderTop: '1px solid rgba(66, 78, 98, 0.3)',
-    marginTop: 'auto',
-    transition: 'background-color 0.15s ease',
-  },
-  resultIconContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: '60px',
-  },
-  resultSvg: {
-    // filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3))',
-  },
-  footer: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '65%',
-    maxWidth: '1350px',
-    marginTop: '1.5rem',
-    marginBottom: '1.5rem',
-  },
-  timerSection: {
-    display: 'flex',
-    alignItems: 'center',
-    minWidth: '60px',
-    height: '60px',
-  },
-  timerContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timerSvg: {
-    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
-  },
-  leaveFeedbackButton: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    padding: '12px 36px',
-    fontSize: '16px',
-    fontWeight: '500',
-    fontFamily: "'Sarabun', sans-serif",
-    color: '#9D9D9D',
-    backgroundColor: 'transparent',
-    border: 'transparent',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    minWidth: '140px',
-    height: 'auto',
-  },
-  leaveFeedbackText: {
-    fontSize: '16px',
-    fontWeight: '500',
-    fontFamily: "'Sarabun', sans-serif",
-    color: '#9D9D9D',
-    lineHeight: 1,
-  },
-  actionsSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-  },
-  actionButton: {
-    padding: '12px 42px',
-    fontSize: '22px',
-    fontWeight: '500',
-    fontFamily: "'Sarabun', sans-serif",
-    color: '#AAABAF',
-    backgroundColor: 'transparent',
-    border: 'transparent',
-    // border: '2px solid #424E62',
-    // borderRadius: '16px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    minWidth: '80px',
-  },
-  reviewConceptContainer: {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-  },
-  reviewConceptTitle: {
-    // fontSize: '24px',
-    // fontWeight: '600',
-    // fontFamily: "'Inter', sans-serif",
-    // color: '#FFFFFF',
-    // marginBottom: '20px',
-  },
-  reviewConceptContent: {
-    fontSize: '20px',
-    fontWeight: '400',
-    fontFamily: "'Inter', sans-serif",
-    flex: 1,
-    overflowY: 'auto',
-    padding: '0 20px',
-    scrollBehavior: 'smooth',
-  },
-  reviewConceptParagraphs: {
-    marginBottom: '30px',
-  },
-  reviewConceptParagraph: {
-    fontSize: '18px',
-    fontWeight: '400',
-    fontFamily: "'Inter', sans-serif",
-    lineHeight: '1.6',
-    marginBottom: '16px',
-  },
-  revisitLessonContainer: {
-    marginTop: '30px',
-    textAlign: 'left' as const,
-  },
-  revisitLessonLink: {
-    fontSize: '14px',
-    fontWeight: '400',
-    fontFamily: "'Inter', sans-serif",
-    color: '#AFAFAF',
-    textDecoration: 'underline',
-    cursor: 'pointer',
-    transition: 'color 0.2s ease',
-    lineHeight: '1.4',
-  },
-  continueButton: {
-    padding: '12px 42px',
-    fontSize: '22px',
-    fontWeight: '500',
-    fontFamily: "'Sarabun', sans-serif",
-    // color: '#FFFFFF',
-    border: 'none',
-    borderRadius: '16px',
-    transition: 'all 0.2s ease',
-    minWidth: '100px',
-  },
-  resultsContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    height: '100%',
-    padding: '40px',
-    marginTop: '50%',
-  },
-  resultsTitle: {
-    fontSize: '36px',
-    fontWeight: '600',
-    fontFamily: "'Inter', sans-serif",
-    color: '#FFFFFF',
-    marginBottom: '50px',
-    textAlign: 'center',
-  },
-  resultsContent: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '80px',
-    marginBottom: '60px',
-  },
-  accuracySection: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  accuracyCircle: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '0',
-  },
-  accuracySvg: {
-    // transform: 'rotate(-90deg)',
-  },
-  percentageText: {
-    position: 'absolute',
-    fontSize: '16px',
-    fontWeight: '600',
-    fontFamily: "'Inter', sans-serif",
-    color: '#FFFFFF',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-  },
-  accuracyLabel: {
-    fontSize: '18px',
-    fontWeight: '400',
-    fontFamily: "'Inter', sans-serif",
-    color: '#AAAAC1',
-    margin: 0,
-  },
-  timeSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  timeDisplay: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: '2%',
-    marginBottom: '-2%',
-    height: '70px',
-  },
-  timeNumber: {
-    fontSize: '18px',
-    fontWeight: '600',
-    fontFamily: "'Inter', sans-serif",
-    color: '#FFFFFF',
-  },
-  timeLabel: {
-    fontSize: '18px',
-    fontWeight: '400',
-    fontFamily: "'Inter', sans-serif",
-    color: '#AAAAC1',
-    margin: 0,
-  },
-  sideChatOverlay: {
-    position: 'fixed',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    width: '400px',
-    zIndex: 1000,
-    pointerEvents: 'auto',
-  },
-};
-
-// Add hover effects
-const addHoverStyles = () => {
-  const style = document.createElement('style');
-  style.textContent = `
-    .quiz-bottom-buttons:hover:not(:disabled) {
-      opacity: 0.9 !important;
-      transition: opacity 0.2s ease;
-    }
-
-    .revisit-lesson-link:hover:not(:disabled) {
-      opacity: 0.9 !important;
-      transition: opacity 0.2s ease;
-    }
-    
-    @keyframes fillFromBottom {
-      0% {
-        stroke-dashoffset: ${2 * Math.PI * 25}; /* Full circumference - starts empty */
-        transform: rotate(90deg); /* Start from bottom */
-      }
-      100% {
-        stroke-dashoffset: var(--final-offset); /* Final calculated offset */
-        transform: rotate(var(--final-rotation)); /* Final rotation for symmetry */
-      }
-    }
-  `;
-  document.head.appendChild(style);
-};
-
-if (typeof document !== 'undefined') {
-  addHoverStyles();
-}
 
 export default Quiz;

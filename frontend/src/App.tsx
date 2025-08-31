@@ -13,14 +13,14 @@ import {
   useParams,
   useNavigate
 } from 'react-router-dom';
-import Login from './components/Login';
-import ProfileCreation from './components/ProfileCreation';
-import Dashboard from './components/Dashboard';
-import Profile from './components/Profile';
-import Quiz from './components/Quiz';
-import AdminDashboard from './components/AdminDashboard';
+import Login from './components/Login/Login';
+import ProfileCreation from './components/ProfileCreation/ProfileCreation';
+import Dashboard from './components/Dashboard/Dashboard';
+import Profile from './components/Profile/Profile';
+import Quiz from './components/Quiz/Quiz';
+import AdminDashboard from './components/AdminDashboard/AdminDashboard';
 import { allQuizData } from './components/QuizQuestion';
-import './App.css';
+import './App.scss';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 
 /**

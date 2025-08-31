@@ -1,0 +1,246 @@
+// ======================================================
+// src/components/FeedbackModal/FeedbackModal.module.scss
+// ======================================================
+
+@use '../../styles/variables' as *;
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: z(modal);
+}
+
+.modalContent {
+  background-color: #17213A;
+  border-radius: space(lg);
+  padding: space(xxxxl);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(xxxl);
+  position: relative;
+}
+
+.modalTitle {
+  font-size: font-size(xxxl);
+  font-weight: font-weight(semibold);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: -28px;
+  top: -28px;
+  transition: transform transition(fast) ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.backButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  left: -28px;
+  top: -24px;
+  transition: transform transition(fast) ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.modalBody {
+  font-size: font-size(base);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  margin: 0 0 space(xxxl) 0;
+  line-height: map-get($line-heights, relaxed);
+  text-align: center;
+}
+
+.categoryButtons {
+  display: flex;
+  flex-direction: column;
+  gap: space(md);
+}
+
+.categoryButton {
+  padding: space(lg) space(xl);
+  font-size: font-size(base);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  background-color: transparent;
+  border: 1px solid #424E62;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  text-align: left;
+  width: 100%;
+
+  &:hover {
+    background-color: rgba(66, 78, 98, 0.2);
+    border-color: #566591;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.feedbackTextarea {
+  width: 100%;
+  min-height: 120px;
+  padding: space(lg);
+  font-size: font-size(base);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: #9DA7B7;
+  background-color: color(background-dark);
+  border: 1px solid #353E56;
+  border-radius: 8px;
+  resize: vertical;
+  outline: none;
+  margin-bottom: space(xxxl);
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: #566591;
+  }
+
+  &::placeholder {
+    color: #6B7280;
+  }
+}
+
+.actionButtons {
+  display: flex;
+  gap: space(lg);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.screenshotButton {
+  padding: space(md) space(xl);
+  font-size: font-size(sm);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  background-color: transparent;
+  border: 1px solid #353E54;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  flex: 1;
+  min-width: 150px;
+
+  &:hover {
+    background-color: rgba(53, 62, 84, 0.3);
+    border-color: #566591;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.submitButton {
+  padding: space(md) space(xxxl);
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  background-color: #353E54;
+  border: none;
+  border-radius: space(lg);
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  min-width: 100px;
+
+  &:hover:not(:disabled) {
+    background-color: #404A5F;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+// Responsive breakpoints
+@include breakpoint(mobile) {
+  .modalContent {
+    padding: space(xxxl);
+    max-width: 95%;
+  }
+
+  .modalTitle {
+    font-size: font-size(xl);
+  }
+
+  .actionButtons {
+    flex-direction: column;
+    align-items: stretch;
+
+    .screenshotButton,
+    .submitButton {
+      width: 100%;
+      min-width: auto;
+    }
+  }
+}

@@ -1,7 +1,8 @@
-// src/components/Profile.tsx
+// src/components/Profile/Profile.tsx
 
 import React, { useEffect, useState, ChangeEvent } from 'react';
 import axios from 'axios';
+import styles from './Profile.module.scss';
 
 // Base URL for API (uses same env var across your app)
 const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
@@ -150,47 +151,47 @@ const Profile: React.FC = () => {
       .catch(console.error);
   };
 
-  if (loading) return <div style={styles.page}>Loading…</div>;
+  if (loading) return <div className={styles.page}>Loading…</div>;
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
+    <div className={styles.page}>
+      <div className={styles.card}>
         <div
-          style={styles.back}
+          className={styles.back}
           onClick={() => (window.location.href = '/map')}
         >
           ← Back
         </div>
 
-        <h2 style={styles.heading}>Welcome back, {data.name}!</h2>
+        <h2 className={styles.heading}>Welcome back, {data.name}!</h2>
 
-        <div style={styles.avatarSection}>
+        <div className={styles.avatarSection}>
           {data.profilePicture ? (
             <img
               src={data.profilePicture}
               alt="Profile"
-              style={styles.avatar}
+              className={styles.avatar}
             />
           ) : (
-            <div style={styles.avatarFallback}>👤</div>
+            <div className={styles.avatarFallback}>👤</div>
           )}
-          <label style={styles.uploadLabel}>
+          <label className={styles.uploadLabel}>
             Change Photo
             <input
               type="file"
               accept="image/*"
               onChange={handlePicture}
-              style={styles.fileInput}
+              className={styles.fileInput}
             />
           </label>
         </div>
 
         {/* Education */}
-        <div style={styles.section}>
-          <div style={styles.label}>Education level</div>
-          <div style={styles.optionsGrid}>
+        <div className={styles.section}>
+          <div className={styles.label}>Education level</div>
+          <div className={styles.optionsGrid}>
             {EDUCATION_LEVELS.map(lvl => (
-              <label key={lvl} style={styles.radioLabel}>
+              <label key={lvl} className={styles.radioLabel}>
                 <input
                   type="radio"
                   name="education"
@@ -207,14 +208,14 @@ const Profile: React.FC = () => {
               placeholder="Please specify"
               value={data.otherEducation}
               onChange={handleChange('otherEducation')}
-              style={styles.textInput}
+              className={styles.textInput}
             />
           )}
         </div>
 
         {/* Major */}
-        <div style={styles.section}>
-          <div style={styles.label}>Major / Field of study</div>
+        <div className={styles.section}>
+          <div className={styles.label}>Major / Field of study</div>
           <input
             type="text"
             placeholder="Your major"
@@ -236,16 +237,16 @@ const Profile: React.FC = () => {
                   otherMajor: v
                 }));
             }}
-            style={styles.textInput}
+            className={styles.textInput}
           />
         </div>
 
         {/* Coding Experience */}
-        <div style={styles.section}>
-          <div style={styles.label}>Coding experience</div>
-          <div style={styles.optionsGrid}>
+        <div className={styles.section}>
+          <div className={styles.label}>Coding experience</div>
+          <div className={styles.optionsGrid}>
             {CODING_EXP.map(opt => (
-              <label key={opt} style={styles.radioLabel}>
+              <label key={opt} className={styles.radioLabel}>
                 <input
                   type="radio"
                   name="coding"
@@ -260,19 +261,16 @@ const Profile: React.FC = () => {
         </div>
 
         {/* Hobbies */}
-        <div style={styles.section}>
-          <div style={styles.label}>Your hobbies & interests</div>
-          <div style={styles.hobbyGrid}>
+        <div className={styles.section}>
+          <div className={styles.label}>Your hobbies & interests</div>
+          <div className={styles.hobbyGrid}>
             {HOBBIES.map(h => (
               <button
                 key={h}
                 onClick={() => handleHobbyToggle(h)}
-                style={{
-                  ...styles.hobby,
-                  ...(data.favoriteHobbies.includes(h)
-                    ? styles.hobbySelected
-                    : {})
-                }}
+                className={`${styles.hobby} ${
+                  data.favoriteHobbies.includes(h) ? styles.selected : ''
+                }`}
               >
                 {h}
               </button>
@@ -281,17 +279,17 @@ const Profile: React.FC = () => {
         </div>
 
         {/* Actions */}
-        <div style={styles.actions}>
+        <div className={styles.actions}>
           <button
             onClick={handleSave}
             disabled={saving}
-            style={styles.saveBtn}
+            className={styles.saveBtn}
           >
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
           <button
             onClick={() => setShowLogoutConfirm(true)}
-            style={styles.logoutBtn}
+            className={styles.logoutBtn}
           >
             Log Out
           </button>
@@ -300,19 +298,19 @@ const Profile: React.FC = () => {
 
       {/* Logout Modal */}
       {showLogoutConfirm && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
             <p>Are you sure you want to log out?</p>
-            <div style={styles.modalActions}>
+            <div className={styles.modalActions}>
               <button
                 onClick={handleLogout}
-                style={styles.saveBtn}
+                className={styles.saveBtn}
               >
                 Confirm
               </button>
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                style={styles.cancelBtn}
+                className={styles.cancelBtn}
               >
                 Cancel
               </button>
@@ -322,178 +320,6 @@ const Profile: React.FC = () => {
       )}
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: '100vh',
-    background: '#071746',
-    padding: 20,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'flex-start'
-  },
-  card: {
-    width: 600,
-    background: '#1C1F2E',
-    borderRadius: 10,
-    padding: 30,
-    color: '#f8f8fa',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-  },
-  back: {
-    cursor: 'pointer',
-    color: '#A487AE',
-    fontSize: '1.1rem',
-    marginBottom: 20
-  },
-  heading: {
-    margin: 0,
-    fontSize: '1.8rem',
-    marginBottom: 30
-  },
-  avatarSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    marginBottom: 30
-  },
-  avatar: {
-    width: 150,
-    height: 150,
-    borderRadius: '50%',
-    objectFit: 'cover',
-    marginBottom: 10,
-    border: '3px solid #566395'
-  },
-  avatarFallback: {
-    width: 150,
-    height: 150,
-    borderRadius: '50%',
-    background: '#394a6d',
-    fontSize: 60,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10
-  },
-  uploadLabel: {
-    background: '#566395',
-    padding: '6px 12px',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: '0.9rem'
-  },
-  fileInput: {
-    display: 'none'
-  },
-  section: {
-    marginBottom: 25
-  },
-  label: {
-    fontWeight: 600,
-    marginBottom: 8
-  },
-  optionsGrid: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 12
-  },
-  radioLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    background: 'rgba(255,255,255,0.05)',
-    padding: '8px 12px',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: '0.95rem'
-  },
-  textInput: {
-    width: '100%',
-    padding: '10px',
-    borderRadius: 6,
-    border: '1px solid #566395',
-    background: '#0F1233',
-    color: '#f8f8fa',
-    fontSize: '1rem',
-    marginTop: 8
-  },
-  hobbyGrid: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 8
-  },
-  hobby: {
-    padding: '6px 14px',
-    borderRadius: 6,
-    border: '1px solid #566395',
-    background: 'transparent',
-    color: '#f8f8fa',
-    cursor: 'pointer',
-    fontSize: '0.9rem'
-  },
-  hobbySelected: {
-    background: '#566395'
-  },
-  actions: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginTop: 30
-  },
-  saveBtn: {
-    flex: 1,
-    marginRight: 10,
-    padding: '12px',
-    background: '#566395',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: '1rem'
-  },
-  logoutBtn: {
-    flex: 1,
-    marginLeft: 10,
-    padding: '12px',
-    background: '#A487AE',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: '1rem'
-  },
-  modalOverlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  modal: {
-    background: '#fff',
-    color: '#111',
-    padding: 24,
-    borderRadius: 8,
-    width: 320,
-    textAlign: 'center'
-  },
-  modalActions: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginTop: 20
-  },
-  cancelBtn: {
-    flex: 1,
-    marginLeft: 8,
-    background: '#ddd',
-    color: '#111',
-    border: 'none',
-    borderRadius: 6,
-    padding: '12px',
-    cursor: 'pointer'
-  }
 };
 
 export default Profile;

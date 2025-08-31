@@ -1,0 +1,343 @@
+// ==========================================
+// src/components/Profile/Profile.module.scss
+// ==========================================
+
+@use '../../styles/variables' as *;
+
+.page {
+  min-height: 100vh;
+  background: color(primary-dark);
+  padding: space(xl);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.card {
+  width: 600px;
+  max-width: 90vw;
+  background: #1C1F2E;
+  border-radius: 10px;
+  padding: space(xxxl);
+  color: color(text-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.back {
+  cursor: pointer;
+  color: color(secondary-light);
+  font-size: font-size(lg);
+  margin-bottom: space(xl);
+  transition: color transition(fast) ease;
+
+  &:hover {
+    color: color(secondary);
+  }
+}
+
+.heading {
+  margin: 0 0 space(xxxl);
+  font-size: font-size(xxl);
+  color: color(text-primary);
+}
+
+.avatarSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: space(xxxl);
+}
+
+.avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: space(sm);
+  border: 3px solid color(secondary);
+}
+
+.avatarFallback {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: #394a6d;
+  font-size: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: space(sm);
+}
+
+.uploadLabel {
+  background: color(secondary);
+  padding: 6px space(md);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: font-size(sm);
+  color: color(text-primary);
+  transition: background-color transition(fast) ease;
+
+  &:hover {
+    background-color: color(secondary-light);
+  }
+}
+
+.fileInput {
+  display: none;
+}
+
+.section {
+  margin-bottom: 25px;
+}
+
+.label {
+  font-weight: font-weight(semibold);
+  margin-bottom: space(sm);
+  color: color(text-primary);
+}
+
+.optionsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(md);
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: space(sm) space(md);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: font-size(sm);
+  transition: background-color transition(fast) ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.textInput {
+  width: 100%;
+  padding: space(sm);
+  border-radius: 6px;
+  border: 1px solid color(secondary);
+  background: #0F1233;
+  color: color(text-primary);
+  font-size: font-size(base);
+  margin-top: space(sm);
+
+  &:focus {
+    outline: none;
+    border-color: color(primary);
+  }
+}
+
+.hobbyGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(sm);
+}
+
+.hobby {
+  padding: 6px space(sm);
+  border-radius: 6px;
+  border: 1px solid color(secondary);
+  background: transparent;
+  color: color(text-primary);
+  cursor: pointer;
+  font-size: font-size(sm);
+  transition: all transition(fast) ease;
+  min-width: 100px;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #2A3A52;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+// Modal styles
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: z(tutorial);
+}
+
+.modalContent {
+  background-color: #182549;
+  border-radius: space(lg);
+  padding: space(xxxxl);
+  max-width: 440px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.modalTitle {
+  font-size: 22px;
+  font-weight: font-weight(semibold);
+  font-family: font-family(primary);
+  color: #FEFEFE;
+  margin: 0 0 space(lg) 0;
+  line-height: 1.3;
+  flex: 1;
+  text-align: center;
+}
+
+.closeModalButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: -28px;
+  top: -28px;
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+.modalSubtext {
+  font-size: 14px;
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: #AAAAC1;
+  margin: 0 0 space(xxxl) 0;
+  line-height: 1.5;
+}
+
+.modalButtons {
+  display: flex;
+  gap: space(lg);
+  justify-content: center;
+}
+
+.goBackButton {
+  padding: space(md) space(xxl);
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  background-color: transparent;
+  border: 2px solid #424E62;
+  border-radius: space(md);
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  min-width: 120px;
+
+  &:hover {
+    background-color: #10204D;
+    border-color: #1D4177;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.skipAnywayButton {
+  padding: space(md) space(xxl);
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  background-color: #3D4C65;
+  border: none;
+  border-radius: space(md);
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  min-width: 120px;
+
+  &:hover {
+    background-color: #404A5F;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+// Video popup
+.videoOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: z(chat);
+  padding: space(xl);
+
+  h2 {
+    color: color(text-primary);
+    margin-bottom: space(xl);
+    text-align: center;
+    font-size: font-size(xxxl);
+  }
+
+  video {
+    width: 80%;
+    border-radius: space(sm);
+    max-width: layout(max-content-width);
+  }
+}
+
+.skipVideoButton {
+  margin-top: space(xl);
+  padding: space(md) space(xxl);
+  background-color: color(secondary);
+  color: color(text-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: font-size(lg);
+  font-family: font-family(primary);
+  transition: background-color transition(fast) ease;
+
+  &:hover {
+    background-color: color(secondary-light);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}

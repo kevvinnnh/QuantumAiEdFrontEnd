@@ -1,4 +1,5 @@
 // src/components/QuizQuestions.ts
+
 export interface Question {
   question: string;
   options: string[];

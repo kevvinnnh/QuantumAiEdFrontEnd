@@ -1,10 +1,11 @@
-// src/components/TutorialPopup.tsx
+// src/components/TutorialPopup/TutorialPopup.tsx
 
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { MdClose } from 'react-icons/md';
-import AnalogyImg from '../assets/analogy-tutorial.svg';
-import ExplainImg from '../assets/explain-tutorial.svg';
+import AnalogyImg from '../../assets/analogy-tutorial.svg';
+import ExplainImg from '../../assets/explain-tutorial.svg';
+import styles from './TutorialPopup.module.scss';
 
 interface TutorialPopupProps {
 	step: 1 | 2 | 3;
@@ -141,55 +142,53 @@ const TutorialPopup: React.FC<TutorialPopupProps> = ({
 	return createPortal(
 		<div
 			ref={popupRef}
-			className="tutorial-popup"
+			className={styles.container}
 			style={{
-				...styles.container,
 				top: position.top,
 				left: position.left,
 				opacity: position.visible ? 1 : 0,
 				transform: position.visible ? 'scale(1)' : 'scale(0.9)',
-				transition: 'opacity 0.2s ease, transform 0.2s ease',
 			}}
 		>
 			{/* Arrow */}
-			<div style={styles.arrowWrapper}>
-				<div style={styles.arrowOuter} />
-				<div style={styles.arrowInner} />
+			<div className={styles.arrowWrapper}>
+				<div className={styles.arrowOuter} />
+				<div className={styles.arrowInner} />
 			</div>
 			
-			<div className="popup" style={styles.popup}>
+			<div className={styles.popup}>
 				{/* Close button */}
 				<button
 					onClick={onClose}
-					style={styles.closeButton}
+					className={styles.closeButton}
 					aria-label="Close"
 				>
 					<MdClose size={24} color="#FFFFFF" />
 				</button>
 				
 				{/* Preload both images */}
-				<img src={AnalogyImg} alt="" style={{ display: 'none' }} />
-				<img src={ExplainImg} alt="" style={{ display: 'none' }} />
+				<img src={AnalogyImg} alt="" className={styles.hiddenImage} />
+				<img src={ExplainImg} alt="" className={styles.hiddenImage} />
 				
 				{/* Tutorial image */}
-				<div style={styles.imageContainer}>
-					<img src={image} alt={title} style={styles.image} />
+				<div className={styles.imageContainer}>
+					<img src={image} alt={title} className={styles.image} />
 				</div>
 				
-				<div style={styles.contentContainer}>
+				<div className={styles.contentContainer}>
 					{/* Tutorial text */}
-					<div style={styles.tutorialText}>
-						<div style={styles.tutorialTitle}>{title}</div>
-						<div style={styles.tutorialDescription}>{description}</div>
+					<div className={styles.tutorialText}>
+						<div className={styles.tutorialTitle}>{title}</div>
+						<div className={styles.tutorialDescription}>{description}</div>
 					</div>
 					
-					<div style={styles.navRow}>
-						<div style={styles.buttonContainer}>
+					<div className={styles.navRow}>
+						<div className={styles.buttonContainer}>
 							{/* Back button */}
 							<button
 								onClick={onBack}
+								className={styles.backButton}
 								style={{
-									...styles.backButton,
 									visibility: showBack ? 'visible' : 'hidden',
 								}}
 							>
@@ -198,24 +197,21 @@ const TutorialPopup: React.FC<TutorialPopupProps> = ({
 						</div>
 						
 						{/* Step indicators */}
-						<div style={styles.dotsRow}>
+						<div className={styles.dotsRow}>
 							{[0, 1, 2].map(i => (
 								<span
 									key={i}
-									style={{
-										...styles.dot,
-										background: stepIndex === i ? '#A8BAD8' : '#525D67',
-									}}
+									className={`${styles.dot} ${stepIndex === i ? styles.active : ''}`}
 								/>
 							))}
 						</div>
 						
-						<div style={styles.buttonContainer}>
+						<div className={styles.buttonContainer}>
 							{/* Next/Got it button */}
 							<button
 								onClick={showNext ? onNext : onClose}
+								className={styles.nextButton}
 								style={{
-									...styles.nextButton,
 									visibility: (showNext || buttonLabel === 'Got it') ? 'visible' : 'hidden',
 								}}
 							>
@@ -228,147 +224,6 @@ const TutorialPopup: React.FC<TutorialPopupProps> = ({
 		</div>,
 		portalRoot
 	);
-};
-
-const styles: Record<string, React.CSSProperties> = {
-	container: {
-		position: 'fixed',
-		width: 300,
-		border: '1px solid #2F3C57',
-		borderRadius: '10px',
-		zIndex: 3000,
-		pointerEvents: 'auto',
-	},
-	arrowWrapper: {
-		position: 'absolute',
-		top: 35,
-		left: 290,
-		width: 0,
-		height: 0,
-		pointerEvents: 'none',
-	},
-	arrowOuter: {
-		position: 'absolute',
-		top: 0,
-		left: 8,
-		borderLeft: '16px solid #2B3854',
-		borderTop: '16px solid transparent',
-		borderRight: '16px solid transparent',
-		borderBottom: '12px solid transparent',
-	},
-	arrowInner: {
-		position: 'absolute',
-		top: 0,
-		left: 6,
-		borderLeft: '16px solid #030C34',
-		borderTop: '16px solid transparent',
-		borderRight: '16px solid transparent',
-		borderBottom: '12px solid transparent',
-	},
-	popup: {
-		position: 'relative',
-		alignItems: 'center',
-		borderRadius: '10px',
-		overflow: 'hidden',
-	},
-	closeButton: {
-		background: 'transparent',
-		border: 'none',
-		cursor: 'pointer',
-		padding: '4px',
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		position: 'absolute',
-		right: 0,
-		top: 0,
-		zIndex: 1,
-	},
-	imageContainer: {
-		minHeight: 200,
-		display: 'flex',
-		alignItems: 'flex-end',
-		justifyContent: 'center',
-		background: '#030C34',
-	},
-	image: {
-		width: 'calc(100% - 48px)',
-		height: 128,
-		minHeight: 128,
-		maxHeight: 128,
-		margin: '12px auto 12px auto',
-		borderRadius: '8px',
-		objectFit: 'contain',
-		display: 'block',
-	},
-	contentContainer: {
-		padding: '14px 14px 16px 14px',
-		background: '#253655',
-	},
-	tutorialText: {
-		marginBottom: 18,
-	},
-	tutorialTitle: {
-		color: '#F2F2F2',
-		fontFamily: "'Inter', sans-serif",
-		fontWeight: 500,
-		fontSize: '16px',
-		marginBottom: 8,
-	},
-	tutorialDescription: {
-		color: '#9CB0BC',
-		fontFamily: "'Inter', sans-serif",
-		fontSize: '14px',
-	},
-	navRow: {
-		display: 'flex',
-		position: 'relative',
-		justifyContent: 'space-between',
-		minHeight: 40,
-	},
-	buttonContainer: {
-		minWidth: 60,
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	backButton: {
-		background: 'transparent',
-		color: '#A8BAD8',
-		border: '1px solid #A8BAD8',
-		borderRadius: 6,
-		padding: '6px 8px',
-		fontFamily: "'Inter', sans-serif",
-		fontWeight: 500,
-		fontSize: '16px',
-		cursor: 'pointer',
-	},
-	nextButton: {
-		background: '#A8BAD8',
-		color: '#030C34',
-		border: 'none',
-		borderRadius: 4,
-		padding: '6px 8px',
-		fontFamily: "'Inter', sans-serif",
-		fontWeight: 500,
-		fontSize: '16px',
-		cursor: 'pointer',
-	},
-	dotsRow: {
-		display: 'flex',
-		justifyContent: 'center',
-		alignItems: 'center',
-		gap: 3,
-		margin: '30px 0 0 0',
-	},
-	dot: {
-		width: 6,
-		height: 6,
-		borderRadius: '50%',
-		background: '#525D67',
-		transition: 'background 0.2s',
-		display: 'inline-block',
-	},
 };
 
 export default TutorialPopup;

@@ -1,0 +1,122 @@
+// ==========================================
+// src/components/Reading/Reading.module.scss
+// ==========================================
+
+@use '../../styles/variables' as *;
+
+.readingBox {
+  background: transparent;
+  color: color(text-primary);
+  font-size: font-size(base);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  line-height: 1.2;
+  cursor: text;
+}
+
+.paragraph {
+  margin-bottom: space(xxxl); // Extra spacing between regular paragraphs
+}
+
+.heading {
+  font-size: 1.4rem;
+  font-weight: font-weight(semibold);
+  letter-spacing: 0.75px;
+  margin-top: space(xxxl);
+  margin-bottom: space(lg);
+  color: color(text-primary);
+}
+
+.subheading {
+  font-size: 1.2rem;
+  font-weight: font-weight(medium);
+  letter-spacing: 0.75px;
+  margin-top: space(xxxl);
+  margin-bottom: space(md);
+  color: color(text-primary);
+}
+
+.title {
+  color: color(text-primary);
+  margin-top: 0;
+  margin-bottom: space(lg);
+  font-family: font-family(primary);
+}
+
+.interactive {
+  position: relative;
+  display: inline-block;
+  color: #a4c8ff;
+  cursor: default;
+  text-decoration: underline dashed;
+  font-weight: font-weight(semibold);
+
+  &:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 6px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: color(text-primary);
+  padding: 6px space(sm);
+  border-radius: 4px;
+  white-space: normal;
+  width: 200px;
+  z-index: z(dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity transition(fast) ease, visibility transition(fast) ease;
+  font-size: font-size(sm);
+  font-weight: font-weight(normal);
+  line-height: map-get($line-heights, relaxed);
+}
+
+// Responsive design
+@include breakpoint(tablet) {
+  .heading {
+    font-size: 1.3rem;
+    margin-top: space(xl);
+  }
+
+  .subheading {
+    font-size: 1.1rem;
+    margin-top: space(xl);
+  }
+
+  .tooltip {
+    width: 180px;
+  }
+}
+
+@include breakpoint(mobile) {
+  .readingBox {
+    font-size: font-size(sm);
+  }
+
+  .paragraph {
+    margin-bottom: space(xl);
+  }
+
+  .heading {
+    font-size: 1.2rem;
+    margin-top: space(xl);
+    margin-bottom: space(sm);
+  }
+
+  .subheading {
+    font-size: 1.1rem;
+    margin-top: space(lg);
+    margin-bottom: space(sm);
+  }
+
+  .tooltip {
+    width: 160px;
+    font-size: font-size(xs);
+  }
+}

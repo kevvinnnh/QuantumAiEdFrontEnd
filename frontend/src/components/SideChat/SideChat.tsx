@@ -1,10 +1,11 @@
-// src/components/SideChat.tsx
+// src/components/SideChat/SideChat.tsx
 
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 import { FaPaperPlane, FaSyncAlt } from 'react-icons/fa';
-import assistantIcon from '../assets/chat_mascot.png';
+import assistantIcon from '../../assets/chat_mascot.png';
+import styles from './SideChat.module.scss';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -29,20 +30,6 @@ interface SideChatProps {
   toggleHistory: () => void;
   chatHistory: HistoryItem[];
 }
-
-const colors = {
-  dark: '#010117',
-  accent: '#071746',
-  primary: '#566395',
-  light: '#f8f9fa',
-  white: '#FFFFFF',
-  chatBackground: 'rgba(1,1,23,0.97)',
-  userMessageBg: '#3a4a78',
-  assistantMessageBg: '#071746',
-  buttonBackground: '#566395',
-  inputBackground: 'rgba(7,23,70,0.9)',
-  border: 'rgba(255,255,255,0.2)',
-};
 
 const markdownComponents = {
   ul: ({ node, ...props }: any) => (
@@ -153,7 +140,7 @@ const SideChat: React.FC<SideChatProps> = ({
     } catch {
       setLocalMessages(prev => [
         ...prev,
-        { role: 'assistant', content: 'Sorry, couldn’t generate an analogy.' }
+        { role: 'assistant', content: 'Sorry, couldn\'t generate an analogy.' }
       ]);
     }
   };
@@ -162,10 +149,10 @@ const SideChat: React.FC<SideChatProps> = ({
     msgs.map((m, i) => {
       const isAssistant = m.role === 'assistant';
       return (
-        <div key={i} style={isAssistant ? styles.assistantMsg : styles.userMsg}>
-          {isAssistant && <img src={assistantIcon} style={styles.avatar} alt="Assistant" />}
-          <div style={styles.bubble}>
-            <strong style={styles.senderLabel}>
+        <div key={i} className={isAssistant ? styles.assistantMsg : styles.userMsg}>
+          {isAssistant && <img src={assistantIcon} className={styles.avatar} alt="Assistant" />}
+          <div className={styles.bubble}>
+            <strong className={styles.senderLabel}>
               {isAssistant ? 'QuantumAide:' : 'You:'}
             </strong>
             {isAssistant ? <TypingText text={m.content} /> : <ReactMarkdown components={markdownComponents}>{m.content}</ReactMarkdown>}
@@ -175,26 +162,26 @@ const SideChat: React.FC<SideChatProps> = ({
     });
 
   return (
-    <div style={{ ...styles.container, width: chatWidth }}>
-      <div style={styles.resizer} onPointerDown={handlePointerDown} />
+    <div className={styles.container} style={{ width: chatWidth }}>
+      <div className={styles.resizer} onPointerDown={handlePointerDown} />
 
-      <div style={styles.historyToggle}>
-        <button style={styles.toggleBtn} onClick={toggleHistory}>
+      <div className={styles.historyToggle}>
+        <button className={styles.toggleBtn} onClick={toggleHistory}>
           {showHistory ? 'Hide History' : 'Show History'}
         </button>
       </div>
 
-      <div ref={messagesContainerRef} style={styles.body}>
+      <div ref={messagesContainerRef} className={styles.body}>
         {chatHidden && (
-          <div style={styles.pullDown}>
-            <p style={styles.pullText}>Pull down to view chat</p>
+          <div className={styles.pullDown}>
+            <p className={styles.pullText}>Pull down to view chat</p>
           </div>
         )}
 
         {showHistory &&
           chatHistory.map((h, idx) => (
-            <div key={idx} style={styles.historyItem}>
-              <p style={styles.historyLabel}>Question {h.question + 1} Chat:</p>
+            <div key={idx} className={styles.historyItem}>
+              <p className={styles.historyLabel}>Question {h.question + 1} Chat:</p>
               {renderMessages(h.messages)}
             </div>
           ))}
@@ -204,8 +191,8 @@ const SideChat: React.FC<SideChatProps> = ({
 
         {/* Try another analogy below last assistant response */}
         {lastAssistant && (
-          <div style={styles.tryWrap}>
-            <button style={styles.tryBtn} onClick={tryAnotherAnalogy}>
+          <div className={styles.tryWrap}>
+            <button className={styles.tryBtn} onClick={tryAnotherAnalogy}>
               <FaSyncAlt style={{ marginRight: 6 }} />
               Try another explanation
             </button>
@@ -213,184 +200,27 @@ const SideChat: React.FC<SideChatProps> = ({
         )}
 
         {localMessages.length === 0 && (
-          <div style={styles.placeholder}>
-            Start by clicking “Discuss” on a question.
+          <div className={styles.placeholder}>
+            Start by clicking "Discuss" on a question.
           </div>
         )}
       </div>
 
-      <div style={styles.footer}>
+      <div className={styles.footer}>
         <input
-          style={styles.input}
+          className={styles.input}
           placeholder="Ask a follow-up question…"
           value={sideChatInput}
           onChange={e => setSideChatInput(e.target.value)}
           onFocus={revealChat}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSideChatSubmit()}
         />
-        <button style={styles.sendBtn} onClick={handleSideChatSubmit}>
+        <button className={styles.sendBtn} onClick={handleSideChatSubmit}>
           <FaPaperPlane />
         </button>
       </div>
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    position: 'fixed',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    background: colors.chatBackground,
-    borderLeft: `1px solid ${colors.border}`,
-    color: colors.white,
-    zIndex: 2000,
-  },
-  resizer: {
-    width: 6,
-    cursor: 'ew-resize',
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: colors.border,
-    zIndex: 2,
-  },
-  historyToggle: {
-    padding: '8px',
-    background: colors.accent,
-    textAlign: 'center',
-  },
-  toggleBtn: {
-    background: colors.primary,
-    color: colors.white,
-    border: 'none',
-    borderRadius: 20,
-    padding: '6px 16px',
-    cursor: 'pointer',
-    fontSize: '0.9rem',
-  },
-  body: {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '15px 20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-  },
-  pullDown: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 40,
-    background: colors.dark,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pullText: {
-    color: colors.light,
-    fontStyle: 'italic',
-    fontSize: '0.9rem',
-  },
-  historyItem: {
-    marginBottom: 12,
-  },
-  historyLabel: {
-    fontWeight: 600,
-    marginBottom: 6,
-  },
-  userMsg: {
-    alignSelf: 'flex-end',
-    background: colors.userMessageBg,
-    color: colors.white,
-    padding: '10px 14px',
-    borderRadius: '12px 12px 2px 12px',
-    maxWidth: '80%',
-    whiteSpace: 'pre-wrap',
-  },
-  assistantMsg: {
-    alignSelf: 'flex-start',
-    background: colors.assistantMessageBg,
-    border: `1px solid ${colors.primary}`,
-    color: colors.white,
-    padding: '10px 14px',
-    borderRadius: '12px 12px 12px 2px',
-    maxWidth: '80%',
-    whiteSpace: 'pre-wrap',
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: '50%',
-    marginRight: 10,
-  },
-  bubble: {
-    display: 'inline-block',
-  },
-  senderLabel: {
-    display: 'block',
-    marginBottom: 4,
-    color: colors.primary,
-    fontSize: '0.9rem',
-  },
-  tryWrap: {
-    display: 'flex',
-    justifyContent: 'center',
-    paddingTop: 8,
-  },
-  tryBtn: {
-    background: 'transparent',
-    color: colors.primary,
-    border: `1px solid ${colors.primary}`,
-    borderRadius: 20,
-    padding: '6px 18px',
-    cursor: 'pointer',
-    fontSize: 14,
-    display: 'flex',
-    alignItems: 'center',
-  },
-  placeholder: {
-    textAlign: 'center',
-    color: colors.light,
-    opacity: 0.7,
-    padding: 20,
-  },
-  footer: {
-    flexShrink: 0,
-    display: 'flex',
-    padding: '15px 20px',
-    background: colors.accent,
-    borderTop: `1px solid ${colors.border}`,
-  },
-  input: {
-    flex: 1,
-    padding: '12px 15px',
-    borderRadius: 20,
-    border: `1px solid ${colors.primary}`,
-    background: colors.inputBackground,
-    color: colors.white,
-    fontSize: 16,
-    outline: 'none',
-  },
-  sendBtn: {
-    marginLeft: 8,
-    width: 44,
-    height: 44,
-    background: colors.buttonBackground,
-    border: 'none',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: colors.white,
-    cursor: 'pointer',
-    fontSize: 18,
-  },
 };
 
 export default SideChat;

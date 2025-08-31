@@ -1,7 +1,8 @@
-// src/components/HighlightableInstructionsForReading.tsx
+// src/components/HighlightableInstructionsForReading/HighlightableInstructionsForReading.tsx
 
 import React, { useState, useEffect } from 'react';
 import { MdLightbulbOutline, MdOutlineChat } from 'react-icons/md';
+import styles from './HighlightableInstructionsForReading.module.scss';
 
 interface Props {
   onExplain:     (highlightedText: string) => void;
@@ -227,85 +228,43 @@ const HighlightableInstructionsForReading: React.FC<Props> = ({
   }, [showPopup]);
 
   return (
-    <div style={{ position: 'relative' }} onMouseUp={handleMouseUp} onClick={handleClick}>
+    <div className={styles.container} onMouseUp={handleMouseUp} onClick={handleClick}>
       {children}
       {showPopup && (
         <div
+          className={styles.popup}
           style={{
-            position: 'fixed',
             top: popupPos.top,
             left: popupPos.left,
-            border: '2px solid #0B54A7',
-            borderRadius: '8px',
-            display: 'flex',
-            zIndex: 1000,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-            overflow: 'hidden',
           }}
+          data-highlight-popup="true"
         >
           <button
-            style={explainButtonStyle}
+            className={styles.explainButton}
             onClick={() => {
               onExplain(highlightedText);
               setShowPopup(false);
               setSelectionDocumentPos(null);
             }}
           >
-            <MdOutlineChat size={20} style={{ marginRight: '8px' }} />
+            <MdOutlineChat size={20} className={styles.buttonIcon} />
             Explain
           </button>
           <button
-            style={analogyButtonStyle}
+            className={styles.analogyButton}
             onClick={() => {
               onViewAnalogy(highlightedText);
               setShowPopup(false);
               setSelectionDocumentPos(null);
             }}
           >
-            <MdLightbulbOutline size={20} style={{ marginRight: '8px' }} />
+            <MdLightbulbOutline size={20} className={styles.buttonIcon} />
             View Analogy
           </button>
         </div>
       )}
     </div>
   );
-};
-
-const explainButtonStyle: React.CSSProperties = {
-  backgroundColor: '#E6F1FB',
-  color: '#07073D',
-  border: 'none',
-  padding: '8px 8px',
-  gap: '0',
-  cursor: 'pointer',
-  fontSize: '18px',
-  fontWeight: '500',
-  fontFamily: "'Inter', sans-serif",
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flex: '1',
-  transition: 'all 0.2s ease',
-  borderRadius: '0',
-  whiteSpace: 'nowrap',
-};
-
-const analogyButtonStyle: React.CSSProperties = {
-  backgroundColor: '#A7BAE2',
-  color: '#07073D',
-  border: 'none',
-  padding: '8px 8px',
-  cursor: 'pointer',
-  fontSize: '18px',
-  fontWeight: '500',
-  fontFamily: "'Inter', sans-serif",
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flex: '1.3',
-  transition: 'all 0.2s ease',
-  borderRadius: '0',
-  whiteSpace: 'nowrap',
 };
 
 export default HighlightableInstructionsForReading;

@@ -1,0 +1,45 @@
+// ==========================================================
+// src/components/QuizProgressBar/QuizProgressBar.module.scss
+// ==========================================================
+
+@use '../../styles/variables' as *;
+
+.container {
+  width: 200px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fill {
+  height: 100%;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: width transition(normal) map-get($transitions, easing);
+}
+
+.shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+
+  &.active {
+    animation: shimmer 2s infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% { 
+    left: -100%; 
+  }
+  100% { 
+    left: 100%; 
+  }
+}

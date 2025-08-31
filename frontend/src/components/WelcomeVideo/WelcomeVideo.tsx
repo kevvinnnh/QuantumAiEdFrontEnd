@@ -1,12 +1,19 @@
+// src/components/WelcomeVideo/WelcomeVideo.tsx
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import welcomeVideo from '../assets/welcome.mp4'; // Adjust the path as needed
+import welcomeVideo from '../../assets/welcome.mp4'; // Adjust the path as needed
+import styles from './WelcomeVideo.module.scss';
 
 const WelcomeVideo: React.FC = () => {
   const navigate = useNavigate();
 
   const handleVideoEnd = () => {
     // When the video ends, redirect to the map page.
+    navigate('/map');
+  };
+
+  const handleSkipVideo = () => {
     navigate('/map');
   };
 
@@ -20,16 +27,22 @@ const WelcomeVideo: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div style={{ width: '100%', height: '100vh', backgroundColor: 'black' }}>
+    <div className={styles.container}>
       <video
         autoPlay
         onEnded={handleVideoEnd}
-        style={{ width: '100%', height: '100%' }}
+        className={styles.video}
         controls={false}
       >
         <source src={welcomeVideo} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
+      <button
+        onClick={handleSkipVideo}
+        className={styles.skipButton}
+      >
+        Skip Video
+      </button>
     </div>
   );
 };

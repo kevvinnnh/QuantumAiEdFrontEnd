@@ -1,0 +1,320 @@
+// ==========================================
+// src/components/Sidebar/Sidebar.module.scss
+// ==========================================
+
+@use '../../styles/variables' as *;
+
+.sidebar {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  padding: space(xl) 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  position: fixed;
+  height: 100vh;
+  z-index: z(sticky);
+  justify-content: space-between;
+  overflow: hidden;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  min-width: 40px;
+  padding: space(md) 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.logoQ {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: block;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+}
+
+.logoUantaid {
+  height: 38px;
+  flex-shrink: 0;
+  display: block;
+  background-repeat: no-repeat;
+  background-size: auto 100%;
+  background-position: left center;
+  overflow: hidden;
+}
+
+.nav {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding-bottom: space(xl);
+  overflow: hidden;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  background-color: color(background-dark);
+  border-left: none;
+  border: none;
+  color: color(text-icon);
+  font-size: font-size(lg);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+  width: 100%;
+  margin-bottom: 4px;
+  overflow: hidden;
+  transition: all transition(normal) map-get($transitions, easing);
+
+  &:hover {
+    background-color: color(background-dark-secondary);
+  }
+
+  &.active {
+    background-color: color(background-dark-secondary);
+    color: color(text-primary);
+
+    &:hover {
+      background-color: color(background-dark-secondary);
+      color: color(text-primary);
+    }
+  }
+}
+
+.navButtonText {
+  font-size: font-size(lg);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: inherit;
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.sidebarBottom {
+  display: flex;
+  flex-direction: column;
+  gap: space(sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.profileButton {
+  display: flex;
+  align-items: center;
+  font-size: font-size(sm);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-icon);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  background-color: transparent;
+  overflow: hidden;
+  transition: all transition(normal) map-get($transitions, easing);
+
+  &:hover {
+    background-color: color(background-dark-secondary);
+  }
+
+  &.active {
+    background-color: color(background-dark-secondary);
+  }
+}
+
+.profileButtonText {
+  font-size: font-size(sm);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-icon);
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.sidebarFeedbackButton {
+  display: flex;
+  align-items: center;
+  font-size: font-size(sm);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-icon);
+  background-color: transparent;
+  border: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  overflow: hidden;
+  transition: all transition(normal) map-get($transitions, easing);
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+    transition: opacity transition(fast) ease;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.sidebarFeedbackText {
+  font-size: font-size(sm);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-icon);
+  line-height: 1;
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.profileDropdown {
+  position: absolute;
+  bottom: 135px;
+  left: space(xl);
+  right: space(xl);
+  background-color: color(background-dark-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: space(sm) 4px;
+  z-index: z(header);
+  overflow: hidden;
+  animation: fadeInUp 200ms ease-out;
+}
+
+.emailText {
+  font-size: font-size(sm);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: color(text-icon);
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.profileDropdownDivider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 6px;
+  padding: 0 2px;
+}
+
+.profileDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: space(md);
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  width: 100%;
+  border: none;
+  background-color: transparent;
+  transition: background-color transition(fast) ease;
+  overflow: hidden;
+
+  &:hover {
+    background-color: darken-color(color(background-dark-secondary), 10%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.profileDropdownItemText {
+  font-size: font-size(sm);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: color(text-icon);
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+// Animation keyframes
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Enhanced text animation handling
+.sidebar {
+  .navButton span,
+  .profileButton span,
+  .sidebarFeedbackButton span,
+  .profileDropdownItem span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    min-width: 0;
+    transition: opacity 180ms map-get($transitions, easing);
+  }
+
+  // Ensure icons don't shrink during animations
+  svg {
+    flex-shrink: 0;
+    min-width: auto;
+  }
+
+  // Smooth button layouts during animations
+  button {
+    transition: all transition(normal) map-get($transitions, easing);
+    overflow: hidden;
+  }
+
+  // Profile dropdown text handling
+  .profileDropdownItem {
+    overflow: hidden;
+
+    span {
+      opacity: 1; // Dropdown text should always be visible when dropdown is open
+    }
+  }
+
+  // Enhanced logo animation - ensure smooth transitions
+  .logoContainer {
+    overflow: hidden;
+
+    > div {
+      transition: all transition(normal) map-get($transitions, easing);
+      overflow: hidden;
+    }
+  }
+}

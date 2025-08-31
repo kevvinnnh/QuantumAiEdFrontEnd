@@ -1,0 +1,255 @@
+/**
+ * GLOBALS.SCSS
+ * 
+ * Global base styles and CSS reset for the Quantaid application.
+ * 
+ * This file contains ONLY truly global styles that affect the entire application:
+ * - CSS reset and normalization
+ * - Base element styling (body, html, typography)
+ * - Global accessibility features
+ * - Selection and focus styles
+ * - Utility classes that are used across multiple components
+ * 
+ * WHAT DOES NOT GO HERE:
+ * - Component-specific styles (use .module.scss files)
+ * - Button variants (use mixins in component files)
+ * - Layout-specific styles (use component modules)
+ * - Color/spacing values (use variables.scss functions)
+ */
+
+@use 'variables' as *;
+
+// ===========================================
+// CSS RESET & BASE STYLES
+// ===========================================
+
+// Modern CSS reset with font inheritance
+*, *::before, *::after {
+  box-sizing: border-box;
+  font-family: inherit; // Ensures all elements inherit font
+}
+
+// Root element configuration  
+:root {
+  font-family: font-family(primary);
+  line-height: map-get($line-heights, relaxed);
+  font-weight: font-weight(normal);
+  
+  // Performance optimizations
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Body and root container reset
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: inherit;
+  
+  // Default to light theme background (Login is entry point)
+  // Dashboard will override this with its own dark theme
+  background: linear-gradient(135deg, 
+    color(background-light-gradient-start), 
+    color(background-light-gradient-end));
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: inherit;
+}
+
+// ===========================================
+// TYPOGRAPHY - BASE ELEMENTS
+// ===========================================
+
+// Headings - using Dashboard sizing as primary
+h1 {
+  font-size: font-size(massive);
+  line-height: map-get($line-heights, tight);
+  font-family: inherit;
+  margin: 0; // Remove default margins
+}
+
+h2 {
+  font-size: font-size(xxxxl);
+  line-height: map-get($line-heights, normal);
+  font-family: inherit;
+  margin: 0;
+}
+
+h3 {
+  font-size: font-size(xxl);
+  line-height: map-get($line-heights, normal);
+  font-family: inherit;
+  margin: 0;
+}
+
+h4 {
+  font-size: font-size(xl);
+  line-height: map-get($line-heights, normal);
+  font-family: inherit;
+  margin: 0;
+}
+
+h5, h6 {
+  font-size: font-size(lg);
+  line-height: map-get($line-heights, normal);
+  font-family: inherit;
+  margin: 0;
+}
+
+// Paragraph and text elements
+p {
+  line-height: map-get($line-heights, loose);
+  margin: 0 0 space(lg); // Consistent paragraph spacing
+}
+
+// Links - unified styling
+a {
+  font-weight: font-weight(medium);
+  color: color(secondary);
+  text-decoration: none;
+  transition: color transition(fast) ease;
+
+  &:hover {
+    color: color(secondary-light);
+    text-decoration: underline;
+  }
+  
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+// ===========================================
+// FORM ELEMENTS - BASE INHERITANCE
+// ===========================================
+
+// Ensure all form elements inherit font properly
+input, textarea, select, button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+// Text elements inherit font 
+span, div, label {
+  font-family: inherit;
+}
+
+// ===========================================
+// GLOBAL SELECTION & FOCUS
+// ===========================================
+
+// Text selection styling - using Dashboard selection color
+::selection {
+  background-color: color(selection);
+  color: color(text-primary);
+}
+
+::-moz-selection {
+  background-color: color(selection);
+  color: color(text-primary);
+}
+
+// Default focus styles for accessibility
+:focus-visible {
+  outline: 2px solid color(focus-ring);
+  outline-offset: 2px;
+}
+
+// ===========================================
+// UTILITY CLASSES
+// ===========================================
+
+// Font family utilities (maintain existing classes)
+.font-roboto {
+  font-family: font-family(roboto);
+}
+
+.font-sarabun {
+  font-family: font-family(sarabun);
+}
+
+// Screen reader only content
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Custom scrollbar utility (used by Dashboard)
+.default-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: color(border-dark) transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: color(border-dark);
+    border-radius: 4px;
+    transition: background-color transition(fast) ease;
+
+    &:hover {
+      background-color: lighten(color(border-dark), 20%);
+    }
+  }
+}
+
+// ===========================================
+// ACCESSIBILITY & PERFORMANCE
+// ===========================================
+
+// Respect user's motion preferences
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  :root {
+    // Increase border contrast for better visibility
+    --border-contrast: rgba(255, 255, 255, 0.3);
+  }
+  
+  // Ensure buttons have visible borders in high contrast
+  button {
+    border: 2px solid currentColor;
+  }
+}
+
+// Forced colors mode (Windows high contrast)
+@media (forced-colors: active) {
+  // Let system handle colors in forced color mode
+  * {
+    forced-color-adjust: auto;
+  }
+}

@@ -1,6 +1,7 @@
-// src/components/QuizProgressBar.tsx
+// src/components/QuizProgressBar/QuizProgressBar.tsx
 
 import React, { useEffect, useState } from 'react';
+import styles from './QuizProgressBar.module.scss';
 
 interface QuizProgressBarProps {
   currentIndex: number;
@@ -11,6 +12,7 @@ interface QuizProgressBarProps {
   style?: React.CSSProperties; // Custom container styles from parent
   fillColor?: string;
   animationDuration?: number; // in milliseconds
+  className?: string; // Allow parent to pass className
 }
 
 const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
@@ -22,6 +24,7 @@ const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
   style = {}, // Accept custom styles from parent
   fillColor = "#7BA8ED",
   animationDuration = 600,
+  className = '', // Default to empty string
 }) => {
   const [displayProgress, setDisplayProgress] = useState(0);
 
@@ -43,57 +46,28 @@ const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
     return () => clearTimeout(timer);
   }, [targetProgress]);
 
-  // Default container styles that can be overridden
-  const defaultContainerStyle: React.CSSProperties = {
-    width: 200,
-    height: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 4,
-    overflow: 'hidden',
-    position: 'relative',
-    border: '1px solid rgba(255,255,255,0.1)',
-  };
-
-  // Merge default styles with custom styles from parent
-  const containerStyle: React.CSSProperties = {
-    ...defaultContainerStyle,
-    ...style, // Parent styles override defaults
-  };
+  // Combine module class with any parent className
+  const containerClasses = `${styles.container} ${className}`.trim();
 
   const fillStyle: React.CSSProperties = {
-    height: '100%',
     width: `${displayProgress}%`,
     backgroundColor: fillColor,
-    borderRadius: containerStyle.borderRadius || 4,
-    transition: `width ${animationDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`,
-    position: 'relative',
-    overflow: 'hidden',
+    transitionDuration: `${animationDuration}ms`,
   };
 
-  // Add a subtle shimmer effect
-  const shimmerStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: 0,
-    left: '-100%',
-    width: '100%',
-    height: '100%',
-    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
-    animation: displayProgress > 0 ? 'shimmer 2s infinite' : 'none',
-  };
+  const shimmerClasses = `${styles.shimmer} ${displayProgress > 0 ? styles.active : ''}`.trim();
 
   return (
-    <div style={containerStyle}>
-      <div style={fillStyle}>
-        <div style={shimmerStyle} />
+    <div 
+      className={containerClasses}
+      style={style} // Apply any custom styles from parent
+    >
+      <div 
+        className={styles.fill}
+        style={fillStyle}
+      >
+        <div className={shimmerClasses} />
       </div>
-      <style>
-        {`
-          @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
-          }
-        `}
-      </style>
     </div>
   );
 };

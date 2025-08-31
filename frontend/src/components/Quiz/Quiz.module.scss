@@ -1,0 +1,655 @@
+// ======================================
+// src/components/Quiz/Quiz.module.scss
+// ======================================
+
+@use '../../styles/variables' as *;
+
+// ===========================================
+// MAIN CONTAINER & LAYOUT
+// ===========================================
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: color(background-dark);
+  color: color(text-primary);
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 70%;
+  max-width: 1350px;
+  z-index: z(sticky);
+  margin-top: space(huge);
+  margin-bottom: layout(max-content-width);
+}
+
+.quizPane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: space(massive) space(xxxxl) space(xxxxl);
+  box-sizing: border-box;
+  width: 62%;
+  max-width: layout(max-content-width);
+  margin: 0 auto;
+}
+
+.bottomBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+  z-index: z(sticky);
+  border-top: 1px solid rgba(66, 78, 98, 0.3);
+  margin-top: auto;
+  transition: background-color transition(fast) ease;
+}
+
+// ===========================================
+// TOP BAR CONTROLS
+// ===========================================
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: space(xxl);
+  height: space(xxl);
+  cursor: pointer;
+  z-index: z(sticky);
+}
+
+.progressBar {
+  width: 90%;
+  height: 10px;
+  background-color: color(text-icon);
+  border-radius: 6px;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-right: space(xxxl);
+}
+
+.dotsButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: space(xxl);
+  height: space(xxl);
+  cursor: pointer;
+  z-index: z(sticky);
+  margin-right: space(xxxl);
+}
+
+// ===========================================
+// MODALS & OVERLAYS
+// ===========================================
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: z(modal);
+}
+
+.modalContent {
+  background-color: color(background-dark-secondary);
+  border-radius: layout(sidebar-collapsed);
+  padding: space(xxxxl);
+  max-width: 440px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(xxl);
+  position: relative;
+}
+
+.modalTitle {
+  font-size: font-size(xxxl);
+  font-weight: font-weight(semibold);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: -28px;
+  top: -28px;
+}
+
+.modalSubtext {
+  font-size: font-size(base);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: color(text-muted);
+  margin: 0 0 space(xxxl) 0;
+  line-height: map-get($line-heights, relaxed);
+}
+
+.modalButtons {
+  display: flex;
+  gap: space(lg);
+  justify-content: center;
+}
+
+.goBackButton {
+  padding: space(md) space(xxl);
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  background-color: transparent;
+  border: 2px solid color(text-icon);
+  border-radius: space(md);
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  min-width: 120px;
+}
+
+.exitQuizButton {
+  padding: space(md) space(xxl);
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  background-color: color(hover-dark);
+  border: none;
+  border-radius: space(md);
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  min-width: 120px;
+}
+
+// ===========================================
+// SETTINGS DROPDOWN
+// ===========================================
+
+.settingsDropdown {
+  background-color: #1a2332;
+  border: 1px solid color(text-icon);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: space(md);
+  min-width: 250px;
+  z-index: z(dropdown);
+}
+
+.settingsOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color transition(fast) ease;
+  margin-bottom: 4px;
+}
+
+.optionLeft {
+  display: flex;
+  align-items: center;
+  gap: space(md);
+}
+
+.optionText {
+  color: color(text-placeholder);
+  font-size: font-size(sm);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+}
+
+.toggleTrack {
+  width: 32px;
+  height: space(lg);
+  border-radius: 8px;
+  position: relative;
+  transition: background-color transition(fast) ease;
+}
+
+.toggleThumb {
+  width: space(md);
+  height: space(md);
+  background-color: color(text-primary);
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  transition: transform transition(fast) ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+// ===========================================
+// QUESTION STYLES (passed as props)
+// ===========================================
+
+.questionStyles {
+  font-family: font-family(primary);
+  font-size: font-size(xxxl);
+  font-weight: font-weight(normal);
+  line-height: map-get($line-heights, loose);
+  letter-spacing: 0.02em;
+  color: color(text-primary);
+  text-align: left;
+  max-width: layout(max-content-width);
+  width: 100%;
+  margin: 0 auto 5.5rem auto;
+}
+
+.optionStyles {
+  font-family: font-family(primary);
+  font-size: font-size(lg);
+  font-weight: font-weight(normal);
+  line-height: map-get($line-heights, normal);
+  color: color(text-muted);
+}
+
+// ===========================================
+// FOOTER & CONTROLS
+// ===========================================
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 65%;
+  max-width: 1350px;
+  margin-top: space(xl);
+  margin-bottom: space(xl);
+}
+
+.timerSection {
+  display: flex;
+  align-items: center;
+  min-width: space(massive);
+  height: space(massive);
+}
+
+.timerContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timerSvg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.resultIconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: space(massive);
+}
+
+// .resultSvg {
+  // Optional: Add filter effects if needed
+  // filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+// }
+
+.leaveFeedbackButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: space(md) space(xxxl);
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  font-family: font-family(sarabun);
+  color: color(text-icon);
+  background-color: transparent;
+  border: transparent;
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  min-width: 140px;
+  height: auto;
+}
+
+.leaveFeedbackText {
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  font-family: font-family(sarabun);
+  color: color(text-icon);
+  line-height: 1;
+}
+
+.actionsSection {
+  display: flex;
+  align-items: center;
+  gap: space(lg);
+}
+
+.actionButton {
+  padding: space(md) 42px;
+  font-size: font-size(xxl);
+  font-weight: font-weight(medium);
+  font-family: font-family(sarabun);
+  color: color(text-muted);
+  background-color: transparent;
+  border: transparent;
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  min-width: 80px;
+}
+
+.continueButton {
+  padding: space(md) 42px;
+  font-size: font-size(xxl);
+  font-weight: font-weight(medium);
+  font-family: font-family(sarabun);
+  border: none;
+  border-radius: space(lg);
+  transition: all transition(fast) ease;
+  min-width: 100px;
+}
+
+// ===========================================
+// REVIEW CONCEPT MODAL
+// ===========================================
+
+.reviewConceptContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.reviewConceptContent {
+  font-size: font-size(lg);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 space(lg);
+  scroll-behavior: smooth;
+}
+
+.reviewConceptParagraphs {
+  margin-bottom: space(xxxl);
+}
+
+.reviewConceptParagraph {
+  font-size: font-size(lg);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  line-height: map-get($line-heights, loose);
+  margin-bottom: space(lg);
+}
+
+.revisitLessonContainer {
+  margin-top: space(xxxl);
+  text-align: left;
+}
+
+.revisitLessonLink {
+  font-size: font-size(sm);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: #AFAFAF;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color transition(fast) ease;
+  line-height: map-get($line-heights, normal);
+}
+
+// ===========================================
+// RESULTS SCREEN
+// ===========================================
+
+.resultsScreenContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resultsContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: space(xxxxl);
+  margin-top: 50%;
+}
+
+.resultsTitle {
+  font-size: font-size(massive);
+  font-weight: font-weight(semibold);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  margin-bottom: 50px;
+  text-align: center;
+}
+
+.resultsContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 80px;
+  margin-bottom: space(massive);
+}
+
+.accuracySection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.accuracyCircle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+// .accuracySvg {
+  // Optional: Add transform if needed
+  // transform: rotate(-90deg);
+// }
+
+.percentageText {
+  position: absolute;
+  font-size: font-size(base);
+  font-weight: font-weight(semibold);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.accuracyLabel {
+  font-size: font-size(lg);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: color(text-muted);
+  margin: 0;
+}
+
+.timeSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.timeDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2%;
+  margin-bottom: -2%;
+  height: 70px;
+}
+
+.timeNumber {
+  font-size: font-size(lg);
+  font-weight: font-weight(semibold);
+  font-family: font-family(primary);
+  color: color(text-primary);
+}
+
+.timeLabel {
+  font-size: font-size(lg);
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: color(text-muted);
+  margin: 0;
+}
+
+// ===========================================
+// ANIMATIONS & HOVER EFFECTS
+// ===========================================
+
+:global(.quiz-bottom-buttons:hover:not(:disabled)) {
+  opacity: 0.9 !important;
+  transition: opacity transition(fast) ease;
+}
+
+:global(.revisit-lesson-link:hover:not(:disabled)) {
+  opacity: 0.9 !important;
+  transition: opacity transition(fast) ease;
+}
+
+@keyframes fillFromBottom {
+  0% {
+    stroke-dashoffset: 157.08; /* 2 * Math.PI * 25 - full circumference */
+    transform: rotate(90deg);
+  }
+  100% {
+    stroke-dashoffset: var(--final-offset);
+    transform: rotate(var(--final-rotation));
+  }
+}
+
+// ===========================================
+// RESPONSIVE DESIGN
+// ===========================================
+
+@include breakpoint(tablet) {
+  .topBar {
+    width: 85%;
+    margin-top: space(xxxl);
+    margin-bottom: space(xxxl);
+  }
+
+  .quizPane {
+    width: 85%;
+    padding: space(xxxl) space(lg);
+  }
+
+  .footer {
+    width: 85%;
+  }
+
+  .questionStyles {
+    font-size: font-size(xxl);
+    margin-bottom: space(xxxxl);
+  }
+
+  .optionStyles {
+    font-size: font-size(base);
+  }
+}
+
+@include breakpoint(mobile) {
+  .topBar {
+    width: 95%;
+    margin-top: space(xxl);
+    margin-bottom: space(xxl);
+  }
+
+  .quizPane {
+    width: 95%;
+    padding: space(xxl) space(md);
+  }
+
+  .footer {
+    width: 95%;
+    margin-top: space(md);
+    margin-bottom: space(md);
+  }
+
+  .questionStyles {
+    font-size: font-size(xl);
+    margin-bottom: space(xxxl);
+  }
+
+  .optionStyles {
+    font-size: font-size(sm);
+  }
+
+  .actionButton {
+    font-size: font-size(xl);
+    padding: space(sm) space(xl);
+  }
+
+  .continueButton {
+    font-size: font-size(xl);
+    padding: space(sm) space(xl);
+  }
+
+  .resultsContent {
+    flex-direction: column;
+    gap: space(xxxxl);
+  }
+
+  .modalContent {
+    padding: space(xxxl);
+    max-width: 90%;
+  }
+
+  .settingsDropdown {
+    min-width: 200px;
+    left: 50% !important;
+    transform: translateX(-50%);
+  }
+}

@@ -1,0 +1,811 @@
+// ==========================================================
+// src/components/ProfileCreation/ProfileCreation.module.scss
+// ==========================================================
+
+@use '../../styles/variables' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: color(background-dark);
+  color: color(text-primary);
+  overflow: hidden;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 70%;
+  max-width: layout(max-content-width);
+  z-index: z(base);
+  margin-top: space(huge);
+  margin-bottom: space(xxxxl);
+}
+
+.backArrowSpace {
+  height: 24px;
+  width: 24px;
+}
+
+.backArrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  z-index: z(base);
+  transition: transform transition(fast) ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+.progressBar {
+  width: 90%;
+  height: 10px;
+  background-color: #424E62;
+  border-radius: 6px;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-left: space(xxxxl);
+  margin-right: space(xxxxl);
+}
+
+.quizPane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: space(massive) space(xxxxl) space(xxxxl);
+  box-sizing: border-box;
+  width: 62%;
+  max-width: 1195px;
+  margin: 0 auto;
+}
+
+.formQuestion {
+  font-family: font-family(primary);
+  font-size: 2.125rem;
+  font-weight: font-weight(normal);
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  color: color(text-primary);
+  text-align: center;
+  max-width: 1195px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.formSubtitle {
+  font-size: font-size(xl);
+  color: color(text-primary);
+  text-align: center;
+  font-family: font-family(primary);
+  margin-top: -0.1rem;
+}
+
+.formContent {
+  margin-top: space(huge);
+}
+
+.checkList {
+  display: flex;
+  flex-direction: column;
+  gap: space(lg);
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: space(xxl);
+}
+
+.checkItem {
+  display: flex;
+  align-items: center;
+  padding: space(md) space(xxxl);
+  min-width: 400px;
+  font-size: font-size(lg);
+  font-family: font-family(primary);
+  color: color(text-muted);
+  background-color: transparent;
+  border: 2px solid #424E62;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  text-align: left;
+
+  &:hover {
+    border-color: #1E4277;
+  }
+
+  &.selected {
+    background-color: #10204D;
+    border-color: #1D4177;
+
+    &:hover {
+      background-color: #10204D;
+      border-color: #1E4277;
+    }
+  }
+}
+
+.checkItemExpanded {
+  min-height: 60px;
+  align-items: flex-start;
+  padding-top: space(lg);
+  padding-bottom: space(lg);
+}
+
+.checkbox {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid color(text-muted);
+  border-radius: 2px;
+  background-color: transparent;
+  margin-left: -0.6rem;
+  margin-right: space(lg);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all transition(fast) ease;
+
+  &:hover {
+    border-color: color(primary);
+  }
+
+  &:checked {
+    background-color: color(primary);
+    border-color: color(primary);
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 1px;
+      width: 4px;
+      height: 10px;
+      border: solid #0F1F4C;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+  }
+}
+
+.optionContent {
+  display: flex;
+  flex-direction: column;
+  gap: space(sm);
+  width: 100%;
+}
+
+.inlineOtherInput {
+  padding: space(sm) 0;
+  font-size: font-size(base);
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid #424E62;
+  background-color: transparent;
+  color: color(text-primary);
+  outline: none;
+  font-family: font-family(primary);
+  transition: all transition(fast) ease;
+
+  &:focus {
+    border-bottom-color: #7BA8ED;
+    background-color: rgba(37, 52, 98, 0.15);
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  &:hover {
+    border-bottom-color: #7BA8ED;
+  }
+
+  &::placeholder {
+    color: #666;
+    font-style: italic;
+  }
+}
+
+.radioGroup {
+  margin-bottom: space(xxxl);
+  width: 100%;
+  max-width: 600px;
+}
+
+.radioGroupLabel {
+  font-size: font-size(xl);
+  margin-bottom: space(lg);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  font-weight: font-weight(semibold);
+}
+
+.radioItem {
+  display: flex;
+  align-items: center;
+  padding: space(md) space(xxxl);
+  margin-bottom: space(lg);
+  min-width: 400px;
+  font-size: font-size(lg);
+  font-family: font-family(primary);
+  color: color(text-muted);
+  background-color: transparent;
+  border: 2px solid #424E62;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  text-align: left;
+
+  &:hover {
+    border-color: #1E4277;
+  }
+
+  &.selected {
+    background-color: #10204D;
+    border-color: #1D4177;
+
+    &:hover {
+      background-color: #10204D;
+      border-color: #1E4277;
+    }
+  }
+}
+
+.radio {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid color(text-muted);
+  border-radius: 50%;
+  background-color: transparent;
+  margin-top: 0;
+  margin-left: -0.6rem;
+  margin-right: space(lg);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all transition(fast) ease;
+
+  &:hover {
+    border-color: color(primary);
+  }
+
+  &:checked {
+    background-color: color(primary);
+    border-color: color(primary);
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: color(primary);
+      border: 2px solid #131C46;
+    }
+  }
+}
+
+.radioItemExpanded {
+  min-height: 60px;
+  align-items: flex-start;
+  padding-top: space(lg);
+  padding-bottom: space(lg);
+  min-width: 300px;
+}
+
+.educationContainer {
+  display: flex;
+  flex-direction: column;
+  gap: space(xxxl);
+  width: 100%;
+  max-width: 800px;
+  align-items: flex-start;
+}
+
+.educationSection {
+  display: flex;
+  flex-direction: column;
+  gap: space(lg);
+  width: 100%;
+  align-items: flex-start;
+}
+
+.radioRowGroup {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: space(md);
+  width: 100%;
+}
+
+.radioItemCompact {
+  display: flex;
+  align-items: center;
+  padding: space(md) space(xl);
+  font-size: font-size(base);
+  font-family: font-family(primary);
+  color: color(text-muted);
+  background-color: transparent;
+  border: 2px solid #424E62;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  text-align: left;
+  min-width: fit-content;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: #1E4277;
+  }
+
+  &.selected {
+    background-color: #10204D;
+    border-color: #1D4177;
+
+    &:hover {
+      background-color: #10204D;
+      border-color: #1E4277;
+    }
+  }
+}
+
+.hobbiesMainContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: space(xxxl);
+}
+
+.hobbiesContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(lg);
+  justify-content: center;
+  max-width: 700px;
+  margin-bottom: space(xxxl);
+}
+
+.hobbyButton {
+  border: 2px solid #424E62;
+  padding: space(md) space(xxxl);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: font-size(base);
+  background-color: transparent;
+  transition: all transition(fast) ease;
+  font-family: font-family(primary);
+  color: color(text-muted);
+  text-align: center;
+  min-width: 120px;
+
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  &.selected {
+    background-color: #10204D;
+    border-color: #1D4177;
+    color: color(text-primary);
+  }
+}
+
+.customHobbiesSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+  gap: space(sm);
+}
+
+.customHobbiesInput {
+  width: 100%;
+  padding: space(md) 0;
+  font-size: font-size(base);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  background-color: transparent;
+  border: 2px solid #424E62;
+  border-radius: 8px;
+  outline: none;
+  transition: all transition(fast) ease;
+  text-align: center;
+
+  &:focus {
+    border-color: #7BA8ED;
+    background-color: rgba(37, 52, 98, 0.15);
+  }
+
+  &:hover {
+    border-color: #7BA8ED;
+  }
+
+  &::placeholder {
+    color: #666;
+    font-style: italic;
+  }
+}
+
+.bottomBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+  z-index: z(base);
+  border-top: 1px solid rgba(66, 78, 98, 0.3);
+  margin-top: auto;
+  transition: background-color transition(fast) ease;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 65%;
+  max-width: layout(max-content-width);
+  margin-top: space(xxl);
+  margin-bottom: space(xxl);
+}
+
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: space(lg);
+  height: 60px;
+}
+
+.skipButton {
+  padding: space(md) space(xxxxl);
+  font-size: font-size(xl);
+  font-weight: font-weight(medium);
+  font-family: font-family(secondary);
+  color: #AAABAF;
+  background-color: transparent;
+  border: transparent;
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  min-width: 80px;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.continueButton {
+  padding: space(md) space(xxxxl);
+  font-size: font-size(xl);
+  font-weight: font-weight(medium);
+  font-family: font-family(secondary);
+  color: color(text-primary);
+  background-color: #142748;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  min-width: 100px;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #2A3A52;
+  }
+}
+
+// Modal styles
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: z(modal);
+}
+
+.modalContent {
+  background-color: #182549;
+  border-radius: 16px;
+  padding: space(xxxxl);
+  max-width: 440px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.modalTitle {
+  font-size: 22px;
+  font-weight: font-weight(semibold);
+  font-family: font-family(primary);
+  color: #FEFEFE;
+  margin: 0 0 space(lg) 0;
+  line-height: 1.3;
+  flex: 1;
+  text-align: center;
+}
+
+.closeModalButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: -28px;
+  top: -28px;
+  transition: transform transition(fast) ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.modalSubtext {
+  font-size: 14px;
+  font-weight: font-weight(normal);
+  font-family: font-family(primary);
+  color: #AAAAC1;
+  margin: 0 0 space(xxxl) 0;
+  line-height: 1.5;
+}
+
+.modalButtons {
+  display: flex;
+  gap: space(lg);
+  justify-content: center;
+}
+
+.goBackButton {
+  padding: space(md) space(xxxl);
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  background-color: transparent;
+  border: 2px solid #424E62;
+  border-radius: space(md);
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  min-width: 120px;
+
+  &:hover {
+    background-color: #10204D;
+    border-color: #1D4177;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.skipAnywayButton {
+  padding: space(md) space(xxxl);
+  font-size: font-size(base);
+  font-weight: font-weight(medium);
+  font-family: font-family(primary);
+  color: color(text-primary);
+  background-color: #3D4C65;
+  border: none;
+  border-radius: space(md);
+  cursor: pointer;
+  transition: all transition(fast) ease;
+  min-width: 120px;
+
+  &:hover {
+    background-color: #404A5F;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+// Video popup
+.videoOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: z(tutorial);
+  padding: space(xl);
+
+  h2 {
+    color: color(text-primary);
+    margin-bottom: space(xl);
+    font-size: font-size(xxxl);
+    text-align: center;
+  }
+
+  video {
+    width: 80%;
+    border-radius: 8px;
+    max-width: layout(max-content-width);
+  }
+}
+
+.skipVideoButton {
+  margin-top: space(xl);
+  padding: space(md) space(xxxl);
+  background-color: color(secondary);
+  color: color(text-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: font-size(lg);
+  font-family: font-family(primary);
+  transition: all transition(fast) ease;
+
+  &:hover {
+    background-color: color(secondary-light);
+    transform: scale(1.05);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+// Responsive breakpoints
+@include breakpoint(tablet) {
+  .container {
+    padding: space(lg);
+  }
+
+  .quizPane {
+    width: 90%;
+    padding: space(xxxl) space(xl) space(xxxxl);
+  }
+
+  .formQuestion {
+    font-size: font-size(xxxl);
+  }
+
+  .formSubtitle {
+    font-size: font-size(lg);
+  }
+
+  .checkItem,
+  .radioItem {
+    min-width: 300px;
+    padding: space(sm) space(xl);
+  }
+
+  .hobbiesContainer {
+    max-width: 500px;
+  }
+
+  .customHobbiesInput {
+    padding: space(sm) space(lg);
+  }
+}
+
+@include breakpoint(mobile) {
+  .topBar {
+    width: 90%;
+    margin-top: space(xxxl);
+    margin-bottom: space(xxxl);
+  }
+
+  .quizPane {
+    width: 95%;
+    padding: space(xl) space(lg) space(xxxl);
+  }
+
+  .formQuestion {
+    font-size: font-size(xxl);
+  }
+
+  .formSubtitle {
+    font-size: font-size(base);
+  }
+
+  .checkItem,
+  .radioItem {
+    min-width: 250px;
+    padding: space(sm) space(lg);
+    font-size: font-size(base);
+  }
+
+  .radioRowGroup {
+    flex-direction: column;
+  }
+
+  .radioItemCompact {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .hobbiesContainer {
+    max-width: 100%;
+    gap: space(sm);
+  }
+
+  .hobbyButton {
+    min-width: 100px;
+    padding: space(sm) space(lg);
+  }
+
+  .footer {
+    width: 90%;
+  }
+
+  .rightSection {
+    gap: space(sm);
+  }
+
+  .skipButton,
+  .continueButton {
+    font-size: font-size(base);
+    padding: space(sm) space(xl);
+  }
+
+  .modalContent {
+    width: 95%;
+    padding: space(xxxl);
+  }
+
+  .modalTitle {
+    font-size: font-size(lg);
+  }
+
+  .modalButtons {
+    flex-direction: column;
+    gap: space(sm);
+  }
+
+  .goBackButton,
+  .skipAnywayButton {
+    width: 100%;
+  }
+}
