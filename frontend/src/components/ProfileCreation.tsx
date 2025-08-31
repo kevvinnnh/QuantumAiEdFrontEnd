@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { IoMdClose } from "react-icons/io";
 import { LiaArrowLeftSolid } from "react-icons/lia";
 import QuizProgressBar from './QuizProgressBar';
-// import welcomeVideo from '../assets/welcome.mp4';
+import welcomeVideo from '../assets/welcome.mp4';
 // import assistantImage from '../assets/assistant.png';
 
 /** STEP DATA:
@@ -634,7 +634,7 @@ const DefaultStep: React.FC<{
 const ProfileCreation: React.FC = () => {
   const [userId, setUserId] = useState<string>('');
   const [step, setStep] = useState<number>(0);
-  // const [showVideoPopup, setShowVideoPopup] = useState<boolean>(false);
+  const [showVideoPopup, setShowVideoPopup] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
@@ -721,42 +721,22 @@ const ProfileCreation: React.FC = () => {
 
   /** ------------------ SUBMIT PROFILE ------------------ **/
   const handleSubmit = () => {
-    // Example data transformation if your backend expects certain fields:
-    let finalEducationLevel = '';
-    let finalMajor = formData.subjects.join(', ');
-    let finalKnowsQuantum = 'No'; // Example placeholder
-    let finalCodingExp = formData.codingExperience;
-    let finalHobbies = formData.favoriteHobbies || [];
-
-    // If user selected "HighSchool"
-    if (formData.educationCategory === 'HighSchool') {
-      finalEducationLevel = formData.educationLevel;
-    } else if (formData.educationCategory === 'College') {
-      finalEducationLevel = formData.educationLevel;
-    } else {
-      finalEducationLevel = formData.otherEducationLevel;
-    }
-
-    if (
-      formData.subjects.includes('Other (please specify)') &&
-      formData.otherSubject
-    ) {
-      finalMajor += `, ${formData.otherSubject}`;
-    }
-
     const dataToSend = {
       user_id: userId,
       whereHeard: formData.whereHeard,
       otherWhereHeard: formData.otherWhereHeard,
-      educationLevel: finalEducationLevel,
-      major: finalMajor,
-      knowsQuantumComputing: finalKnowsQuantum,
-      codingExperience: finalCodingExp,
-      favoriteHobbies: finalHobbies,
+      educationCategory: formData.educationCategory,
+      educationLevel: formData.educationLevel,
+      otherEducationLevel: formData.otherEducationLevel,
+      subjects: formData.subjects,
+      otherSubject: formData.otherSubject,
+      favoriteHobbies: formData.favoriteHobbies,
       customHobbies: formData.customHobbies,
+      codingExperience: formData.codingExperience,
+      //TODO: hardcoded defaults below should get added to the form? 
+      // knowsQuantumComputing: 'No',
+      // use_generic_analogies: true,
     };
-
-    console.log('DEBUG: Submitting profile =>', dataToSend);
 
     axios
       .post(`${backendUrl}/save_profile`, dataToSend, {
@@ -764,9 +744,8 @@ const ProfileCreation: React.FC = () => {
       })
       .then((response) => {
         console.log('Profile saved:', response.data);
-        navigate('/map')
-        // // Show the welcome video popup
-        // setShowVideoPopup(true);
+        navigate('/map');
+        setShowVideoPopup(true);
       })
       .catch((error) => {
         console.error('Error saving profile:', error);
@@ -799,32 +778,32 @@ const ProfileCreation: React.FC = () => {
   }
 
   /** ------------------ VIDEO POPUP ------------------ **/
-  // if (showVideoPopup) {
-  //   return (
-  //     <div style={styles.videoOverlay}>
-  //       <h2 style={{ color: '#fff', marginBottom: '20px', fontSize: '2rem' }}>
-  //         Welcome to QuantumAiEd!
-  //       </h2>
-  //       <video
-  //         width="80%"
-  //         autoPlay
-  //         playsInline
-  //         controls
-  //         onEnded={() => navigate('/map')}
-  //         style={{ borderRadius: '8px' }}
-  //       >
-  //         <source src={welcomeVideo} type="video/mp4" />
-  //         Your browser does not support the video tag.
-  //       </video>
-  //       <button
-  //         onClick={() => navigate('/map')}
-  //         style={styles.skipVideoButton}
-  //       >
-  //         Skip Video
-  //       </button>
-  //     </div>
-  //   );
-  // }
+  if (showVideoPopup) {
+    return (
+      <div style={styles.videoOverlay}>
+        <h2 style={{ color: '#fff', marginBottom: '20px', fontSize: '2rem' }}>
+          Welcome to QuantumAiEd!
+        </h2>
+        <video
+          width="80%"
+          autoPlay
+          playsInline
+          controls
+          onEnded={() => navigate('/map')}
+          style={{ borderRadius: '8px' }}
+        >
+          <source src={welcomeVideo} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        <button
+          onClick={() => navigate('/map')}
+          style={styles.skipVideoButton}
+        >
+          Skip Video
+        </button>
+      </div>
+    );
+  }
 
   // Render current step
     const currentStepConfig = stepConfigs[step];
@@ -1311,7 +1290,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     maxWidth: '700px',
     marginBottom: '2rem',
   },
-  /** Video Overlay **/
   videoOverlay: {
     position: 'fixed',
     top: 0,

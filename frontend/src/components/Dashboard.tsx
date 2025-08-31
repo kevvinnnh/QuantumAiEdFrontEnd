@@ -15,6 +15,7 @@ import lesson0Img from '../assets/lessonIcons/lesson-0.svg';
 import lesson1Img from '../assets/lessonIcons/lesson-1.svg';
 import lesson2Img from '../assets/lessonIcons/lesson-2.svg';
 import { useNavigate } from 'react-router-dom';
+import TutorialPopup from './TutorialPopup';
 
 // Define BACKEND_URL - Replace with your actual backend URL
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'; // Use environment variable
@@ -269,6 +270,10 @@ interface CompletedQuiz {
 }
 
 const Dashboard: React.FC = () => {
+  /* ---------- dev state ----------------------------------------- */
+  const DEV_LOGIN_EMAIL = import.meta.env.DEV_LOGIN_EMAIL;
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
   /* ---------- animation state ------------------------------------ */
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const collapsibleSidebarWidth = 1500;
@@ -284,6 +289,13 @@ const Dashboard: React.FC = () => {
   const [quizOpen, setQuizOpen] = useState<boolean>(false);
   const [isLoadingProgress, setIsLoadingProgress] = useState<boolean>(true);
   const [completedQuizzes, setCompletedQuizzes] = useState<CompletedQuiz[]>([]);
+
+  /* ---------- first lesson tutorial state ------------------------ */
+  const [hasViewedFirstLesson, setHasViewedFirstLesson] = useState<boolean>(false);
+  const [showOnboardingPopup, setShowOnboardingPopup] = useState<boolean>(false);
+  const [tutorialStep, setTutorialStep] = useState<1 | 2 | 3>(1);
+  const [, setTutorialAnchor] = useState<{ top: number; left: number } | null>(null);
+  const lessonContentsRef = useRef<HTMLDivElement>(null);
 
   /* ---------- feedback state ------------------------------------- */
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
@@ -473,6 +485,27 @@ const Dashboard: React.FC = () => {
     }
   }, [chatOpen, screenWidth, sidebarCollapsed, handleSidebarToggle]);
 
+  // Set tutorial popup anchor position
+  const handlePositionUpdate = () => {
+    if (lessonContentsRef.current) {
+      const rect = lessonContentsRef.current.getBoundingClientRect();
+      setTutorialAnchor({
+        top: rect.top,
+        left: rect.left,
+      });
+    } else {
+      setTutorialAnchor(null);
+    }
+  };
+
+  useEffect(() => {
+    handlePositionUpdate();
+    return () => {
+      window.removeEventListener('resize', handlePositionUpdate);
+      window.removeEventListener('scroll', handlePositionUpdate);
+    };
+  }, [view, showOnboardingPopup, chatOpen, chatWidth, sidebarCollapsed, screenWidth]);
+
   // Navigation handlers
   const handleNavigateToDashboard = useCallback(() => {
     goDashboard();
@@ -506,14 +539,34 @@ const Dashboard: React.FC = () => {
       console.log("Progress data received:", data);
       setUnlocked(data.unlockedLevels || [0]);
       setCompletedQuizzes(data.completedQuizzes || []);
+      setHasViewedFirstLesson(data.hasViewedFirstLesson || false);
+      if (data.email) setUserEmail(data.email);
     } catch (error) {
       console.error('Failed to fetch user progress:', error);
       setUnlocked([0]);
       setCompletedQuizzes([]);
+      setHasViewedFirstLesson(false);
     } finally {
       setIsLoadingProgress(false);
     }
   }, [navigate]);
+
+  // Save first lesson view to backend
+  const saveFirstLessonView = useCallback(async () => {
+    try {
+      await fetch(`${BACKEND_URL}/save_first_lesson_view`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log("First lesson view saved successfully");
+    } catch (error) {
+      console.error('Failed to save first lesson view:', error);
+      // Don't throw error - this is not critical functionality
+    }
+  }, []);
 
   // Fetch progress when the component mounts
   useEffect(() => {
@@ -612,6 +665,15 @@ const Dashboard: React.FC = () => {
       alert('This lesson is locked. Complete the previous lessons first.');
       return;
     }
+
+    // Check if this is the user's first lesson ever
+    if (!hasViewedFirstLesson) {
+      setShowOnboardingPopup(true);
+      if (userEmail !== DEV_LOGIN_EMAIL) {
+        setHasViewedFirstLesson(true);
+        saveFirstLessonView();
+    }
+    }
     
     setCurrentLesson(topicId);
     setView('lesson');
@@ -639,6 +701,18 @@ const Dashboard: React.FC = () => {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
+  };
+
+  /* ---------- popup tutorial handlers ---------------------------- */
+  const handleTutorialNext = () => {
+    setTutorialStep(prev => (prev < 3 ? (prev + 1) as 1 | 2 | 3 : prev));
+  };
+  const handleTutorialBack = () => {
+    setTutorialStep(prev => (prev > 1 ? (prev - 1) as 1 | 2 | 3 : prev));
+  };
+  const handleTutorialClose = () => {
+    setShowOnboardingPopup(false);
+    setTutorialStep(1);
   };
 
   /* ---------- profile dropdown handlers -------------------------- */
@@ -900,17 +974,19 @@ const Dashboard: React.FC = () => {
             <p style={styles.noQuizText}>Quiz coming soon for this lesson!</p>
           )}
         </div>
-
-        <HighlightableInstructionsForReading
-          onExplain={handleExplain}
-          onViewAnalogy={handleAnalogy}
-        >
-          <Reading
-            courseId={currentLesson}
-            onExplainRequest={handleExplain}
+        
+        <div ref={lessonContentsRef}>
+          <HighlightableInstructionsForReading
+            onExplain={handleExplain}
             onViewAnalogy={handleAnalogy}
-          />
-        </HighlightableInstructionsForReading>
+          >
+            <Reading
+              courseId={currentLesson}
+              onExplainRequest={handleExplain}
+              onViewAnalogy={handleAnalogy}
+            />
+          </HighlightableInstructionsForReading>
+        </div>
         
         {currentQuiz.length > 0 && (
           <div style={styles.quizPromptSection} className='lesson-header'>
@@ -977,7 +1053,7 @@ const Dashboard: React.FC = () => {
         </form>
         
         <div style={styles.headerIcons}>
-          {!quizOpen && (
+          {view === 'lesson' && !quizOpen && (
             <button
               className="chat-button"
               style={styles.chatButton}
@@ -1035,17 +1111,19 @@ const Dashboard: React.FC = () => {
       </main>
       
       {/* CHAT */}
-      <GlobalChat
-        isOpen={chatOpen}
-        onClose={() => setChatOpen(false)}
-        highlightText={highlightText}
-        highlightMode={highlightMode}
-        onWidthChange={handleChatWidthChange}
-        sidebarWidth={currentSidebarWidth}
-        animationDuration={ANIMATION_DURATION}
-        animationEasing={ANIMATION_EASING}
-        isAnimating={isAnimating}
-      />
+      {view === 'lesson' && (
+        <GlobalChat
+          isOpen={chatOpen}
+          onClose={() => setChatOpen(false)}
+          highlightText={highlightText}
+          highlightMode={highlightMode}
+          onWidthChange={handleChatWidthChange}
+          sidebarWidth={currentSidebarWidth}
+          animationDuration={ANIMATION_DURATION}
+          animationEasing={ANIMATION_EASING}
+          isAnimating={isAnimating}
+        />
+      )}
 
       {/* QUIZ */}
       {quizOpen && currentLesson !== null && currentQuiz.length > 0 && (
@@ -1067,6 +1145,17 @@ const Dashboard: React.FC = () => {
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
       />
+
+      {/* TUTORIAL POPUP */}
+      {showOnboardingPopup && view === 'lesson' && !quizOpen && (
+        <TutorialPopup
+          step={tutorialStep}
+          anchorElement={lessonContentsRef.current}
+          onNext={handleTutorialNext}
+          onBack={handleTutorialBack}
+          onClose={handleTutorialClose}
+        />
+      )}
     </div>
   );
 };
@@ -1227,7 +1316,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '15px',
     gridAutoRows: '360px',
     alignItems: 'start',
@@ -1270,7 +1359,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '8px',
     display: 'block',
     flexShrink: 0,
-
   },
   cardContent: {
     padding: 20,
