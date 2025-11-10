@@ -961,6 +961,19 @@ const Dashboard: React.FC = () => {
           </HighlightableInstructionsForReading>
         </div>
         
+        <div ref={lessonContentsRef}>
+          <HighlightableInstructionsForReading
+            onExplain={handleExplain}
+            onViewAnalogy={handleAnalogy}
+          >
+            <Reading
+              courseId={currentLesson}
+              onExplainRequest={handleExplain}
+              onViewAnalogy={handleAnalogy}
+            />
+          </HighlightableInstructionsForReading>
+        </div>
+        
         {currentQuiz.length > 0 && (
           <div className={styles.quizPromptSection}>
             <p className={styles.lessonDescription}>
