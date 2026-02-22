@@ -144,6 +144,20 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleDeleteFeedback = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this feedback?')) return;
+    try {
+      await axios.delete(
+        `${backendUrl}/admin/feedback/${id}`,
+        { withCredentials: true }
+      );
+      setFeedbackList(prev => prev.filter(fb => fb._id !== id));
+      setFeedbackTotal(prev => prev - 1);
+    } catch (error) {
+      console.error('Error deleting feedback:', error);
+    }
+  };
+
   const handleExportCSV = async () => {
     try {
       const params = new URLSearchParams();
@@ -308,6 +322,7 @@ const AdminDashboard: React.FC = () => {
                   <th style={{ ...styles.th, minWidth: 200 }}>Feedback</th>
                   <th style={styles.th}>Status</th>
                   <th style={styles.th}>Screenshot</th>
+                  <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -364,12 +379,21 @@ const AdminDashboard: React.FC = () => {
                           <span style={{ color: '#6B7280' }}>—</span>
                         )}
                       </td>
+                      <td style={styles.td}>
+                        <button
+                          onClick={() => handleDeleteFeedback(fb._id)}
+                          style={styles.deleteButton}
+                          title="Delete feedback"
+                        >
+                          Delete
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
                 {feedbackList.length === 0 && !feedbackLoading && (
                   <tr>
-                    <td colSpan={6} style={{ ...styles.td, textAlign: 'center', color: '#6B7280' }}>
+                    <td colSpan={7} style={{ ...styles.td, textAlign: 'center', color: '#6B7280' }}>
                       No feedback found.
                     </td>
                   </tr>
@@ -581,6 +605,18 @@ const styles: Record<string, React.CSSProperties> = {
     textDecoration: 'none',
     fontSize: 13,
     fontWeight: 500,
+  },
+  deleteButton: {
+    padding: '4px 10px',
+    backgroundColor: '#5f1e1e',
+    color: '#fa6060',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: 12,
+    fontWeight: 600,
+    fontFamily: "'Inter', sans-serif",
+    whiteSpace: 'nowrap' as const,
   },
 };
 

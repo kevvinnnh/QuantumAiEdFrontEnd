@@ -6,15 +6,18 @@ import { useNavigate } from 'react-router-dom';
 import GoogleIcon from '../assets/google-icon.svg';
 import LoginGraphic from '../assets/login-graphic.svg';
 import QuantaidLogo from '../assets/quantaid-logo.svg';
+import { useAuth } from '../AuthContext';
 
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
   const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 
   // State to track if user is signing up (true) or logging in (false)
-  const [isSignUpMode, setIsSignUpMode] = useState(true);
+  // Returning users (have logged in before) start in login mode
+  const [isSignUpMode, setIsSignUpMode] = useState(() => !localStorage.getItem('loggedInUserEmail'));
   
   // Local state for manual sign-up fields (if needed)
   const [email, setEmail] = useState("");
@@ -65,6 +68,9 @@ const Login: React.FC = () => {
           }
         );
         const { redirect_to: redirectTo, is_admin: isAdmin } = backendResponse.data;
+
+        // Update auth context
+        authLogin(userEmail, isAdmin);
 
         // If admin, redirect to admin dashboard
         if (isAdmin) {

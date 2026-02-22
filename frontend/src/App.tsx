@@ -20,6 +20,7 @@ import Profile from './components/Profile';
 import Quiz from './components/Quiz';
 import AdminDashboard from './components/AdminDashboard';
 import { allQuizData } from './components/QuizQuestion';
+import { AuthProvider, ProtectedRoute, AdminRoute } from './AuthContext';
 import './App.css';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 
@@ -59,19 +60,19 @@ const QuizPage: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Router>
-      <div className="app-container">
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/profile-creation" element={<ProfileCreation />} />
-          <Route path="/map" element={<Dashboard />} />
-          <Route path="/profile" element={<Profile />} />
-          {/* Use a URL parameter courseId so TS knows we supply it */}
-          <Route path="/quiz/:courseId" element={<QuizPage />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          {/* Redirect any unknown route back to dashboard */}
-          <Route path="*" element={<Dashboard />} />
-        </Routes>
-      </div>
+      <AuthProvider>
+        <div className="app-container">
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/profile-creation" element={<ProtectedRoute><ProfileCreation /></ProtectedRoute>} />
+            <Route path="/map" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/quiz/:courseId" element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
+            <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          </Routes>
+        </div>
+      </AuthProvider>
     </Router>
   );
 };
