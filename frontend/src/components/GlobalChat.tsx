@@ -37,7 +37,6 @@ interface Props {
   sidebarWidth?: number;
   animationDuration?: number;
   animationEasing?: string;
-  isAnimating?: boolean;
 }
 
 const GlobalChat: React.FC<Props> = ({
@@ -103,12 +102,12 @@ const GlobalChat: React.FC<Props> = ({
     };
   }, [isResizing, sidebarWidth, width, onWidthChange]);
 
-  // Notify parent of width changes
+  // Notify parent of width changes (skip during active drag — handled by mousemove)
   useEffect(() => {
-    if (onWidthChange) {
+    if (onWidthChange && !isResizing) {
       onWidthChange(isOpen ? width : 0, false); // isResizing = false for open/close
     }
-  }, [isOpen, width, onWidthChange]);
+  }, [isOpen, width, onWidthChange, isResizing]);
 
   // Auto-scroll when new messages arrive or chat opens
   useEffect(() => {

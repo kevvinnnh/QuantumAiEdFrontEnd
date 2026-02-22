@@ -1,5 +1,5 @@
 // src/components/Login.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
+
   // State to track if user is signing up (true) or logging in (false)
   const [isSignUpMode, setIsSignUpMode] = useState(true);
   
@@ -22,6 +23,13 @@ const Login: React.FC = () => {
   
   // Loading state for the login process
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Refs for managing focus
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const googleButtonRef = useRef<HTMLButtonElement>(null);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
   
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -56,10 +64,10 @@ const Login: React.FC = () => {
             headers: { 'Content-Type': 'application/json' },
           }
         );
-        const redirectTo = backendResponse.data.redirect_to;
-        
+        const { redirect_to: redirectTo, is_admin: isAdmin } = backendResponse.data;
+
         // If admin, redirect to admin dashboard
-        if (userEmail.toLowerCase() === 'kh78@rice.edu') {
+        if (isAdmin) {
           navigate('/admin-dashboard');
         } else if (redirectTo === 'map') {
           navigate('/map');
@@ -100,6 +108,14 @@ const Login: React.FC = () => {
     setPassword("");
   };
   
+  // Handle keyboard navigation for form submission
+  const handleFormKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleManualSignupOrLogin();
+    }
+  };
+  
   return (
     <>
       
@@ -127,7 +143,8 @@ const Login: React.FC = () => {
           input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
             background-color: rgba(116, 142, 203, 1) !important;
             color: #1F1A2A !important;
-            outline: none !important;
+            outline: 3px solid #A4C5FF !important;
+            outline-offset: 2px !important;
             border: none !important;
             font-style: normal !important;
             text-align: left !important;
@@ -157,6 +174,19 @@ const Login: React.FC = () => {
             text-align: left !important;
             padding-left: 1rem !important;
           }
+          
+          /* Focus visible styles for buttons */
+          button:focus-visible {
+            outline: 3px solid #A4C5FF !important;
+            outline-offset: 2px !important;
+          }
+          
+          /* Focus visible styles for text buttons */
+          button.text-button:focus-visible {
+            outline: 2px solid #A4C5FF !important;
+            outline-offset: 1px !important;
+            border-radius: 2px;
+          }
 
           /* Responsive breakpoint - hide right column on screens smaller than 768px */
           @media screen and (max-width: 768px) {
@@ -172,13 +202,26 @@ const Login: React.FC = () => {
       </style>
       {/* Loading Animation Overlay */}
       {isLoading && (
-        <div style={styles.loadingOverlay}>
+        <div 
+          style={styles.loadingOverlay}
+          role="status"
+          aria-live="polite"
+          aria-label="Loading, please wait"
+        >
           <div style={styles.spinner}></div>
+          <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
+            Loading...
+          </span>
         </div>
       )}
       <div style={styles.container}>
         {/* LEFT COLUMN */}
-        <div style={styles.leftColumn} className="left-column-responsive">
+        <main 
+          style={styles.leftColumn} 
+          className="left-column-responsive"
+          role="main"
+          aria-label={isSignUpMode ? "Sign up form" : "Login form"}
+        >
         <div
           style={styles.logoStyle}
           role="img"
@@ -192,6 +235,7 @@ const Login: React.FC = () => {
             
             {/* Sign up/Continue with Google */}
             <button
+              ref={googleButtonRef}
               style={styles.googleButton}
               onClick={() => login()}
               onMouseEnter={(e) => {
@@ -200,63 +244,86 @@ const Login: React.FC = () => {
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = '#F2F2F2';
               }}
+              aria-label={isSignUpMode ? 'Sign up with Google' : 'Continue with Google'}
             >
-              <img src={GoogleIcon} alt="Google icon" style={styles.googleIcon} />
+              <img src={GoogleIcon} alt="" style={styles.googleIcon} aria-hidden="true" />
               <span>{isSignUpMode ? 'Sign up with Google' : 'Continue with Google'}</span>
             </button>
             
             {/* Divider */}
-            <div style={styles.divider}>
+            <div style={styles.divider} aria-hidden="true">
               <div style={styles.line} />
               <span style={styles.dividerText}>OR</span>
               <div style={styles.line} />
             </div>
             
             {/* Manual signup fields */}
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleManualSignupOrLogin();
+              }}
+              onKeyDown={handleFormKeyDown}
+            >
             <div style={styles.inputContainer}>
-              <label style={styles.label}>Email</label>
+              <label htmlFor="email-input" style={styles.label}>Email</label>
               <input
+                id="email-input"
+                ref={emailInputRef}
                 type="email"
                 placeholder="Name@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 style={styles.input}
+                required
+                aria-required="true"
+                autoComplete="email"
               />
             </div>
 
             {/* Name field - only show in sign up mode */}
             {isSignUpMode && (
               <div style={styles.inputContainer}>
-                <label style={styles.label}>Name</label>
-                <p style={styles.labelText}>
+                <label htmlFor="name-input" style={styles.label}>Name</label>
+                <p style={styles.labelText} id="name-description">
                   This name will appear on your profile
                 </p>
                 <input
+                  id="name-input"
                   key="name-input"
+                  ref={nameInputRef}
                   type="text"
                   placeholder="John/Jane Doe"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   style={styles.input}
                   autoComplete="name"
+                  required={isSignUpMode}
+                  aria-required={isSignUpMode}
+                  aria-describedby="name-description"
                 />
               </div>
             )}
 
             <div style={styles.inputContainer}>
-              <label style={styles.label}>Password</label>
+              <label htmlFor="password-input" style={styles.label}>Password</label>
               <input
+                id="password-input"
+                ref={passwordInputRef}
                 type="password"
                 placeholder="********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={styles.input}
+                required
+                aria-required="true"
+                autoComplete={isSignUpMode ? "new-password" : "current-password"}
               />
             </div>
 
             {/* Terms text for sign up mode, Forgot password for login mode */}
             {isSignUpMode ? (
-              <p style={styles.termsText}>
+              <p style={styles.termsText} id="terms-text">
                 By clicking SIGN UP, you acknowledge that you have read and agree to QuantAid's{' '}
                 <a
                   href="/terms"
@@ -291,14 +358,17 @@ const Login: React.FC = () => {
             ) : (
               <div style={styles.forgotPasswordContainer}>
                 <button
+                  type="button"
                   onClick={handleForgotPassword}
                   style={styles.forgotPasswordLink}
+                  className="text-button"
                   onMouseEnter={(e) => {
                     e.currentTarget.style.textDecoration = 'underline';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.textDecoration = 'none';
                   }}
+                  aria-label="Forgot password"
                 >
                   Forgot my password
                 </button>
@@ -307,13 +377,16 @@ const Login: React.FC = () => {
             
             {/* Sign Up/Log In Button */}
             <button
+              ref={submitButtonRef}
+              type="submit"
               style={styles.signupButton}
-              onClick={handleManualSignupOrLogin}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1F4ADB'; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2C5CE6'; }}
+              aria-describedby={isSignUpMode ? "terms-text" : undefined}
             >
               {isSignUpMode ? 'SIGN UP' : 'LOG IN'}
             </button>
+            </form>
 
             {/* Toggle between sign up and log in */}
             <p style={styles.loginLink}>
@@ -321,14 +394,17 @@ const Login: React.FC = () => {
                 <>
                   Already have an account?{' '}
                   <button 
+                    type="button"
                     onClick={toggleMode}
                     style={styles.toggleButton}
+                    className="text-button"
                     onMouseEnter={(e) => {
                       e.currentTarget.style.textDecoration = 'underline';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.textDecoration = 'none';
                     }}
+                    aria-label="Switch to login mode"
                   >
                     Log in
                   </button>
@@ -337,14 +413,17 @@ const Login: React.FC = () => {
                 <>
                   Don't have an account?{' '}
                   <button 
+                    type="button"
                     onClick={toggleMode}
                     style={styles.toggleButton}
+                    className="text-button"
                     onMouseEnter={(e) => {
                       e.currentTarget.style.textDecoration = 'underline';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.textDecoration = 'none';
                     }}
+                    aria-label="Switch to sign up mode"
                   >
                     Sign up
                   </button>
@@ -352,16 +431,20 @@ const Login: React.FC = () => {
               )}
             </p>
           </div>
-        </div>
+        </main>
         
         {/* RIGHT COLUMN */}
-        <div style={styles.rightColumn} className="right-column-responsive">
+        <aside 
+          style={styles.rightColumn} 
+          className="right-column-responsive"
+          aria-label="Decorative illustration"
+        >
         <img
           src={LoginGraphic}
-          alt="Illustration of a student using QuantAid"
+          alt="Illustration of a student using QuantAid to learn quantum computing"
           style={styles.rightContent}
         />
-        </div>
+        </aside>
       </div>
     </>
   );

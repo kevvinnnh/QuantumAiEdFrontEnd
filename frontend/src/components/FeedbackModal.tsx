@@ -1,6 +1,6 @@
 // src/components/FeedbackModal.tsx
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MdClose, MdArrowBackIos } from 'react-icons/md';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
@@ -21,6 +21,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
   const [feedbackText, setFeedbackText] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const categories = [
     'Analogies and chat responses',
@@ -31,7 +32,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
   ];
 
   // Initialize at feedback step if initialCategory is provided
-  React.useEffect(() => {
+  useEffect(() => {
     if (initialCategory && isOpen) {
       setSelectedCategory(initialCategory);
       setCurrentStep('feedback');
@@ -40,6 +41,57 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
       setSelectedCategory('');
     }
   }, [initialCategory, isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const modalElement = modalRef.current;
+      if (!modalElement) return;
+
+      // Query all focusable elements within the modal
+      const focusableElements = modalElement.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      
+      const firstElement = focusableElements[0] as HTMLElement;
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+      // Handle Tab key for circular navigation
+      const handleTabKeyPress = (event: KeyboardEvent) => {
+        if (event.key === 'Tab') {
+          // Shift+Tab on first element: go to last
+          if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+          } 
+          // Tab on last element: go to first
+          else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+          }
+        }
+      };
+
+      // Handle Escape key to close modal
+      const handleEscapeKeyPress = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          handleClose();
+        }
+      };
+
+      // Attach event listeners
+      modalElement.addEventListener('keydown', handleTabKeyPress);
+      modalElement.addEventListener('keydown', handleEscapeKeyPress);
+
+      // Focus first element when modal opens
+      firstElement?.focus();
+
+      // Cleanup: remove event listeners when modal closes
+      return () => {
+        modalElement.removeEventListener('keydown', handleTabKeyPress);
+        modalElement.removeEventListener('keydown', handleEscapeKeyPress);
+      };
+    }
+  }, [isOpen, currentStep]);
 
   const handleModalOverlayClick = (event: React.MouseEvent) => {
     if (event.target === event.currentTarget) {
@@ -130,14 +182,14 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div style={styles.modalOverlay} onClick={handleModalOverlayClick}>
-      <div style={styles.modalContent}>
+    <div style={styles.modalOverlay} onClick={handleModalOverlayClick} ref={modalRef}>
+      <div style={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
         {currentStep === 'category' ? (
           // Category Selection Step
           <>
             <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Help us improve Quantaid</h2>
-              <button onClick={handleClose} style={styles.closeButton}>
+              <h2 id="feedback-modal-title" style={styles.modalTitle}>Help us improve Quantaid</h2>
+              <button onClick={handleClose} style={styles.closeButton} aria-label="Close">
                 <MdClose size={24} color="#FFFFFF" />
               </button>
             </div>
@@ -161,11 +213,11 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
           // Feedback Form Step
           <>
             <div style={styles.modalHeader}>
-              <button onClick={handleBack} style={styles.backButton}>
+              <button onClick={handleBack} style={styles.backButton} aria-label="Go back to categories">
                 <MdArrowBackIos size={18} color="#FFFFFF" />
               </button>
-              <h2 style={styles.modalTitle}>{selectedCategory}</h2>
-              <button onClick={handleClose} style={styles.closeButton}>
+              <h2 id="feedback-modal-title" style={styles.modalTitle}>{selectedCategory}</h2>
+              <button onClick={handleClose} style={styles.closeButton} aria-label="Close">
                 <MdClose size={24} color="#FFFFFF" />
               </button>
             </div>
@@ -178,6 +230,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
               placeholder="Describe your experience here."
               style={styles.feedbackTextarea}
               className="feedback-textarea"
+              aria-label="Feedback description"
             />
             
             <div style={styles.actionButtons}>

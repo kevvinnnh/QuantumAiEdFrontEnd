@@ -41,15 +41,19 @@ const Questions: React.FC<QuestionsProps> = ({
 }) => (
   <div style={styles.container}>
     <div style={styles.questionContainer}>
-      <h2 style={{...styles.questionText, ...questionStyles}}>
+      <h2 
+        style={{...styles.questionText, ...questionStyles}}
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {question.question}
       </h2>
     </div>
 
-    <div style={styles.optionsContainer}>
+    <div style={styles.optionsContainer} role="group" aria-label="Quiz answer options">
       {/* Try Again Indicator */}
       {showAnswersEnabled && wrongChoices.length > 0 && !questionCompleted && (
-        <div style={styles.tryAgainIndicator}>
+        <div style={styles.tryAgainIndicator} role="status" aria-live="polite">
           Try again
         </div>
       )}
@@ -97,11 +101,22 @@ const Questions: React.FC<QuestionsProps> = ({
             key={`q${currentIndex}-opt${idx}`}
             style={btnStyle}
             disabled={isDisabled}
+            className="quiz-option"
             onClick={() => {
               if (!isDisabled) {
                 onSelectOption(idx);
               }
             }}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && !isDisabled) {
+                e.preventDefault();
+                onSelectOption(idx);
+              }
+            }}
+            aria-label={`Option ${idx + 1}: ${opt}`}
+            aria-pressed={selectedOption === idx}
+            aria-disabled={isDisabled}
+            tabIndex={isDisabled ? -1 : 0}
           >
             {opt}
           </button>

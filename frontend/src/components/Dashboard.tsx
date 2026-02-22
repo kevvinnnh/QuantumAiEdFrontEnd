@@ -271,7 +271,7 @@ interface CompletedQuiz {
 
 const Dashboard: React.FC = () => {
   /* ---------- dev state ----------------------------------------- */
-  const DEV_LOGIN_EMAIL = import.meta.env.DEV_LOGIN_EMAIL;
+  const FIRST_TIME_USER_EMAIL = import.meta.env.VITE_FIRST_TIME_USER_EMAIL;
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   /* ---------- animation state ------------------------------------ */
@@ -296,6 +296,9 @@ const Dashboard: React.FC = () => {
   const [tutorialStep, setTutorialStep] = useState<1 | 2 | 3>(1);
   const [, setTutorialAnchor] = useState<{ top: number; left: number } | null>(null);
   const lessonContentsRef = useRef<HTMLDivElement>(null);
+
+  /* ---------- card FLIP animation refs --------------------------- */
+  const cardElRefs = useRef<Map<number, HTMLElement>>(new Map());
 
   /* ---------- feedback state ------------------------------------- */
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
@@ -334,24 +337,37 @@ const Dashboard: React.FC = () => {
     setChatOpen(false);
   }, []);
 
-  // const goBackFromCourseDetail = useCallback(() => {
-  //   setView('dashboard');
-  //   setCurrentCourse(null);
-  //   setCurrentLesson(null);
-  // }, []);
-
   // Animation constants
-  const ANIMATION_DURATION = 300;
+  const ANIMATION_DURATION = 200;
   const ANIMATION_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
+  const [isChatResizing, setIsChatResizing] = useState(false);
+  const [isWindowResizing, setIsWindowResizing] = useState(false);
+  const windowResizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Track screen size for responsive behavior
+  // Effective duration: 0 during resize/window-resize, animated otherwise
+  const effectiveDuration = (isChatResizing || isWindowResizing) ? 0 : ANIMATION_DURATION;
+
+  // Track screen size for responsive behavior (suppress transitions during window resize)
   useEffect(() => {
     const handleResize = () => {
       setScreenWidth(window.innerWidth);
+      setIsWindowResizing(true);
+
+      if (windowResizeTimerRef.current) {
+        clearTimeout(windowResizeTimerRef.current);
+      }
+      windowResizeTimerRef.current = setTimeout(() => {
+        setIsWindowResizing(false);
+      }, 150);
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (windowResizeTimerRef.current) {
+        clearTimeout(windowResizeTimerRef.current);
+      }
+    };
   }, []);
 
   // Calculate sidebar dimensions
@@ -392,6 +408,99 @@ const Dashboard: React.FC = () => {
       }
     };
   }, []);
+
+  // FLIP animation — Web Animations API for interruptible, smooth card reflow
+  const cardAnimationsRef = useRef<Map<number, Animation>>(new Map());
+  const prevPositionsRef = useRef<Map<number, DOMRect>>(new Map());
+
+  const FLIP_DURATION = 120;
+  const FLIP_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
+
+  // Stable FLIP function via ref — called by ResizeObserver
+  const runFlipRef = useRef<() => void>(() => {});
+  runFlipRef.current = () => {
+    if (cardElRefs.current.size === 0) return;
+
+    // 1. Snapshot previous positions (from last call) before we overwrite them
+    const oldPositions = new Map(prevPositionsRef.current);
+
+    // 2. Capture where each card VISUALLY is right now (includes in-flight animation transforms)
+    const visualRects = new Map<number, DOMRect>();
+    cardElRefs.current.forEach((el, id) => {
+      visualRects.set(id, el.getBoundingClientRect());
+    });
+
+    // 3. Cancel all in-flight WAAPI animations (synchronous, no paint yet)
+    cardAnimationsRef.current.forEach((anim) => anim.cancel());
+    cardAnimationsRef.current.clear();
+
+    // 4. Force reflow — elements are now at clean layout positions
+    void document.body.offsetHeight;
+
+    // 5. For each card, compute where to animate FROM
+    cardElRefs.current.forEach((el, id) => {
+      const layoutRect = el.getBoundingClientRect();
+
+      // Always update previous positions to current layout for the next call
+      prevPositionsRef.current.set(id, layoutRect);
+
+      const visualRect = visualRects.get(id);
+      if (!visualRect) return;
+
+      // If an animation was in-flight, the visual rect differs from layout rect
+      let fromDx = visualRect.left - layoutRect.left;
+      let fromDy = visualRect.top - layoutRect.top;
+
+      // If no animation was running, use previous positions (one resize-step behind)
+      if (Math.abs(fromDx) < 1 && Math.abs(fromDy) < 1) {
+        const prevRect = oldPositions.get(id);
+        if (prevRect) {
+          fromDx = prevRect.left - layoutRect.left;
+          fromDy = prevRect.top - layoutRect.top;
+        }
+      }
+
+      // No significant movement — skip
+      if (Math.abs(fromDx) < 1 && Math.abs(fromDy) < 1) return;
+
+      // 6. Animate from visual/previous position to layout position
+      const anim = el.animate(
+        [
+          { transform: `translate(${fromDx}px, ${fromDy}px)` },
+          { transform: 'translate(0, 0)' },
+        ],
+        { duration: FLIP_DURATION, easing: FLIP_EASING, fill: 'none' }
+      );
+
+      cardAnimationsRef.current.set(id, anim);
+      anim.onfinish = () => {
+        cardAnimationsRef.current.delete(id);
+      };
+    });
+  };
+
+  // Set up ResizeObserver once on mount
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver(() => {
+      runFlipRef.current();
+    });
+    observer.observe(container);
+
+    // Initialize previous positions
+    cardElRefs.current.forEach((el, id) => {
+      prevPositionsRef.current.set(id, el.getBoundingClientRect());
+    });
+
+    return () => {
+      observer.disconnect();
+      cardAnimationsRef.current.forEach((anim) => anim.cancel());
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const handleCollapsedProfileClick = useCallback(() => {
     if (chatOpen) {
@@ -445,13 +554,13 @@ const Dashboard: React.FC = () => {
   const getMainPanelStyles = useCallback(() => {
     return {
       marginLeft: currentSidebarWidth,
-      maxWidth: chatOpen && chatWidth > 0 
+      maxWidth: chatOpen && chatWidth > 0
         ? `calc(100vw - ${currentSidebarWidth}px - ${chatWidth}px)`
         : `calc(100vw - ${currentSidebarWidth}px)`,
       flex: 1,
-      transition: `all ${ANIMATION_DURATION}ms ${ANIMATION_EASING}`,
+      transition: effectiveDuration > 0 ? `all ${effectiveDuration}ms ${ANIMATION_EASING}` : 'none',
     };
-  }, [currentSidebarWidth, chatOpen, chatWidth, ANIMATION_DURATION, ANIMATION_EASING]);
+  }, [currentSidebarWidth, chatOpen, chatWidth, effectiveDuration, ANIMATION_EASING]);
 
   // Calculate header positioning and dimensions
   const getHeaderStyles = useCallback(() => {
@@ -459,13 +568,14 @@ const Dashboard: React.FC = () => {
       marginLeft: currentSidebarWidth,
       width: `calc(100vw - ${currentSidebarWidth}px)`,
       flex: 1,
-      transition: `all ${ANIMATION_DURATION}ms ${ANIMATION_EASING} !important`,
+      transition: effectiveDuration > 0 ? `all ${effectiveDuration}ms ${ANIMATION_EASING} !important` : 'none !important',
     };
-  }, [currentSidebarWidth, chatOpen, chatWidth, ANIMATION_DURATION, ANIMATION_EASING]);
+  }, [currentSidebarWidth, chatOpen, chatWidth, effectiveDuration, ANIMATION_EASING]);
 
-  // Chat width change handler (simple for now, can update for zero transition time during resize?)
-  const handleChatWidthChange = useCallback((width: number) => {
+  // Chat width change handler — suppress transitions while actively dragging
+  const handleChatWidthChange = useCallback((width: number, isResizing?: boolean) => {
     setChatWidth(width);
+    setIsChatResizing(!!isResizing);
   }, []);
 
   // Chat toggle also collapses sidebar based on screen width
@@ -500,10 +610,6 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     handlePositionUpdate();
-    return () => {
-      window.removeEventListener('resize', handlePositionUpdate);
-      window.removeEventListener('scroll', handlePositionUpdate);
-    };
   }, [view, showOnboardingPopup, chatOpen, chatWidth, sidebarCollapsed, screenWidth]);
 
   // Navigation handlers
@@ -669,10 +775,10 @@ const Dashboard: React.FC = () => {
     // Check if this is the user's first lesson ever
     if (!hasViewedFirstLesson) {
       setShowOnboardingPopup(true);
-      if (userEmail !== DEV_LOGIN_EMAIL) {
+      if (userEmail !== FIRST_TIME_USER_EMAIL) {
         setHasViewedFirstLesson(true);
         saveFirstLessonView();
-    }
+      }
     }
     
     setCurrentLesson(topicId);
@@ -762,6 +868,7 @@ const Dashboard: React.FC = () => {
         style={styles.breadcrumbButton}
         onClick={goDashboard}
         className="breadcrumb-button"
+        aria-label="Go back to lessons overview"
       >
         {rootTabName}
       </button>
@@ -780,6 +887,7 @@ const Dashboard: React.FC = () => {
             style={styles.breadcrumbButton}
             onClick={() => goToCourseDetail(currentCourse)}
             className="breadcrumb-button"
+            aria-label={`Go back to ${course.title}`}
           >
             {course.title}
           </button>
@@ -844,11 +952,25 @@ const Dashboard: React.FC = () => {
     return (
       <div
         key={c.id}
+        ref={(el) => {
+          if (el) cardElRefs.current.set(c.id, el);
+          else cardElRefs.current.delete(c.id);
+        }}
+        role="button"
+        tabIndex={isUnlocked ? 0 : -1}
         style={{
           ...styles.card,
           ...(isUnlocked ? styles.cardEnabled : styles.cardDisabled),
         }}
         onClick={() => isUnlocked && goToCourseDetail(c.id)}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && isUnlocked) {
+            e.preventDefault();
+            goToCourseDetail(c.id);
+          }
+        }}
+        aria-label={`${c.title}. ${isUnlocked ? progress > 0 ? `${progress}% complete` : 'Not started' : 'Locked'}`}
+        aria-disabled={!isUnlocked}
       >
         <img src={c.image} alt={c.title} style={styles.cardImg} />
         <div style={styles.cardContent}>
@@ -917,7 +1039,15 @@ const Dashboard: React.FC = () => {
                         ...(!isUnlocked ? styles.topicButtonDisabled : {}),
                       }}
                       onClick={() => isUnlocked && openLesson(topic.id)}
+                      onKeyDown={(e) => {
+                        if ((e.key === 'Enter' || e.key === ' ') && isUnlocked) {
+                          e.preventDefault();
+                          openLesson(topic.id);
+                        }
+                      }}
                       disabled={!isUnlocked}
+                      aria-label={`${topic.title}. ${isTopicCompleted ? 'Completed' : isUnlocked ? 'Available' : 'Locked'}`}
+                      aria-disabled={!isUnlocked}
                     >
                       <span style={styles.topicTitle}>{topic.title}</span>
                       {isTopicCompleted && (
@@ -966,7 +1096,11 @@ const Dashboard: React.FC = () => {
           )}
 
           {currentQuiz.length > 0 && (
-            <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
+            <button 
+              style={styles.takeQuizButton} 
+              onClick={() => setQuizOpen(true)}
+              aria-label="Start quiz for this lesson"
+            >
               TAKE QUIZ
             </button>
           )}
@@ -1006,7 +1140,7 @@ const Dashboard: React.FC = () => {
   /* JSX                                                              */
   /* ---------------------------------------------------------------- */
   return (
-    <div style={styles.container}>
+    <div style={styles.container} className={effectiveDuration === 0 ? 'no-transition' : ''}>
 
       {/* SIDEBAR */}
       <Sidebar
@@ -1026,10 +1160,10 @@ const Dashboard: React.FC = () => {
         onLeaveFeedbackClick={handleLeaveFeedbackClick}
         chatWidth={chatWidth}
         screenWidth={screenWidth}
-        animationDuration={ANIMATION_DURATION}
+        animationDuration={effectiveDuration}
         animationEasing={ANIMATION_EASING}
       />
-      
+
       {/* HEADER */}
       <header 
         style={{
@@ -1037,10 +1171,11 @@ const Dashboard: React.FC = () => {
           ...getHeaderStyles(),
         }}
         className='main-panel-coordinated'
+        role="banner"
       >
-        <form onSubmit={handleSearchSubmit} style={styles.headerSearch}>
+        <form onSubmit={handleSearchSubmit} style={styles.headerSearch} role="search">
           <div style={styles.searchContainer} className="search-container">
-            <FaSearch style={styles.searchIcon} />
+            <FaSearch style={styles.searchIcon} aria-hidden="true" />
             <input
               type="text"
               placeholder="Search Quantaid"
@@ -1048,6 +1183,7 @@ const Dashboard: React.FC = () => {
               onChange={handleSearchChange}
               style={styles.searchInput}
               className="search-input"
+              aria-label="Search Quantaid"
             />
           </div>
         </form>
@@ -1073,12 +1209,17 @@ const Dashboard: React.FC = () => {
           ...getMainPanelStyles(),
         }}
         className="main-panel-coordinated"
+        role="main"
+        aria-label="Course content"
       >
         
         <div
           ref={contentRef}
           style={styles.content}
           className="dashboard-content default-scrollbar"
+          tabIndex={0}
+          role="region"
+          aria-label="Scrollable content area"
         >
           {isLoadingProgress ? (
              <p style={styles.loadingText}>Loading your progress...</p>
@@ -1119,9 +1260,8 @@ const Dashboard: React.FC = () => {
           highlightMode={highlightMode}
           onWidthChange={handleChatWidthChange}
           sidebarWidth={currentSidebarWidth}
-          animationDuration={ANIMATION_DURATION}
+          animationDuration={effectiveDuration}
           animationEasing={ANIMATION_EASING}
-          isAnimating={isAnimating}
         />
       )}
 
@@ -1154,6 +1294,9 @@ const Dashboard: React.FC = () => {
           onNext={handleTutorialNext}
           onBack={handleTutorialBack}
           onClose={handleTutorialClose}
+          chatOpen={chatOpen}
+          sidebarCollapsed={sidebarCollapsed}
+          animationDuration={ANIMATION_DURATION}
         />
       )}
     </div>
@@ -1169,14 +1312,14 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100vh',
     background: '#030E29',
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    overflow: 'hidden', // Prevent body scrolling
+    overflow: 'clip', // Prevent body scrolling without clipping focus outlines
   },
   main: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
     height: '100vh',
-    overflow: 'hidden', // Prevent main from scrolling
+    overflow: 'clip', // Prevent main from scrolling without clipping focus outlines
     minWidth: 300,
     // Transition is now handled dynamically in getMainPanelStyles
   },
@@ -1316,12 +1459,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, 300px)',
     gap: '15px',
     gridAutoRows: '360px',
     alignItems: 'start',
-    justifyItems: 'stretch',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     width: '100%',
     boxSizing: 'border-box',
   },
@@ -1330,7 +1471,8 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 10,
     overflow: 'hidden',
     position: 'relative',
-    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease-in-out',border: `1px solid ${colors.border}`,
+    transition: 'box-shadow 0.2s ease-in-out',
+    border: `1px solid ${colors.border}`,
     height: '360px',
     display: 'flex',
     flexDirection: 'column',
@@ -1644,6 +1786,22 @@ const styles: Record<string, React.CSSProperties> = {
 const addAllStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
+    /* Focus visible styles for accessibility */
+    button:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+    
+    [role="button"]:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+    
+    input:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+    
     /* Make lesson header non-selectable */
     .lesson-header {
       user-select: none !important;

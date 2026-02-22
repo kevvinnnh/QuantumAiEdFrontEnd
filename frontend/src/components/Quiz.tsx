@@ -81,6 +81,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
   const [showExitModal, setShowExitModal] = useState(false);
+  const exitModalRef = useRef<HTMLDivElement>(null);
+  const quizContainerRef = useRef<HTMLDivElement>(null);
 
   // // Side chat state
   // const [sideChatMessages, setSideChatMessages] = useState<ChatMessage[]>([]);
@@ -438,6 +440,94 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
     }
   };
 
+  // Exit modal focus trap & Escape key
+  useEffect(() => {
+    if (!showExitModal) return;
+    const modalEl = exitModalRef.current;
+    if (!modalEl) return;
+
+    const focusableEls = modalEl.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstEl = focusableEls[0];
+    const lastEl = focusableEls[focusableEls.length - 1];
+
+    firstEl?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleCloseExitModal();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl?.focus();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl?.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showExitModal]);
+
+  // Quiz-level focus trap: keep Tab within the quiz container
+  useEffect(() => {
+    const containerEl = quizContainerRef.current;
+    if (!containerEl) return;
+
+    // Focus the first interactive element when quiz mounts or question changes
+    const focusFirst = () => {
+      const focusableEls = containerEl.querySelectorAll<HTMLElement>(
+        'button:not([disabled]):not([tabindex="-1"]), [href], input:not([disabled]):not([tabindex="-1"]), select, textarea, [tabindex="0"]'
+      );
+      if (focusableEls.length > 0) {
+        focusableEls[0].focus();
+      }
+    };
+
+    // Small delay to let React render the new question's DOM
+    const timerId = setTimeout(focusFirst, 50);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      // Don't interfere if exit modal or feedback modal is open (they have their own traps)
+      if (showExitModal || showFeedbackModal) return;
+
+      const focusableEls = containerEl.querySelectorAll<HTMLElement>(
+        'button:not([disabled]):not([tabindex="-1"]), [href], input:not([disabled]):not([tabindex="-1"]), select, textarea, [tabindex="0"]'
+      );
+      if (focusableEls.length === 0) return;
+
+      const firstEl = focusableEls[0];
+      const lastEl = focusableEls[focusableEls.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl.focus();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timerId);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [currentIndex, hasSubmitted, wrongChoices.length, showResultsScreen, showReviewConcept, showExitModal, showFeedbackModal]);
+
   // Feedback modal handler
   const handleLeaveFeedbackClick = () => {
     setShowFeedbackModal(true);
@@ -699,18 +789,21 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
   };
 
   return (
-    <div style={styles.container}>
+    <div ref={quizContainerRef} style={styles.container} role="main" aria-label="Quiz">
       {showResultsScreen ? (
         <div style={styles.resultsScreenContainer}>
           <ResultsScreen />
         </div>
       ) : (
         <>
-          <div style={styles.topBar}>
+          <div style={styles.topBar} role="navigation" aria-label="Quiz navigation">
             <button 
               ref={settingsButtonRef}
               onClick={toggleSettingsDropdown} 
               style={styles.dotsButton}
+              aria-label="Quiz settings"
+              aria-expanded={showSettingsDropdown}
+              aria-haspopup="true"
             >
               <BsThreeDots size={24} color={'#424E62'} />
             </button>
@@ -725,7 +818,11 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
               animationDuration={600}
             />
 
-            <button onClick={progressSaved ? onExit : handleBackButtonClick} style={styles.backButton}>
+            <button 
+              onClick={progressSaved ? onExit : handleBackButtonClick} 
+              style={styles.backButton}
+              aria-label="Exit quiz"
+            >
               <IoCloseOutline size={24} color={'#424E62'} />
             </button>
           </div>
@@ -733,10 +830,16 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
           {/* Exit Confirmation Modal */}
           {showExitModal && (
             <div style={styles.modalOverlay} onClick={handleModalOverlayClick}>
-              <div style={styles.modalContent}>
+              <div
+                ref={exitModalRef}
+                style={styles.modalContent}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="exit-modal-title"
+              >
                 <div style={styles.modalHeader}>
-                  <h2 style={styles.modalTitle}>Exit Quiz?</h2>
-                  <button onClick={handleCloseExitModal} style={styles.closeButton}>
+                  <h2 id="exit-modal-title" style={styles.modalTitle}>Exit Quiz?</h2>
+                  <button onClick={handleCloseExitModal} style={styles.closeButton} aria-label="Close">
                     <IoMdClose size={24} color="#FFFFFF" />
                   </button>
                 </div>
@@ -776,6 +879,15 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
               <div 
                 style={styles.settingsOption}
                 onClick={() => handleSettingToggle('sound', soundEnabled)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSettingToggle('sound', soundEnabled);
+                  }
+                }}
+                aria-label={`Sound effects ${soundEnabled ? 'on' : 'off'}`}
               >
                 <div style={styles.optionLeft}>
                   <span style={styles.optionText}>Sound effects</span>
@@ -797,6 +909,15 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
               <div 
                 style={styles.settingsOption}
                 onClick={() => handleSettingToggle('answers', showAnswersEnabled)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSettingToggle('answers', showAnswersEnabled);
+                  }
+                }}
+                aria-label={`Show correct answers ${showAnswersEnabled ? 'on' : 'off'}`}
               >
                 <div style={styles.optionLeft}>
                   <span style={styles.optionText}>Show correct answers</span>
@@ -818,6 +939,15 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
               <div 
                 style={styles.settingsOption}
                 onClick={() => handleSettingToggle('time', timeModeEnabled)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSettingToggle('time', timeModeEnabled);
+                  }
+                }}
+                aria-label={`Time mode ${timeModeEnabled ? 'on' : 'off'}`}
               >
                 <div style={styles.optionLeft}>
                   <span style={styles.optionText}>Time mode</span>
@@ -856,13 +986,14 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
                           ))}
                         </div>
                         <div style={styles.revisitLessonContainer}>
-                          <span 
+                          <button
                             onClick={progressSaved ? onExit : handleBackButtonClick}
                             className="revisit-lesson-link"
                             style={styles.revisitLessonLink}
+                            aria-label="Revisit full lesson"
                           >
                             Revisit full lesson
-                          </span>
+                          </button>
                         </div>
                       </>
                     );
@@ -1011,11 +1142,11 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
             <button
               className={`quiz-bottom-buttons ${showResultsScreen ? 'results-continue' : ''}`}
               onClick={showResultsScreen ? onExit : handleContinue}
-              disabled={!canContinue && !questionCompleted}
+              disabled={!showResultsScreen && !canContinue && !questionCompleted}
               style={{
                 ...styles.continueButton,
-                opacity: (!canContinue && !questionCompleted) ? 0.5 : 1,
-                cursor: (!canContinue && !questionCompleted) ? 'not-allowed' : 'pointer',
+                opacity: (!showResultsScreen && !canContinue && !questionCompleted) ? 0.5 : 1,
+                cursor: (!showResultsScreen && !canContinue && !questionCompleted) ? 'not-allowed' : 'pointer',
                 color: showResultsScreen ? '#0D103F' : (canContinue || questionCompleted ? '#FFFFFF' : '#AAABAF'),
                 backgroundColor: showResultsScreen
                   ? '#3B6BBB'
@@ -1432,6 +1563,9 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     transition: 'color 0.2s ease',
     lineHeight: '1.4',
+    background: 'none',
+    border: 'none',
+    padding: 0,
   },
   continueButton: {
     padding: '12px 42px',
@@ -1538,13 +1672,24 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-// Add hover effects
+// Add hover effects and focus styles
 const addHoverStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
     .quiz-bottom-buttons:hover:not(:disabled) {
       opacity: 0.9 !important;
       transition: opacity 0.2s ease;
+    }
+    
+    /* Focus visible styles for accessibility */
+    button:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+    
+    .quiz-option:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
     }
 
     .revisit-lesson-link:hover:not(:disabled) {

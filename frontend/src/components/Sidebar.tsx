@@ -340,7 +340,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100vh',
     zIndex: 100,
     justifyContent: 'space-between',
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   logoContainer: {
     display: 'flex',
@@ -373,7 +373,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     flex: 1,
     paddingBottom: 20,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   navButton: {
     display: 'flex',
@@ -390,7 +390,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '8px',
     width: '100%',
     marginBottom: '4px',
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   navButtonText: {
     fontSize: '18px',
@@ -410,7 +410,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: '8px',
     position: 'relative',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   profileButton: {
     display: 'flex',
@@ -424,7 +424,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     width: '100%',
     backgroundColor: 'transparent',
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   profileButtonText: {
     fontSize: '14px',
@@ -447,7 +447,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '8px',
     cursor: 'pointer',
     width: '100%',
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   sidebarFeedbackText: {
     fontSize: '14px',
@@ -470,7 +470,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
     padding: '8px 4px',
     zIndex: 1000,
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   emailText: {
     fontSize: '14px',
@@ -499,7 +499,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     backgroundColor: 'transparent',
     transition: 'background-color 0.2s ease',
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   profileDropdownItemText: {
     fontSize: '14px',
@@ -553,12 +553,12 @@ const addSidebarAnimations = () => {
     /* Smooth button layouts during animations */
     .sidebar-coordinated button {
       transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1) !important;
-      overflow: hidden !important;
+      overflow: clip !important;
     }
 
     /* Profile dropdown text handling */
     .sidebar-coordinated .profile-dropdown-item {
-      overflow: hidden !important;
+      overflow: clip !important;
     }
 
     .sidebar-coordinated .profile-dropdown-item span {
