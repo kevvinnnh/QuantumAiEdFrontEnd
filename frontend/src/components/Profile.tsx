@@ -578,18 +578,22 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, userName: 
                   <span style={{ color: '#AAAAC1', fontSize: 13, fontFamily: "'Inter', sans-serif" }}>
                     {data.hobbyPersonalization ? 'Enabled — AI uses your hobbies for analogies' : 'Disabled — AI uses generic examples'}
                   </span>
-                  <div
+                  <button
+                    type="button"
+                    aria-pressed={data.hobbyPersonalization}
                     onClick={() => setData(d => ({ ...d, hobbyPersonalization: !d.hobbyPersonalization }))}
                     style={{
                       ...styles.toggleTrack,
                       backgroundColor: data.hobbyPersonalization ? '#3B89FF' : '#434F62',
                     }}
                   >
-                    <div style={{
-                      ...styles.toggleThumb,
-                      transform: data.hobbyPersonalization ? 'translateX(18px)' : 'translateX(0)',
-                    }} />
-                  </div>
+                    <div
+                      style={{
+                        ...styles.toggleThumb,
+                        transform: data.hobbyPersonalization ? 'translateX(18px)' : 'translateX(0)',
+                      }}
+                    />
+                  </button>
                 </label>
               </div>
             </div>
