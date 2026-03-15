@@ -470,6 +470,7 @@ const stepConfigs: StepConfig[] = [
           >
             <input
               type="radio"
+              name="codingExperience"
               checked={formData.codingExperience === option}
               onChange={() =>
                 handlers.setFormData(prev => ({ ...prev, codingExperience: option }))
