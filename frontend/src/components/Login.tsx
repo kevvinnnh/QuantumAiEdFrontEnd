@@ -1,5 +1,5 @@
 // src/components/Login.tsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -178,6 +178,17 @@ const Login: React.FC = () => {
     }
   };
 
+  const forgotPasswordTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (forgotPasswordTimeoutRef.current !== null) {
+        clearTimeout(forgotPasswordTimeoutRef.current);
+        forgotPasswordTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   const handleForgotPassword = async () => {
     setFormError("");
     setFormMessage("");
@@ -185,6 +196,12 @@ const Login: React.FC = () => {
     if (!email.trim()) {
       setFormError("Please enter your email address first.");
       return;
+    }
+
+    // Clear any existing cooldown timeout before starting a new one
+    if (forgotPasswordTimeoutRef.current !== null) {
+      clearTimeout(forgotPasswordTimeoutRef.current);
+      forgotPasswordTimeoutRef.current = null;
     }
 
     setForgotCooldown(true);
@@ -198,7 +215,10 @@ const Login: React.FC = () => {
     }
 
     // 30-second cooldown to prevent spam
-    setTimeout(() => setForgotCooldown(false), 30000);
+    forgotPasswordTimeoutRef.current = window.setTimeout(() => {
+      setForgotCooldown(false);
+      forgotPasswordTimeoutRef.current = null;
+    }, 30000);
   };
 
   const toggleMode = () => {
