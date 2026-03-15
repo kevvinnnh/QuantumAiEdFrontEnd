@@ -8,6 +8,7 @@ import Reading from './Reading';
 import Quiz from './Quiz';
 import GlobalChat from './GlobalChat';
 import FeedbackModal from './FeedbackModal';
+import ProfileModal from './Profile';
 import HighlightableInstructionsForReading from './HighlightableInstructionsForReadings';
 import { allQuizData } from './QuizQuestion';
 import { lessonContents } from './LessonContents';
@@ -16,6 +17,7 @@ import lesson1Img from '../assets/lessonIcons/lesson-1.svg';
 import lesson2Img from '../assets/lessonIcons/lesson-2.svg';
 import { useNavigate } from 'react-router-dom';
 import TutorialPopup from './TutorialPopup';
+import { useAuth } from '../AuthContext';
 
 // Define BACKEND_URL - Replace with your actual backend URL
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'; // Use environment variable
@@ -273,6 +275,9 @@ const Dashboard: React.FC = () => {
   /* ---------- dev state ----------------------------------------- */
   const FIRST_TIME_USER_EMAIL = import.meta.env.VITE_FIRST_TIME_USER_EMAIL;
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('');
+  const [userPicture, setUserPicture] = useState<string>('');
+  const { logout: authLogout } = useAuth();
 
   /* ---------- animation state ------------------------------------ */
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
@@ -302,6 +307,7 @@ const Dashboard: React.FC = () => {
 
   /* ---------- feedback state ------------------------------------- */
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
 
   /* ---------- search state --------------------------------------- */
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -647,6 +653,8 @@ const Dashboard: React.FC = () => {
       setCompletedQuizzes(data.completedQuizzes || []);
       setHasViewedFirstLesson(data.hasViewedFirstLesson || false);
       if (data.email) setUserEmail(data.email);
+      if (data.name) setUserName(data.name);
+      if (data.picture) setUserPicture(data.picture);
     } catch (error) {
       console.error('Failed to fetch user progress:', error);
       setUnlocked([0]);
@@ -824,7 +832,7 @@ const Dashboard: React.FC = () => {
   /* ---------- profile dropdown handlers -------------------------- */
   const handleProfileClick = () => {
     setShowProfileDropdown(false);
-    navigate('/profile');
+    setShowProfileModal(true);
   };
 
   const handleSettingsClick = () => {
@@ -837,9 +845,10 @@ const Dashboard: React.FC = () => {
     console.log('Help clicked');
   };
 
-  const handleSignOutClick = () => {
+  const handleSignOutClick = async () => {
     setShowProfileDropdown(false);
-    console.log('Sign out clicked');
+    await authLogout();
+    navigate('/');
   };
 
   const handleLeaveFeedbackClick = () => {
@@ -1162,6 +1171,9 @@ const Dashboard: React.FC = () => {
         screenWidth={screenWidth}
         animationDuration={effectiveDuration}
         animationEasing={ANIMATION_EASING}
+        userEmail={userEmail || ''}
+        userName={userName}
+        userPicture={userPicture}
       />
 
       {/* HEADER */}
@@ -1284,6 +1296,14 @@ const Dashboard: React.FC = () => {
       <FeedbackModal
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
+      />
+
+      {/* PROFILE SETTINGS */}
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => { setShowProfileModal(false); fetchUserProgress(); }}
+        userName={userName}
+        userPicture={userPicture}
       />
 
       {/* TUTORIAL POPUP */}

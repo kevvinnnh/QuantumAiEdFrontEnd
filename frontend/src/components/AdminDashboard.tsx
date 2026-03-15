@@ -4,6 +4,17 @@ import axios from 'axios';
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
+interface UserItem {
+  user_id: string;
+  name: string;
+  auth_methods: string[];
+  is_admin: boolean;
+  profile_complete: boolean;
+  disabled: boolean;
+  createdAt: string | null;
+  lastLoginAt: string | null;
+}
+
 interface FeedbackItem {
   _id: string;
   user_id: string;
@@ -34,7 +45,15 @@ const STATUS_CYCLE: Record<string, string> = {
 };
 
 const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'content' | 'feedback'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'feedback' | 'users'>('users');
+
+  // Users state
+  const [usersList, setUsersList] = useState<UserItem[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersTotal, setUsersTotalCount] = useState(0);
+  const [usersTotalAll, setUsersTotalAll] = useState(0);
+  const [usersHasMore, setUsersHasMore] = useState(false);
+  const [usersSearch, setUsersSearch] = useState('');
 
   // Content management state
   const [lessonTitle, setLessonTitle] = useState('');
@@ -96,6 +115,49 @@ const AdminDashboard: React.FC = () => {
     } catch (error) {
       setUploadMessage('Error uploading quiz');
       console.error(error);
+    }
+  };
+
+  // Users handlers
+  const fetchUsers = useCallback(async (skip = 0, append = false) => {
+    setUsersLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: '50', skip: String(skip) });
+      if (usersSearch) params.set('search', usersSearch);
+      const response = await axios.get(
+        `${backendUrl}/admin/users?${params.toString()}`,
+        { withCredentials: true }
+      );
+      const data = response.data;
+      setUsersList(prev => append ? [...prev, ...data.users] : data.users);
+      setUsersTotalCount(data.total_count);
+      setUsersTotalAll(data.total_users);
+      setUsersHasMore(data.has_more);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, [usersSearch]);
+
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+  }, [activeTab, fetchUsers]);
+
+  const handleToggleDisable = async (email: string) => {
+    try {
+      const response = await axios.patch(
+        `${backendUrl}/admin/users/${encodeURIComponent(email)}/disable`,
+        {},
+        { withCredentials: true }
+      );
+      setUsersList(prev =>
+        prev.map(u => u.user_id === email ? { ...u, disabled: response.data.disabled } : u)
+      );
+    } catch (error) {
+      console.error('Error toggling user disable:', error);
     }
   };
 
@@ -205,6 +267,12 @@ const AdminDashboard: React.FC = () => {
       {/* Tab bar */}
       <div style={styles.tabBar}>
         <button
+          style={activeTab === 'users' ? styles.tabActive : styles.tab}
+          onClick={() => setActiveTab('users')}
+        >
+          Users {usersTotalAll > 0 && `(${usersTotalAll})`}
+        </button>
+        <button
           style={activeTab === 'content' ? styles.tabActive : styles.tab}
           onClick={() => setActiveTab('content')}
         >
@@ -281,6 +349,125 @@ const AdminDashboard: React.FC = () => {
           {uploadMessage && (
             <div style={styles.messageBox}>
               {uploadMessage}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Users Tab */}
+      {activeTab === 'users' && (
+        <div>
+          {/* Search bar */}
+          <div style={styles.filterBar}>
+            <input
+              type="text"
+              placeholder="Search by email or name..."
+              value={usersSearch}
+              onChange={(e) => setUsersSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') fetchUsers(); }}
+              style={{ ...styles.input, marginBottom: 0, maxWidth: 320 }}
+            />
+            <button onClick={() => fetchUsers()} style={styles.button}>
+              Search
+            </button>
+            <span style={styles.countLabel}>
+              {usersTotal === usersTotalAll
+                ? `${usersTotalAll} users`
+                : `${usersTotal} of ${usersTotalAll} users`}
+            </span>
+          </div>
+
+          {/* Users table */}
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Email</th>
+                  <th style={styles.th}>Name</th>
+                  <th style={styles.th}>Auth</th>
+                  <th style={styles.th}>Profile</th>
+                  <th style={styles.th}>Role</th>
+                  <th style={styles.th}>Created</th>
+                  <th style={styles.th}>Last Login</th>
+                  <th style={styles.th}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usersList.map((user) => (
+                  <tr key={user.user_id} style={styles.tr}>
+                    <td style={{ ...styles.td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user.user_id}
+                    </td>
+                    <td style={styles.td}>{user.name || '—'}</td>
+                    <td style={{ ...styles.td, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {(user.auth_methods || []).map((method) => (
+                        <span
+                          key={method}
+                          style={{
+                            ...styles.statusBadge,
+                            backgroundColor: method === 'google' ? '#1a3b2a' : '#1e3a5f',
+                            color: method === 'google' ? '#4ade80' : '#60a5fa',
+                          }}
+                        >
+                          {method === 'google' ? 'Google' : 'Email'}
+                        </span>
+                      ))}
+                      {(!user.auth_methods || user.auth_methods.length === 0) && (
+                        <span style={{ color: '#6B7280' }}>—</span>
+                      )}
+                    </td>
+                    <td style={styles.td}>
+                      {user.profile_complete
+                        ? <span style={{ color: '#4ade80' }}>Complete</span>
+                        : <span style={{ color: '#6B7280' }}>Incomplete</span>
+                      }
+                    </td>
+                    <td style={styles.td}>
+                      {user.is_admin
+                        ? <span style={{ color: '#facc15', fontWeight: 600 }}>Admin</span>
+                        : <span style={{ color: '#6B7280' }}>User</span>
+                      }
+                    </td>
+                    <td style={styles.td}>{user.createdAt ? formatDate(user.createdAt) : '—'}</td>
+                    <td style={styles.td}>{user.lastLoginAt ? formatDate(user.lastLoginAt) : '—'}</td>
+                    <td style={styles.td}>
+                      <button
+                        onClick={() => handleToggleDisable(user.user_id)}
+                        style={{
+                          ...styles.statusBadge,
+                          backgroundColor: user.disabled ? '#5f1e1e' : '#1a3b2a',
+                          color: user.disabled ? '#fa6060' : '#4ade80',
+                        }}
+                        title={user.disabled ? 'Click to enable' : 'Click to disable'}
+                      >
+                        {user.disabled ? 'Disabled' : 'Active'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {usersList.length === 0 && !usersLoading && (
+                  <tr>
+                    <td colSpan={8} style={{ ...styles.td, textAlign: 'center', color: '#6B7280' }}>
+                      No users found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {usersLoading && (
+            <p style={{ color: '#9DA7B7', textAlign: 'center', marginTop: 16 }}>Loading...</p>
+          )}
+
+          {usersHasMore && !usersLoading && (
+            <div style={{ textAlign: 'center', marginTop: 16 }}>
+              <button
+                onClick={() => fetchUsers(usersList.length, true)}
+                style={styles.button}
+              >
+                Load More
+              </button>
             </div>
           )}
         </div>

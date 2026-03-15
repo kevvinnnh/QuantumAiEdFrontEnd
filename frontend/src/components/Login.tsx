@@ -26,6 +26,9 @@ const Login: React.FC = () => {
   
   // Loading state for the login process
   const [isLoading, setIsLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formMessage, setFormMessage] = useState("");
+  const [forgotCooldown, setForgotCooldown] = useState(false);
   
   // Refs for managing focus
   const emailInputRef = useRef<HTMLInputElement>(null);
@@ -54,13 +57,14 @@ const Login: React.FC = () => {
           return;
         }
         
-        // Send user info to the backend
+        // Send user info to the backend (includes google_sub for identity linking)
         const backendResponse = await axios.post(
           `${backendUrl}/append_user_id`,
           {
             user_id: userEmail,
             name: userData.name,
             picture: userData.picture,
+            google_sub: userData.sub,
           },
           {
             withCredentials: true,
@@ -91,27 +95,119 @@ const Login: React.FC = () => {
     },
   });
   
-  const handleManualSignupOrLogin = () => {
+  const handleManualSignupOrLogin = async () => {
+    setFormError("");
+    setFormMessage("");
+
+    if (!email.trim()) {
+      setFormError("Please enter your email address.");
+      return;
+    }
+
     if (isSignUpMode) {
-      console.log("Manual signup with:", { email, fullName, password });
-      alert("Manual signup is not yet implemented.");
+      if (!fullName.trim()) {
+        setFormError("Please enter your name.");
+        return;
+      }
+      if (password.length < 8) {
+        setFormError("Password must be at least 8 characters.");
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const res = await axios.post(`${backendUrl}/auth/signup`, {
+          email: email.trim(),
+          name: fullName.trim(),
+          password,
+        }, { withCredentials: true });
+
+        const { redirect_to: redirectTo, is_admin: isAdmin } = res.data;
+        localStorage.setItem('loggedInUserEmail', email.trim().toLowerCase());
+        authLogin(email.trim().toLowerCase(), isAdmin);
+
+        if (isAdmin) {
+          navigate('/admin-dashboard');
+        } else if (redirectTo === 'map') {
+          navigate('/map');
+        } else {
+          navigate('/profile-creation');
+        }
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.data?.error) {
+          setFormError(err.response.data.error);
+        } else {
+          setFormError("An unexpected error occurred. Please try again.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
     } else {
-      console.log("Manual login with:", { email, password });
-      alert("Manual login is not yet implemented.");
+      if (!password) {
+        setFormError("Please enter your password.");
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const res = await axios.post(`${backendUrl}/auth/login`, {
+          email: email.trim(),
+          password,
+        }, { withCredentials: true });
+
+        const { redirect_to: redirectTo, is_admin: isAdmin } = res.data;
+        localStorage.setItem('loggedInUserEmail', email.trim().toLowerCase());
+        authLogin(email.trim().toLowerCase(), isAdmin);
+
+        if (isAdmin) {
+          navigate('/admin-dashboard');
+        } else if (redirectTo === 'map') {
+          navigate('/map');
+        } else {
+          navigate('/profile-creation');
+        }
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.data?.error) {
+          setFormError(err.response.data.error);
+        } else {
+          setFormError("An unexpected error occurred. Please try again.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleForgotPassword = () => {
-    console.log("Forgot password for:", email);
-    alert("Forgot password functionality is not yet implemented.");
+  const handleForgotPassword = async () => {
+    setFormError("");
+    setFormMessage("");
+
+    if (!email.trim()) {
+      setFormError("Please enter your email address first.");
+      return;
+    }
+
+    setForgotCooldown(true);
+    try {
+      const res = await axios.post(`${backendUrl}/auth/forgot-password`, {
+        email: email.trim(),
+      }, { withCredentials: true });
+      setFormMessage(res.data.message);
+    } catch {
+      setFormMessage("If an account exists with that email, a reset link has been sent.");
+    }
+
+    // 30-second cooldown to prevent spam
+    setTimeout(() => setForgotCooldown(false), 30000);
   };
 
   const toggleMode = () => {
     setIsSignUpMode(!isSignUpMode);
-    // Clear form fields when switching modes
     setEmail("");
     setFullName("");
     setPassword("");
+    setFormError("");
+    setFormMessage("");
   };
   
   // Handle keyboard navigation for form submission
@@ -366,31 +462,45 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  style={styles.forgotPasswordLink}
+                  disabled={forgotCooldown}
+                  style={{
+                    ...styles.forgotPasswordLink,
+                    opacity: forgotCooldown ? 0.5 : 1,
+                    cursor: forgotCooldown ? 'default' : 'pointer',
+                  }}
                   className="text-button"
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.textDecoration = 'underline';
+                    if (!forgotCooldown) e.currentTarget.style.textDecoration = 'underline';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.textDecoration = 'none';
                   }}
                   aria-label="Forgot password"
                 >
-                  Forgot my password
+                  {forgotCooldown ? 'Reset link sent — check your email' : 'Forgot my password'}
                 </button>
               </div>
             )}
             
+            {/* Error/success messages */}
+            {formError && <p style={styles.formError} role="alert">{formError}</p>}
+            {formMessage && <p style={styles.formMessage} role="status">{formMessage}</p>}
+
             {/* Sign Up/Log In Button */}
             <button
               ref={submitButtonRef}
               type="submit"
-              style={styles.signupButton}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1F4ADB'; }}
+              disabled={isLoading}
+              style={{
+                ...styles.signupButton,
+                opacity: isLoading ? 0.6 : 1,
+                cursor: isLoading ? 'default' : 'pointer',
+              }}
+              onMouseEnter={(e) => { if (!isLoading) e.currentTarget.style.backgroundColor = '#1F4ADB'; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2C5CE6'; }}
               aria-describedby={isSignUpMode ? "terms-text" : undefined}
             >
-              {isSignUpMode ? 'SIGN UP' : 'LOG IN'}
+              {isLoading ? (isSignUpMode ? 'SIGNING UP...' : 'LOGGING IN...') : (isSignUpMode ? 'SIGN UP' : 'LOG IN')}
             </button>
             </form>
 
@@ -668,6 +778,20 @@ const styles: { [key: string]: React.CSSProperties } = {
   forgotPasswordContainer: {
     textAlign: 'left',
     marginBottom: '0.5rem',
+  },
+  formError: {
+    color: '#fa6060',
+    fontSize: '0.85rem',
+    marginBottom: '0.5rem',
+    textAlign: 'center',
+    fontFamily: "'Inter', sans-serif",
+  },
+  formMessage: {
+    color: '#4ade80',
+    fontSize: '0.85rem',
+    marginBottom: '0.5rem',
+    textAlign: 'center',
+    fontFamily: "'Inter', sans-serif",
   },
   forgotPasswordLink: {
     background: 'none',

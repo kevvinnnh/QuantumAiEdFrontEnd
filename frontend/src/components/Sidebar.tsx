@@ -17,6 +17,8 @@ const colors = {
   border: 'rgba(255,255,255,0.1)',
 };
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 interface SidebarProps {
   currentView: 'dashboard' | 'course-detail' | 'lesson';
   isCollapsed: boolean;
@@ -36,6 +38,9 @@ interface SidebarProps {
   screenWidth: number;
   animationDuration: number;
   animationEasing: string;
+  userEmail: string;
+  userName: string;
+  userPicture: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -53,8 +58,16 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSignOutClick,
   onLeaveFeedbackClick,
   animationDuration,
-  animationEasing
+  animationEasing,
+  userEmail,
+  userName,
+  userPicture,
 }) => {
+
+  const profilePicSrc = userPicture
+    ? (userPicture.startsWith('http') ? userPicture : `${BACKEND_URL}${userPicture}`)
+    : '';
+  const displayName = userName || 'Profile';
 
   const handleLeaveFeedbackClick = () => {
     onLeaveFeedbackClick();
@@ -207,17 +220,33 @@ const Sidebar: React.FC<SidebarProps> = ({
           className="profile-button"
           title={isCollapsed ? "Profile" : undefined}
         >
-          <HiUserCircle
-            size={22}
-            color="#9D9D9D"
-            style={{
-              flexShrink: 0,
-              margin: isCollapsed ? '0 0 0 1px' : '0 0 0 0',
-              transition: `margin ${animationDuration}ms ${animationEasing}`,
-            }}
-          />
+          {profilePicSrc ? (
+            <img
+              src={profilePicSrc}
+              alt=""
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                flexShrink: 0,
+                margin: isCollapsed ? '0 0 0 1px' : '0 0 0 0',
+                transition: `margin ${animationDuration}ms ${animationEasing}`,
+              }}
+            />
+          ) : (
+            <HiUserCircle
+              size={22}
+              color="#9D9D9D"
+              style={{
+                flexShrink: 0,
+                margin: isCollapsed ? '0 0 0 1px' : '0 0 0 0',
+                transition: `margin ${animationDuration}ms ${animationEasing}`,
+              }}
+            />
+          )}
           <>
-            <span style={getTextStyles(styles.profileButtonText)}>Profile name</span>
+            <span style={getTextStyles(styles.profileButtonText)}>{displayName}</span>
             <MdKeyboardArrowUp 
               size={20} 
               color="#9D9D9D" 
@@ -266,13 +295,33 @@ const Sidebar: React.FC<SidebarProps> = ({
             style={styles.profileDropdownItem}
             className="profile-dropdown-item"
           >
-            <HiUserCircle 
-              size={21} 
-              color="#9D9D9D" 
-              style={{ flexShrink: 0 }}
-            />
-            <span style={getTextStyles(styles.emailText)}>
-              email@gmail.com
+            {profilePicSrc ? (
+              <img
+                src={profilePicSrc}
+                alt=""
+                style={{
+                  width: 21,
+                  height: 21,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <HiUserCircle
+                size={21}
+                color="#9D9D9D"
+                style={{ flexShrink: 0 }}
+              />
+            )}
+            <span style={{
+              ...getTextStyles(styles.emailText),
+              textOverflow: 'ellipsis',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              maxWidth: '160px',
+            }}>
+              {userEmail || 'email@gmail.com'}
             </span>
           </button>
           

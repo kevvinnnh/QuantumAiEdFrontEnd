@@ -16,11 +16,11 @@ import {
 import Login from './components/Login';
 import ProfileCreation from './components/ProfileCreation';
 import Dashboard from './components/Dashboard';
-import Profile from './components/Profile';
 import Quiz from './components/Quiz';
 import AdminDashboard from './components/AdminDashboard';
+import ResetPassword from './components/ResetPassword';
 import { allQuizData } from './components/QuizQuestion';
-import { AuthProvider, ProtectedRoute, AdminRoute } from './AuthContext';
+import { AuthProvider, ProtectedRoute, AdminRoute, AdminToggle } from './AuthContext';
 import './App.css';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 
@@ -64,13 +64,14 @@ const App: React.FC = () => {
         <div className="app-container">
           <Routes>
             <Route path="/" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/profile-creation" element={<ProtectedRoute><ProfileCreation /></ProtectedRoute>} />
             <Route path="/map" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/quiz/:courseId" element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
             <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           </Routes>
+          <AdminToggle />
         </div>
       </AuthProvider>
     </Router>

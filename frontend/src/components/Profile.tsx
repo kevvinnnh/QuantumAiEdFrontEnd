@@ -1,95 +1,217 @@
-// src/components/Profile.tsx
+// src/components/Profile.tsx — Profile Settings Modal
 
-import React, { useEffect, useState, ChangeEvent } from 'react';
+import React, { useEffect, useRef, useState, useCallback, ChangeEvent } from 'react';
 import axios from 'axios';
+import { IoMdClose } from 'react-icons/io';
 
-// Base URL for API (uses same env var across your app)
-const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
-const HOBBIES = [
-  'Reading', 'Music', 'Dancing', 'Photography',
-  'Cooking', 'Gaming', 'Gardening', 'Writing',
-  'Sports', 'Art', 'Hiking'
+const highSchoolLevels = ['9th Grade', '10th Grade', '11th Grade', '12th Grade'];
+const collegeLevels = ['Freshman', 'Sophomore', 'Junior', 'Senior'];
+
+const subjects = [
+  'Computer Science',
+  'Mathematics',
+  'Physics',
+  'Chemistry',
+  'Biology',
+  'Other (please specify)',
 ];
 
-const EDUCATION_LEVELS = [
-  '9th Grade', '10th Grade', '11th Grade', '12th Grade',
-  'Freshman', 'Sophomore', 'Junior', 'Senior', 'Other'
-];
-
-const CODING_EXP = [
+const codingExperienceOptions = [
   'No experience (0 years)',
   'Less than 1 year',
-  '1–2 years',
-  '3–4 years',
-  '4–5 years',
-  'More than 5 years'
+  '1-2 year',
+  '3-4 years',
+  '4-5 years',
+  'More than 5 years',
 ];
+
+const hobbies = [
+  'Reading', 'Music', 'Dancing', 'Photography',
+  'Cooking', 'Gaming', 'Gardening', 'Writing',
+  'Sports', 'Art', 'Hiking',
+];
+
+interface ProfileModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  userName?: string;
+  userPicture?: string;
+}
 
 interface ProfileData {
   name: string;
   profilePicture: string;
+  educationCategory: string;
   educationLevel: string;
-  otherEducation?: string;
-  major: string;
-  otherMajor?: string;
+  otherEducationLevel: string;
+  subjectsStudied: string[];
+  otherSubject: string;
   codingExperience: string;
   favoriteHobbies: string[];
+  customHobbies: string;
+  hobbyPersonalization: boolean;
+  hasPassword: boolean;
+  hasGoogle: boolean;
 }
 
-const Profile: React.FC = () => {
+const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, userName: propName, userPicture: propPicture }) => {
   const [data, setData] = useState<ProfileData>({
     name: '',
     profilePicture: '',
+    educationCategory: '',
     educationLevel: '',
-    otherEducation: '',
-    major: '',
-    otherMajor: '',
+    otherEducationLevel: '',
+    subjectsStudied: [],
+    otherSubject: '',
     codingExperience: '',
-    favoriteHobbies: []
+    favoriteHobbies: [],
+    customHobbies: '',
+    hobbyPersonalization: true,
+    hasPassword: false,
+    hasGoogle: false,
   });
   const [loading, setLoading] = useState(true);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
 
-  useEffect(() => {
+  // Change password state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  const fetchProfile = useCallback(() => {
+    setLoading(true);
     axios
-      .get(`${backendUrl}/get_user_profile`, { withCredentials: true })
+      .get(`${BACKEND_URL}/get_user_profile`, { withCredentials: true })
       .then(res => {
         const d = res.data;
+        // Parse education: educationLevel is stored as "High School - 10th Grade" or "College - Sophomore" etc
+        let eduCategory = d.educationCategory || '';
+        let eduLevel = '';
+        let otherEdu = '';
+
+        if (eduCategory === 'HighSchool' || eduCategory === 'College' || eduCategory === 'Other') {
+          // educationLevel from backend is the processed string like "High School - 10th Grade"
+          const rawEdu = d.educationLevel || '';
+          if (rawEdu.startsWith('High School - ')) {
+            eduCategory = 'HighSchool';
+            eduLevel = rawEdu.replace('High School - ', '');
+          } else if (rawEdu.startsWith('College - ')) {
+            eduCategory = 'College';
+            eduLevel = rawEdu.replace('College - ', '');
+          } else if (eduCategory === 'Other') {
+            otherEdu = rawEdu;
+          }
+        } else if (d.educationLevel) {
+          // Fallback: try to parse from the processed string
+          const rawEdu = d.educationLevel;
+          if (rawEdu.startsWith('High School - ')) {
+            eduCategory = 'HighSchool';
+            eduLevel = rawEdu.replace('High School - ', '');
+          } else if (rawEdu.startsWith('College - ')) {
+            eduCategory = 'College';
+            eduLevel = rawEdu.replace('College - ', '');
+          } else if (highSchoolLevels.includes(rawEdu)) {
+            eduCategory = 'HighSchool';
+            eduLevel = rawEdu;
+          } else if (collegeLevels.includes(rawEdu)) {
+            eduCategory = 'College';
+            eduLevel = rawEdu;
+          } else if (rawEdu && rawEdu !== 'Not provided') {
+            eduCategory = 'Other';
+            otherEdu = rawEdu;
+          }
+        }
+
+        // Parse subjects: separate "Other" entries from known subjects
+        const rawSubjects: string[] = d.subjectsStudied || [];
+        const knownSubjectNames = subjects.filter(s => s !== 'Other (please specify)');
+        const known: string[] = [];
+        let otherSubj = '';
+        for (const s of rawSubjects) {
+          if (knownSubjectNames.includes(s)) {
+            known.push(s);
+          } else {
+            otherSubj = s;
+          }
+        }
+        const subjectsList = [...known];
+        if (otherSubj) {
+          subjectsList.push('Other (please specify)');
+        }
+
         setData({
-          name: d.name,
-          profilePicture: d.profilePicture,
-          educationLevel: EDUCATION_LEVELS.includes(d.educationLevel)
-            ? d.educationLevel
-            : 'Other',
-          otherEducation: EDUCATION_LEVELS.includes(d.educationLevel)
-            ? ''
-            : d.educationLevel,
-          major: d.major || '',
-          otherMajor: '',
+          name: d.name || '',
+          profilePicture: d.profilePicture || '',
+          educationCategory: eduCategory,
+          educationLevel: eduLevel,
+          otherEducationLevel: otherEdu,
+          subjectsStudied: subjectsList,
+          otherSubject: otherSubj,
           codingExperience: d.codingExperience || '',
-          favoriteHobbies: Array.isArray(d.favoriteHobbies)
-            ? d.favoriteHobbies
-            : []
+          favoriteHobbies: d.favoriteHobbies || [],
+          customHobbies: d.customHobbies || '',
+          hobbyPersonalization: d.hobbyPersonalization !== false,
+          hasPassword: d.hasPassword || false,
+          hasGoogle: d.hasGoogle || false,
         });
       })
-      .catch(console.error)
+      .catch(() => { /* Profile may not be complete yet */ })
       .finally(() => setLoading(false));
   }, []);
 
-  const handleChange =
-    (k: keyof ProfileData) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setData(d => ({ ...d, [k]: e.target.value }));
+  useEffect(() => {
+    if (isOpen) {
+      fetchProfile();
+      setSaveMessage('');
+    }
+  }, [isOpen, fetchProfile]);
 
-  const handleHobbyToggle = (hobby: string) => {
-    setData(d => {
-      const fav = d.favoriteHobbies.includes(hobby)
-        ? d.favoriteHobbies.filter(h => h !== hobby)
-        : [...d.favoriteHobbies, hobby];
-      return { ...d, favoriteHobbies: fav };
-    });
-  };
+  // Focus trap + Escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+    const modalElement = modalRef.current;
+    if (!modalElement) return;
+
+    const getFocusable = () =>
+      modalElement.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const focusable = getFocusable();
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    // Focus the close button on open
+    const focusable = getFocusable();
+    if (focusable.length > 0) focusable[0].focus();
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, loading]);
 
   const handlePicture = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -97,403 +219,895 @@ const Profile: React.FC = () => {
     const form = new FormData();
     form.append('picture', file);
     axios
-      .post(
-        `${backendUrl}/save_profile_picture`,
-        form,
-        {
-          withCredentials: true,
-          headers: { 'Content-Type': 'multipart/form-data' }
-        }
-      )
+      .post(`${BACKEND_URL}/save_profile_picture`, form, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
       .then(res => setData(d => ({ ...d, profilePicture: res.data.url })))
       .catch(console.error);
   };
 
+  const handleSubjectToggle = (subj: string) => {
+    setData(d => {
+      const current = d.subjectsStudied;
+      if (current.includes(subj)) {
+        return { ...d, subjectsStudied: current.filter(s => s !== subj) };
+      }
+      return { ...d, subjectsStudied: [...current, subj] };
+    });
+  };
+
+  const handleHobbyToggle = (hobby: string) => {
+    setData(d => {
+      const current = d.favoriteHobbies;
+      if (current.includes(hobby)) {
+        return { ...d, favoriteHobbies: current.filter(h => h !== hobby) };
+      }
+      return { ...d, favoriteHobbies: [...current, hobby] };
+    });
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError('');
+    setPasswordMessage('');
+
+    if (data.hasPassword && !currentPassword) {
+      setPasswordError('Current password is required.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match.');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const payload: Record<string, string> = { new_password: newPassword };
+      if (data.hasPassword) payload.current_password = currentPassword;
+      const res = await axios.post(`${BACKEND_URL}/auth/change-password`, payload, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' },
+      });
+      setPasswordMessage(res.data.message);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setData(d => ({ ...d, hasPassword: true }));
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.data?.error) {
+        setPasswordError(err.response.data.error);
+      } else {
+        setPasswordError('An error occurred. Please try again.');
+      }
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const handleSave = () => {
     setSaving(true);
+    setSaveMessage('');
     axios
       .post(
-        `${backendUrl}/save_profile`,
+        `${BACKEND_URL}/save_profile`,
         {
-          educationLevel:
-            data.educationLevel === 'Other'
-              ? data.otherEducation
-              : data.educationLevel,
-          college_major:
-            data.major !== 'Other' ? data.major : undefined,
-          other_major:
-            data.major === 'Other' ? data.otherMajor : undefined,
+          educationCategory: data.educationCategory,
+          educationLevel: data.educationLevel,
+          otherEducationLevel: data.otherEducationLevel,
+          subjects: data.subjectsStudied,
+          otherSubject: data.otherSubject,
           codingExperience: data.codingExperience,
-          favoriteHobbies: data.favoriteHobbies
+          favoriteHobbies: data.favoriteHobbies,
+          customHobbies: data.customHobbies,
+          hobbyPersonalization: data.hobbyPersonalization,
         },
-        {
-          withCredentials: true,
-          headers: { 'Content-Type': 'application/json' }
-        }
+        { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
       )
-      .then(() => alert('Profile saved!'))
-      .catch(err => {
-        console.error(err);
-        alert('Save failed');
-      })
+      .then(() => setSaveMessage('Profile saved!'))
+      .catch(() => setSaveMessage('Save failed. Please try again.'))
       .finally(() => setSaving(false));
   };
 
-  const handleLogout = () => {
-    axios
-      .post(
-        `${backendUrl}/logout`,
-        {},
-        { withCredentials: true }
-      )
-      .then(() => (window.location.href = '/'))
-      .catch(console.error);
-  };
+  if (!isOpen) return null;
 
-  if (loading) return <div style={styles.page}>Loading…</div>;
+  const displayNameRaw = data.name || propName || '';
+  const firstName = displayNameRaw ? displayNameRaw.split(' ')[0] : 'User';
+  const rawPic = data.profilePicture || propPicture || '';
+  const picSrc = rawPic
+    ? (rawPic.startsWith('http') ? rawPic : `${BACKEND_URL}${rawPic}`)
+    : '';
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div
-          style={styles.back}
-          onClick={() => (window.location.href = '/map')}
-        >
-          ← Back
-        </div>
+    <div style={styles.overlay} onClick={onClose}>
+      <div
+        ref={modalRef}
+        style={styles.modal}
+        onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Profile settings"
+      >
+        {/* Close button */}
+        <button onClick={onClose} style={styles.closeBtn} aria-label="Close">
+          <IoMdClose size={22} color="#AAAAC1" />
+        </button>
 
-        <h2 style={styles.heading}>Welcome back, {data.name}!</h2>
-
-        <div style={styles.avatarSection}>
-          {data.profilePicture ? (
-            <img
-              src={data.profilePicture}
-              alt="Profile"
-              style={styles.avatar}
-            />
-          ) : (
-            <div style={styles.avatarFallback}>👤</div>
-          )}
-          <label style={styles.uploadLabel}>
-            Change Photo
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePicture}
-              style={styles.fileInput}
-            />
-          </label>
-        </div>
-
-        {/* Education */}
-        <div style={styles.section}>
-          <div style={styles.label}>Education level</div>
-          <div style={styles.optionsGrid}>
-            {EDUCATION_LEVELS.map(lvl => (
-              <label key={lvl} style={styles.radioLabel}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#AAAAC1' }}>Loading...</div>
+        ) : (
+          <div style={styles.content}>
+            {/* Header: Avatar + Greeting */}
+            <div style={styles.avatarSection}>
+              {picSrc ? (
+                <img src={picSrc} alt="Profile" style={styles.avatar} />
+              ) : (
+                <div style={styles.avatarFallback}>
+                  {firstName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <label style={styles.uploadLabel}>
+                Change Photo
                 <input
-                  type="radio"
-                  name="education"
-                  value={lvl}
-                  checked={data.educationLevel === lvl}
-                  onChange={handleChange('educationLevel')}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePicture}
+                  style={{ display: 'none' }}
                 />
-                {lvl}
               </label>
-            ))}
-          </div>
-          {data.educationLevel === 'Other' && (
-            <input
-              placeholder="Please specify"
-              value={data.otherEducation}
-              onChange={handleChange('otherEducation')}
-              style={styles.textInput}
-            />
-          )}
-        </div>
+            </div>
 
-        {/* Major */}
-        <div style={styles.section}>
-          <div style={styles.label}>Major / Field of study</div>
-          <input
-            type="text"
-            placeholder="Your major"
-            value={
-              data.major !== 'Other' ? data.major : data.otherMajor || ''
-            }
-            onChange={e => {
-              const v = e.target.value;
-              if (EDUCATION_LEVELS.includes(v))
-                setData(d => ({
-                  ...d,
-                  major: v,
-                  otherMajor: ''
-                }));
-              else
-                setData(d => ({
-                  ...d,
-                  major: 'Other',
-                  otherMajor: v
-                }));
-            }}
-            style={styles.textInput}
-          />
-        </div>
+            <h2 style={styles.greeting}>Welcome back, {firstName}!</h2>
 
-        {/* Coding Experience */}
-        <div style={styles.section}>
-          <div style={styles.label}>Coding experience</div>
-          <div style={styles.optionsGrid}>
-            {CODING_EXP.map(opt => (
-              <label key={opt} style={styles.radioLabel}>
+            {/* Education Level */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>
+                What is your education level?
+                <span style={styles.tooltip} title="Helps us tailor content difficulty to your level">&#9432;</span>
+              </h3>
+
+              <h4 style={styles.groupLabel}>HIGH SCHOOL</h4>
+              <div style={styles.radioRow}>
+                {highSchoolLevels.map(lvl => (
+                  <label
+                    key={lvl}
+                    style={{
+                      ...styles.radioItem,
+                      backgroundColor: (data.educationCategory === 'HighSchool' && data.educationLevel === lvl) ? '#10204D' : 'transparent',
+                      borderColor: (data.educationCategory === 'HighSchool' && data.educationLevel === lvl) ? '#1D4177' : '#434F62',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      checked={data.educationCategory === 'HighSchool' && data.educationLevel === lvl}
+                      onChange={() => setData(d => ({ ...d, educationCategory: 'HighSchool', educationLevel: lvl, otherEducationLevel: '' }))}
+                      style={styles.radio}
+                    />
+                    {lvl}
+                  </label>
+                ))}
+              </div>
+
+              <h4 style={styles.groupLabel}>COLLEGE</h4>
+              <div style={styles.radioRow}>
+                {collegeLevels.map(lvl => (
+                  <label
+                    key={lvl}
+                    style={{
+                      ...styles.radioItem,
+                      backgroundColor: (data.educationCategory === 'College' && data.educationLevel === lvl) ? '#10204D' : 'transparent',
+                      borderColor: (data.educationCategory === 'College' && data.educationLevel === lvl) ? '#1D4177' : '#434F62',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      checked={data.educationCategory === 'College' && data.educationLevel === lvl}
+                      onChange={() => setData(d => ({ ...d, educationCategory: 'College', educationLevel: lvl, otherEducationLevel: '' }))}
+                      style={styles.radio}
+                    />
+                    {lvl}
+                  </label>
+                ))}
+              </div>
+
+              <div style={styles.radioRow}>
+                <label
+                  style={{
+                    ...styles.radioItem,
+                    ...styles.radioItemExpanded,
+                    backgroundColor: data.educationCategory === 'Other' ? '#10204D' : 'transparent',
+                    borderColor: data.educationCategory === 'Other' ? '#1D4177' : '#434F62',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    checked={data.educationCategory === 'Other'}
+                    onChange={() => setData(d => ({ ...d, educationCategory: 'Other', educationLevel: '' }))}
+                    style={styles.radio}
+                  />
+                  <div style={styles.optionContent}>
+                    <span>Other (please specify)</span>
+                    {data.educationCategory === 'Other' && (
+                      <input
+                        type="text"
+                        placeholder="Type here..."
+                        value={data.otherEducationLevel}
+                        onChange={e => setData(d => ({ ...d, otherEducationLevel: e.target.value }))}
+                        style={styles.inlineInput}
+                        autoFocus
+                      />
+                    )}
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Subjects */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>
+                Subjects studied or experienced
+                <span style={styles.tooltip} title="Helps us understand your background knowledge">&#9432;</span>
+              </h3>
+              <p style={styles.sectionSubtitle}>(Select all that apply)</p>
+              <div style={styles.checkList}>
+                {subjects.map(subj =>
+                  subj === 'Other (please specify)' ? (
+                    <label
+                      key={subj}
+                      style={{
+                        ...styles.checkItem,
+                        ...styles.checkItemExpanded,
+                        backgroundColor: data.subjectsStudied.includes(subj) ? '#10204D' : 'transparent',
+                        borderColor: data.subjectsStudied.includes(subj) ? '#1D4177' : '#434F62',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={data.subjectsStudied.includes(subj)}
+                        onChange={() => handleSubjectToggle(subj)}
+                        style={styles.checkbox}
+                      />
+                      <div style={styles.optionContent}>
+                        <span>Other (please specify)</span>
+                        {data.subjectsStudied.includes(subj) && (
+                          <input
+                            type="text"
+                            placeholder="Type here..."
+                            value={data.otherSubject}
+                            onChange={e => setData(d => ({ ...d, otherSubject: e.target.value }))}
+                            style={styles.inlineInput}
+                            autoFocus
+                          />
+                        )}
+                      </div>
+                    </label>
+                  ) : (
+                    <label
+                      key={subj}
+                      style={{
+                        ...styles.checkItem,
+                        backgroundColor: data.subjectsStudied.includes(subj) ? '#10204D' : 'transparent',
+                        borderColor: data.subjectsStudied.includes(subj) ? '#1D4177' : '#434F62',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={data.subjectsStudied.includes(subj)}
+                        onChange={() => handleSubjectToggle(subj)}
+                        style={styles.checkbox}
+                      />
+                      {subj}
+                    </label>
+                  )
+                )}
+              </div>
+            </div>
+
+            {/* Coding Experience */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>
+                How much coding experience do you have?
+                <span style={styles.tooltip} title="Helps us adjust code examples and technical depth">&#9432;</span>
+              </h3>
+              <div style={styles.radioGroup}>
+                {codingExperienceOptions.map(opt => (
+                  <label
+                    key={opt}
+                    style={{
+                      ...styles.radioItemFull,
+                      backgroundColor: data.codingExperience === opt ? '#10204D' : 'transparent',
+                      borderColor: data.codingExperience === opt ? '#1D4177' : '#434F62',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      checked={data.codingExperience === opt}
+                      onChange={() => setData(d => ({ ...d, codingExperience: opt }))}
+                      style={styles.radio}
+                    />
+                    {opt}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Hobbies */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>
+                Your hobbies &amp; interests
+                <span style={styles.tooltip} title="Listed hobbies can influence the personalization of your AI responses when the toggle below is enabled">&#9432;</span>
+              </h3>
+              <p style={styles.sectionSubtitle}>(Select all that apply)</p>
+              <div style={styles.hobbyGrid}>
+                {hobbies.map(h => (
+                  <button
+                    key={h}
+                    onClick={() => handleHobbyToggle(h)}
+                    style={{
+                      ...styles.hobbyBtn,
+                      backgroundColor: data.favoriteHobbies.includes(h) ? '#10204D' : 'transparent',
+                      borderColor: data.favoriteHobbies.includes(h) ? '#1D4177' : '#434F62',
+                      color: data.favoriteHobbies.includes(h) ? '#FFFFFF' : '#AAAAC1',
+                    }}
+                  >
+                    {h}
+                  </button>
+                ))}
+              </div>
+              <div style={styles.customHobbiesSection}>
+                <p style={{ ...styles.sectionSubtitle, marginTop: 12 }}>Want to be more specific? Add your own</p>
                 <input
-                  type="radio"
-                  name="coding"
-                  value={opt}
-                  checked={data.codingExperience === opt}
-                  onChange={handleChange('codingExperience')}
+                  type="text"
+                  placeholder="(e.g. violin, bird watching, spoken word poetry)"
+                  value={data.customHobbies}
+                  onChange={e => setData(d => ({ ...d, customHobbies: e.target.value }))}
+                  style={styles.customHobbiesInput}
                 />
-                {opt}
-              </label>
-            ))}
-          </div>
-        </div>
+              </div>
 
-        {/* Hobbies */}
-        <div style={styles.section}>
-          <div style={styles.label}>Your hobbies & interests</div>
-          <div style={styles.hobbyGrid}>
-            {HOBBIES.map(h => (
+              {/* Personalization toggle */}
+              <div style={{ marginTop: 20 }}>
+                <h3 style={styles.sectionTitle}>
+                  Allow hobby personalization
+                  <span style={styles.tooltip} title="AI responses will use your hobbies to create relatable analogies">&#9432;</span>
+                </h3>
+                <label style={styles.toggleRowFlat}>
+                  <span style={{ color: '#AAAAC1', fontSize: 13, fontFamily: "'Inter', sans-serif" }}>
+                    {data.hobbyPersonalization ? 'Enabled — AI uses your hobbies for analogies' : 'Disabled — AI uses generic examples'}
+                  </span>
+                  <div
+                    onClick={() => setData(d => ({ ...d, hobbyPersonalization: !d.hobbyPersonalization }))}
+                    style={{
+                      ...styles.toggleTrack,
+                      backgroundColor: data.hobbyPersonalization ? '#3B89FF' : '#434F62',
+                    }}
+                  >
+                    <div style={{
+                      ...styles.toggleThumb,
+                      transform: data.hobbyPersonalization ? 'translateX(18px)' : 'translateX(0)',
+                    }} />
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Change Password / Set Password */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>
+                {data.hasPassword ? 'Change password' : 'Set a password'}
+                <span
+                  style={styles.tooltip}
+                  title={data.hasPassword
+                    ? 'Update your email/password login credentials'
+                    : 'Add a password to also log in with email and password'
+                  }
+                >&#9432;</span>
+              </h3>
+              {data.hasGoogle && !data.hasPassword && (
+                <p style={{ ...styles.sectionSubtitle, marginBottom: 12 }}>
+                  You currently sign in with Google. Set a password to also use email login.
+                </p>
+              )}
+              {data.hasPassword && (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={styles.inputLabel}>Current password</label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
+                    style={styles.passwordInput}
+                    autoComplete="current-password"
+                  />
+                </div>
+              )}
+              <div style={{ marginBottom: 12 }}>
+                <label style={styles.inputLabel}>New password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  style={styles.passwordInput}
+                  autoComplete="new-password"
+                />
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={styles.inputLabel}>Confirm new password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  style={styles.passwordInput}
+                  autoComplete="new-password"
+                />
+              </div>
+              {passwordError && <p style={{ color: '#ff6b6b', fontSize: 13, marginBottom: 8 }}>{passwordError}</p>}
+              {passwordMessage && <p style={{ color: '#4ade80', fontSize: 13, marginBottom: 8 }}>{passwordMessage}</p>}
               <button
-                key={h}
-                onClick={() => handleHobbyToggle(h)}
+                onClick={handleChangePassword}
+                disabled={changingPassword}
                 style={{
-                  ...styles.hobby,
-                  ...(data.favoriteHobbies.includes(h)
-                    ? styles.hobbySelected
-                    : {})
+                  ...styles.secondaryBtn,
+                  opacity: changingPassword ? 0.6 : 1,
                 }}
               >
-                {h}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div style={styles.actions}>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={styles.saveBtn}
-          >
-            {saving ? 'Saving…' : 'Save Changes'}
-          </button>
-          <button
-            onClick={() => setShowLogoutConfirm(true)}
-            style={styles.logoutBtn}
-          >
-            Log Out
-          </button>
-        </div>
-      </div>
-
-      {/* Logout Modal */}
-      {showLogoutConfirm && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <p>Are you sure you want to log out?</p>
-            <div style={styles.modalActions}>
-              <button
-                onClick={handleLogout}
-                style={styles.saveBtn}
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                style={styles.cancelBtn}
-              >
-                Cancel
+                {changingPassword ? 'Updating...' : (data.hasPassword ? 'Update Password' : 'Set Password')}
               </button>
             </div>
+
+            {/* Auth methods info */}
+            <div style={{ marginBottom: 28, fontSize: 13, color: '#6B7280', fontFamily: "'Inter', sans-serif" }}>
+              <span>Linked sign-in methods: </span>
+              {data.hasGoogle && <span style={{ color: '#4ade80', marginRight: 8 }}>Google</span>}
+              {data.hasPassword && <span style={{ color: '#60a5fa' }}>Email/Password</span>}
+              {!data.hasGoogle && !data.hasPassword && <span>None</span>}
+            </div>
+
+            {/* Save */}
+            <div style={styles.saveSection}>
+              <button onClick={handleSave} disabled={saving} style={styles.saveBtn}>
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+              {saveMessage && (
+                <p style={{
+                  ...styles.saveMessage,
+                  color: saveMessage.includes('failed') ? '#ff6b6b' : '#4ade80',
+                }}>
+                  {saveMessage}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: '100vh',
-    background: '#071746',
-    padding: 20,
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     display: 'flex',
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'flex-start'
+    zIndex: 9999,
   },
-  card: {
+  modal: {
+    position: 'relative',
+    backgroundColor: '#182549',
+    borderRadius: 16,
     width: 600,
-    background: '#1C1F2E',
-    borderRadius: 10,
-    padding: 30,
-    color: '#f8f8fa',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+    maxWidth: '90vw',
+    maxHeight: '85vh',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: '0 15px 30px rgba(0, 0, 0, 0.5)',
   },
-  back: {
+  closeBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    background: 'transparent',
+    border: 'none',
     cursor: 'pointer',
-    color: '#A487AE',
-    fontSize: '1.1rem',
-    marginBottom: 20
+    padding: 4,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
-  heading: {
-    margin: 0,
-    fontSize: '1.8rem',
-    marginBottom: 30
+  content: {
+    overflowY: 'auto',
+    padding: '32px 36px',
   },
   avatarSection: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: 30
+    marginBottom: 8,
   },
   avatar: {
-    width: 150,
-    height: 150,
+    width: 100,
+    height: 100,
     borderRadius: '50%',
     objectFit: 'cover',
-    marginBottom: 10,
-    border: '3px solid #566395'
+    border: '3px solid #424E62',
   },
   avatarFallback: {
-    width: 150,
-    height: 150,
+    width: 100,
+    height: 100,
     borderRadius: '50%',
-    background: '#394a6d',
-    fontSize: 60,
+    backgroundColor: '#10204D',
+    border: '3px solid #424E62',
     display: 'flex',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10
+    justifyContent: 'center',
+    fontSize: 36,
+    color: '#AAAAC1',
+    fontFamily: "'Inter', sans-serif",
+    fontWeight: 600,
   },
   uploadLabel: {
-    background: '#566395',
-    padding: '6px 12px',
-    borderRadius: 6,
+    marginTop: 10,
+    padding: '6px 16px',
+    borderRadius: 8,
+    border: '1px solid #424E62',
+    backgroundColor: 'transparent',
+    color: '#AAAAC1',
+    fontSize: 13,
+    fontFamily: "'Inter', sans-serif",
     cursor: 'pointer',
-    fontSize: '0.9rem'
+    transition: 'all 0.2s ease',
   },
-  fileInput: {
-    display: 'none'
+  greeting: {
+    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: 400,
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    margin: '8px 0 28px',
+    letterSpacing: '.02em',
   },
   section: {
-    marginBottom: 25
+    marginBottom: 28,
   },
-  label: {
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: 500,
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    margin: '0 0 6px',
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    fontFamily: "'Inter', sans-serif",
+    color: '#AAAAC1',
+    margin: '0 0 12px',
+  },
+  groupLabel: {
+    fontSize: 13,
     fontWeight: 600,
-    marginBottom: 8
+    fontFamily: "'Inter', sans-serif",
+    color: '#AAAAC1',
+    margin: '12px 0 8px',
+    letterSpacing: '0.05em',
   },
-  optionsGrid: {
+  radioRow: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: 12
+    gap: 10,
+    marginBottom: 4,
   },
-  radioLabel: {
+  radioItem: {
     display: 'flex',
     alignItems: 'center',
-    gap: 6,
-    background: 'rgba(255,255,255,0.05)',
-    padding: '8px 12px',
-    borderRadius: 6,
+    padding: '10px 16px',
+    fontSize: 14,
+    fontFamily: "'Inter', sans-serif",
+    color: '#AAAAC1',
+    border: '2px solid #434F62',
+    borderRadius: 8,
     cursor: 'pointer',
-    fontSize: '0.95rem'
+    transition: 'all 0.2s ease',
+    whiteSpace: 'nowrap',
   },
-  textInput: {
+  radioItemFull: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '10px 16px',
+    fontSize: 14,
+    fontFamily: "'Inter', sans-serif",
+    color: '#AAAAC1',
+    border: '2px solid #434F62',
+    borderRadius: 8,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    marginBottom: 8,
+  },
+  radioItemExpanded: {
+    alignItems: 'flex-start',
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  radio: {
+    appearance: 'none' as const,
+    width: 16,
+    height: 16,
+    border: '2px solid #AAAAC1',
+    borderRadius: '50%',
+    backgroundColor: 'transparent',
+    marginRight: 10,
+    cursor: 'pointer',
+    position: 'relative',
+    flexShrink: 0,
+    transition: 'all 0.2s ease',
+  },
+  radioGroup: {
+    marginTop: 8,
+  },
+  checkList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+  },
+  checkItem: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '10px 16px',
+    fontSize: 14,
+    fontFamily: "'Inter', sans-serif",
+    color: '#AAAAC1',
+    border: '2px solid #434F62',
+    borderRadius: 8,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  checkItemExpanded: {
+    alignItems: 'flex-start',
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  checkbox: {
+    appearance: 'none' as const,
+    width: 16,
+    height: 16,
+    border: '2px solid #AAAAC1',
+    borderRadius: 2,
+    backgroundColor: 'transparent',
+    marginRight: 10,
+    cursor: 'pointer',
+    position: 'relative',
+    flexShrink: 0,
+    transition: 'all 0.2s ease',
+  },
+  optionContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
     width: '100%',
-    padding: '10px',
-    borderRadius: 6,
-    border: '1px solid #566395',
-    background: '#0F1233',
-    color: '#f8f8fa',
-    fontSize: '1rem',
-    marginTop: 8
+  },
+  inlineInput: {
+    padding: '6px 0',
+    fontSize: 14,
+    width: '100%',
+    border: 'none',
+    borderBottom: '2px solid #424E62',
+    backgroundColor: 'transparent',
+    color: '#FFFFFF',
+    outline: 'none',
+    fontFamily: "'Inter', sans-serif",
+    transition: 'all 0.2s ease',
   },
   hobbyGrid: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: 8
+    gap: 10,
   },
-  hobby: {
-    padding: '6px 14px',
-    borderRadius: 6,
-    border: '1px solid #566395',
-    background: 'transparent',
-    color: '#f8f8fa',
+  hobbyBtn: {
+    padding: '8px 18px',
+    borderRadius: 8,
+    border: '2px solid #434F62',
     cursor: 'pointer',
-    fontSize: '0.9rem'
+    fontSize: 14,
+    fontFamily: "'Inter', sans-serif",
+    backgroundColor: 'transparent',
+    transition: 'all 0.2s ease',
   },
-  hobbySelected: {
-    background: '#566395'
-  },
-  actions: {
+  customHobbiesSection: {
     display: 'flex',
-    justifyContent: 'space-between',
-    marginTop: 30
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 8,
+  },
+  customHobbiesInput: {
+    width: '100%',
+    padding: '10px 0',
+    fontSize: 14,
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    backgroundColor: 'transparent',
+    border: '2px solid #424E62',
+    borderRadius: 8,
+    outline: 'none',
+    transition: 'all 0.2s ease',
+    textAlign: 'center',
+  },
+  saveSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingBottom: 8,
   },
   saveBtn: {
-    flex: 1,
-    marginRight: 10,
-    padding: '12px',
-    background: '#566395',
-    color: '#fff',
+    padding: '12px 40px',
+    fontSize: 16,
+    fontWeight: 500,
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    backgroundColor: '#142748',
     border: 'none',
-    borderRadius: 6,
+    borderRadius: 12,
     cursor: 'pointer',
-    fontSize: '1rem'
+    transition: 'all 0.2s ease',
   },
-  logoutBtn: {
-    flex: 1,
-    marginLeft: 10,
-    padding: '12px',
-    background: '#A487AE',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: '1rem'
+  saveMessage: {
+    marginTop: 10,
+    fontSize: 14,
+    fontFamily: "'Inter', sans-serif",
   },
-  modalOverlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.5)',
+  tooltip: {
+    marginLeft: 6,
+    color: '#6B7280',
+    fontSize: 14,
+    cursor: 'help',
+    verticalAlign: 'middle',
+  },
+  toggleRowFlat: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
-  },
-  modal: {
-    background: '#fff',
-    color: '#111',
-    padding: 24,
-    borderRadius: 8,
-    width: 320,
-    textAlign: 'center'
-  },
-  modalActions: {
-    display: 'flex',
     justifyContent: 'space-between',
-    marginTop: 20
+    marginTop: 6,
+    cursor: 'pointer',
   },
-  cancelBtn: {
-    flex: 1,
-    marginLeft: 8,
-    background: '#ddd',
-    color: '#111',
-    border: 'none',
-    borderRadius: 6,
-    padding: '12px',
-    cursor: 'pointer'
-  }
+  toggleTrack: {
+    width: 42,
+    height: 24,
+    borderRadius: 12,
+    position: 'relative' as const,
+    cursor: 'pointer',
+    flexShrink: 0,
+    transition: 'background-color 0.2s ease',
+  },
+  toggleThumb: {
+    width: 18,
+    height: 18,
+    borderRadius: '50%',
+    backgroundColor: '#FFFFFF',
+    position: 'absolute' as const,
+    top: 3,
+    left: 3,
+    transition: 'transform 0.2s ease',
+  },
+  inputLabel: {
+    display: 'block',
+    fontSize: 13,
+    color: '#AAAAC1',
+    fontFamily: "'Inter', sans-serif",
+    marginBottom: 4,
+  },
+  passwordInput: {
+    width: '100%',
+    padding: '10px 12px',
+    fontSize: 14,
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    backgroundColor: '#10204D',
+    border: '2px solid #434F62',
+    borderRadius: 8,
+    outline: 'none',
+    boxSizing: 'border-box' as const,
+  },
+  secondaryBtn: {
+    padding: '10px 24px',
+    fontSize: 14,
+    fontWeight: 500,
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    backgroundColor: '#10204D',
+    border: '2px solid #434F62',
+    borderRadius: 8,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
 };
 
-export default Profile;
+// Inject hover/checked styles matching ProfileCreation
+const addProfileModalStyles = () => {
+  const id = 'profile-modal-styles';
+  if (document.getElementById(id)) return;
+  const style = document.createElement('style');
+  style.id = id;
+  style.textContent = `
+    /* Radio checked */
+    [aria-label="Profile settings"] input[type="radio"]:checked {
+      background-color: #3B89FF !important;
+      border-color: #3B89FF !important;
+    }
+    [aria-label="Profile settings"] input[type="radio"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 0px;
+      top: 0px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #3B89FF;
+      border: 2px solid #131C46;
+    }
+    [aria-label="Profile settings"] input[type="radio"]:hover {
+      border-color: #3B89FF !important;
+    }
+    /* Checkbox checked */
+    [aria-label="Profile settings"] input[type="checkbox"]:checked {
+      background-color: #3B89FF !important;
+      border-color: #3B89FF !important;
+    }
+    [aria-label="Profile settings"] input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 0px;
+      width: 4px;
+      height: 8px;
+      border: solid #0F1F4C;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    [aria-label="Profile settings"] input[type="checkbox"]:hover {
+      border-color: #3B89FF !important;
+    }
+    /* Label hover */
+    [aria-label="Profile settings"] label:has(input[type="checkbox"]):hover,
+    [aria-label="Profile settings"] label:has(input[type="radio"]):hover {
+      border-color: #1E4277 !important;
+    }
+    /* Inline input focus */
+    [aria-label="Profile settings"] input[type="text"]:focus {
+      border-bottom-color: #7BA8ED !important;
+    }
+    [aria-label="Profile settings"] input[type="text"]::placeholder {
+      color: #666 !important;
+      font-style: italic;
+    }
+    /* Save button hover */
+    [aria-label="Profile settings"] button:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+    /* Scrollbar styling */
+    [aria-label="Profile settings"] > div:last-child::-webkit-scrollbar {
+      width: 6px;
+    }
+    [aria-label="Profile settings"] > div:last-child::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    [aria-label="Profile settings"] > div:last-child::-webkit-scrollbar-thumb {
+      background: #424E62;
+      border-radius: 3px;
+    }
+  `;
+  document.head.appendChild(style);
+};
+
+if (typeof document !== 'undefined') {
+  addProfileModalStyles();
+}
+
+export default ProfileModal;
