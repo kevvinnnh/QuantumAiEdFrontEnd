@@ -50,12 +50,6 @@ const Login: React.FC = () => {
         const userData = res.data;
         const userEmail = userData.email || '';
         localStorage.setItem('loggedInUserEmail', userEmail);
-
-        // Dev route to profile creation
-        if (String(import.meta.env.VITE_FORCE_PROFILE_CREATION).toLowerCase() === 'true') {
-          navigate('/profile-creation');
-          return;
-        }
         
         // Send user info to the backend (includes google_sub for identity linking)
         const backendResponse = await axios.post(
@@ -75,6 +69,12 @@ const Login: React.FC = () => {
 
         // Update auth context
         authLogin(userEmail, isAdmin);
+
+        // Dev route to profile creation (after auth/session is established)
+        if (String(import.meta.env.VITE_FORCE_PROFILE_CREATION).toLowerCase() === 'true') {
+          navigate('/profile-creation');
+          return;
+        }
 
         // If admin, redirect to admin dashboard
         if (isAdmin) {
