@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-
-const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+import api from '../api';
 
 const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
@@ -37,10 +36,10 @@ const ResetPassword: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await axios.post(`${backendUrl}/auth/reset-password`, {
+      const res = await api.post('/auth/reset-password', {
         token,
         password: newPassword,
-      }, { withCredentials: true });
+      });
 
       setMessage(res.data.message);
       setTimeout(() => navigate('/'), 3000);

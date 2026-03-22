@@ -7,12 +7,12 @@ import GoogleIcon from '../assets/google-icon.svg';
 import LoginGraphic from '../assets/login-graphic.svg';
 import QuantaidLogo from '../assets/quantaid-logo.svg';
 import { useAuth } from '../AuthContext';
+import api from '../api';
 
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login: authLogin } = useAuth();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 
   // State to track if user is signing up (true) or logging in (false)
@@ -52,18 +52,14 @@ const Login: React.FC = () => {
         localStorage.setItem('loggedInUserEmail', userEmail);
         
         // Send user info to the backend (includes google_sub for identity linking)
-        const backendResponse = await axios.post(
-          `${backendUrl}/append_user_id`,
+        const backendResponse = await api.post(
+          '/append_user_id',
           {
             user_id: userEmail,
             name: userData.name,
             picture: userData.picture,
             google_sub: userData.sub,
           },
-          {
-            withCredentials: true,
-            headers: { 'Content-Type': 'application/json' },
-          }
         );
         const { redirect_to: redirectTo, is_admin: isAdmin } = backendResponse.data;
 
@@ -116,11 +112,11 @@ const Login: React.FC = () => {
 
       setIsLoading(true);
       try {
-        const res = await axios.post(`${backendUrl}/auth/signup`, {
+        const res = await api.post('/auth/signup', {
           email: email.trim(),
           name: fullName.trim(),
           password,
-        }, { withCredentials: true });
+        });
 
         const { redirect_to: redirectTo, is_admin: isAdmin } = res.data;
         localStorage.setItem('loggedInUserEmail', email.trim().toLowerCase());
@@ -150,10 +146,10 @@ const Login: React.FC = () => {
 
       setIsLoading(true);
       try {
-        const res = await axios.post(`${backendUrl}/auth/login`, {
+        const res = await api.post('/auth/login', {
           email: email.trim(),
           password,
-        }, { withCredentials: true });
+        });
 
         const { redirect_to: redirectTo, is_admin: isAdmin } = res.data;
         localStorage.setItem('loggedInUserEmail', email.trim().toLowerCase());
@@ -206,9 +202,9 @@ const Login: React.FC = () => {
 
     setForgotCooldown(true);
     try {
-      const res = await axios.post(`${backendUrl}/auth/forgot-password`, {
+      const res = await api.post('/auth/forgot-password', {
         email: email.trim(),
-      }, { withCredentials: true });
+      });
       setFormMessage(res.data.message);
     } catch {
       setFormMessage("If an account exists with that email, a reset link has been sent.");

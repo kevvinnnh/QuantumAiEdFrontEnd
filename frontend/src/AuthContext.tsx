@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+import api, { setUnauthorizedHandler } from './api';
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -33,9 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/auth/check`, {
-          withCredentials: true,
-        });
+        const res = await api.get('/auth/check');
         const data = res.data;
         setIsLoggedIn(data.authenticated);
         setIsAdmin(data.is_admin);
@@ -59,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = useCallback(async () => {
     try {
-      await axios.post(`${BACKEND_URL}/auth/logout`, {}, { withCredentials: true });
+      await api.post('/auth/logout');
     } catch {
       // Logout failed, clear local state anyway
     }
@@ -67,6 +63,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAdmin(false);
     setUserEmail(null);
     localStorage.removeItem('loggedInUserEmail');
+  }, []);
+
+  // Register the 401 interceptor callback so expired sessions trigger global logout
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setIsLoggedIn(false);
+      setIsAdmin(false);
+      setUserEmail(null);
+      localStorage.removeItem('loggedInUserEmail');
+    });
   }, []);
 
   return (

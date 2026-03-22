@@ -41,7 +41,7 @@ interface QuestionWithLesson extends Question {
   lessonContentIndices?: number[]; // Array of paragraph indices from lesson content
 }
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+import api from '../api';
 
 const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -241,22 +241,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
 
     try {
       console.log("Sending quiz result:", quizResultData);
-      const response = await fetch(`${backendUrl}/save_quiz_result`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(quizResultData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log("Quiz result saved successfully:", result);
+      const response = await api.post('/save_quiz_result', quizResultData);
+      console.log("Quiz result saved successfully:", response.data);
       setProgressSaved(true); // Mark as saved
       
     } catch (error) {

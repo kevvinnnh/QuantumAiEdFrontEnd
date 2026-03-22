@@ -1,8 +1,7 @@
 // src/components/AdminDashboard.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-
-const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+import ContentManager from './ContentManager';
+import api, { BACKEND_URL } from '../api';
 
 interface UserItem {
   user_id: string;
@@ -55,14 +54,6 @@ const AdminDashboard: React.FC = () => {
   const [usersHasMore, setUsersHasMore] = useState(false);
   const [usersSearch, setUsersSearch] = useState('');
 
-  // Content management state
-  const [lessonTitle, setLessonTitle] = useState('');
-  const [lessonDescription, setLessonDescription] = useState('');
-  const [readingTitle, setReadingTitle] = useState('');
-  const [readingContent, setReadingContent] = useState('');
-  const [quizData, setQuizData] = useState('');
-  const [uploadMessage, setUploadMessage] = useState('');
-
   // Feedback state
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
@@ -71,62 +62,14 @@ const AdminDashboard: React.FC = () => {
   const [feedbackHasMore, setFeedbackHasMore] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  // Content management handlers
-  const handleUploadLesson = async () => {
-    try {
-      const response = await axios.post(
-        `${backendUrl}/admin/upload_lesson`,
-        { title: lessonTitle, description: lessonDescription },
-        { withCredentials: true }
-      );
-      setUploadMessage(response.data.message);
-    } catch (error) {
-      setUploadMessage('Error uploading lesson');
-      console.error(error);
-    }
-  };
-
-  const handleUploadReading = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('title', readingTitle);
-    formData.append('content', readingContent);
-    try {
-      const response = await axios.post(
-        `${backendUrl}/admin/upload_reading`,
-        formData,
-        { withCredentials: true, headers: { 'Content-Type': 'multipart/form-data' } }
-      );
-      setUploadMessage(response.data.message);
-    } catch (error) {
-      setUploadMessage('Error uploading reading');
-      console.error(error);
-    }
-  };
-
-  const handleUploadQuiz = async () => {
-    try {
-      const response = await axios.post(
-        `${backendUrl}/admin/upload_quiz`,
-        { questions: JSON.parse(quizData) },
-        { withCredentials: true }
-      );
-      setUploadMessage(response.data.message);
-    } catch (error) {
-      setUploadMessage('Error uploading quiz');
-      console.error(error);
-    }
-  };
-
   // Users handlers
   const fetchUsers = useCallback(async (skip = 0, append = false) => {
     setUsersLoading(true);
     try {
       const params = new URLSearchParams({ limit: '50', skip: String(skip) });
       if (usersSearch) params.set('search', usersSearch);
-      const response = await axios.get(
-        `${backendUrl}/admin/users?${params.toString()}`,
-        { withCredentials: true }
+      const response = await api.get(
+        `/admin/users?${params.toString()}`,
       );
       const data = response.data;
       setUsersList(prev => append ? [...prev, ...data.users] : data.users);
@@ -148,10 +91,9 @@ const AdminDashboard: React.FC = () => {
 
   const handleToggleDisable = async (email: string) => {
     try {
-      const response = await axios.patch(
-        `${backendUrl}/admin/users/${encodeURIComponent(email)}/disable`,
+      const response = await api.patch(
+        `/admin/users/${encodeURIComponent(email)}/disable`,
         {},
-        { withCredentials: true }
       );
       setUsersList(prev =>
         prev.map(u => u.user_id === email ? { ...u, disabled: response.data.disabled } : u)
@@ -168,9 +110,8 @@ const AdminDashboard: React.FC = () => {
       const params = new URLSearchParams({ limit: '50', skip: String(skip) });
       if (feedbackFilter) params.set('status', feedbackFilter);
 
-      const response = await axios.get(
-        `${backendUrl}/admin/feedback?${params.toString()}`,
-        { withCredentials: true }
+      const response = await api.get(
+        `/admin/feedback?${params.toString()}`,
       );
 
       const data = response.data;
@@ -193,10 +134,9 @@ const AdminDashboard: React.FC = () => {
   const handleStatusToggle = async (id: string, currentStatus: string) => {
     const newStatus = STATUS_CYCLE[currentStatus] || 'open';
     try {
-      await axios.patch(
-        `${backendUrl}/admin/feedback/${id}/status`,
+      await api.patch(
+        `/admin/feedback/${id}/status`,
         { status: newStatus },
-        { withCredentials: true }
       );
       setFeedbackList(prev =>
         prev.map(fb => fb._id === id ? { ...fb, status: newStatus } : fb)
@@ -209,9 +149,8 @@ const AdminDashboard: React.FC = () => {
   const handleDeleteFeedback = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this feedback?')) return;
     try {
-      await axios.delete(
-        `${backendUrl}/admin/feedback/${id}`,
-        { withCredentials: true }
+      await api.delete(
+        `/admin/feedback/${id}`,
       );
       setFeedbackList(prev => prev.filter(fb => fb._id !== id));
       setFeedbackTotal(prev => prev - 1);
@@ -224,10 +163,9 @@ const AdminDashboard: React.FC = () => {
     try {
       const params = new URLSearchParams();
       if (feedbackFilter) params.set('status', feedbackFilter);
-      const url = `${backendUrl}/admin/feedback/export?${params.toString()}`;
+      const url = `/admin/feedback/export?${params.toString()}`;
 
-      const response = await axios.get(url, {
-        withCredentials: true,
+      const response = await api.get(url, {
         responseType: 'blob',
       });
 
@@ -288,70 +226,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* Content Management Tab */}
       {activeTab === 'content' && (
-        <div>
-          <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Upload Lesson</h2>
-            <input
-              type="text"
-              placeholder="Lesson Title"
-              value={lessonTitle}
-              onChange={(e) => setLessonTitle(e.target.value)}
-              style={styles.input}
-            />
-            <textarea
-              placeholder="Lesson Description"
-              value={lessonDescription}
-              onChange={(e) => setLessonDescription(e.target.value)}
-              style={styles.textarea}
-            />
-            <button onClick={handleUploadLesson} style={styles.button}>
-              Upload Lesson
-            </button>
-          </section>
-
-          <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Upload Reading</h2>
-            <form onSubmit={handleUploadReading}>
-              <input
-                type="text"
-                placeholder="Reading Title"
-                value={readingTitle}
-                onChange={(e) => setReadingTitle(e.target.value)}
-                style={styles.input}
-              />
-              <textarea
-                placeholder="Reading Content"
-                value={readingContent}
-                onChange={(e) => setReadingContent(e.target.value)}
-                style={styles.textarea}
-              />
-              <input type="file" name="image" style={{ marginBottom: '10px' }} />
-              <input type="file" name="video" style={{ marginBottom: '10px' }} />
-              <button type="submit" style={styles.button}>
-                Upload Reading
-              </button>
-            </form>
-          </section>
-
-          <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Upload Quiz</h2>
-            <textarea
-              placeholder='Enter quiz JSON (e.g., [{"question": "Q?", "options": ["A", "B", "C", "D"], "correctAnswer": 0}, ...])'
-              value={quizData}
-              onChange={(e) => setQuizData(e.target.value)}
-              style={{ ...styles.textarea, height: '150px' }}
-            />
-            <button onClick={handleUploadQuiz} style={styles.button}>
-              Upload Quiz
-            </button>
-          </section>
-
-          {uploadMessage && (
-            <div style={styles.messageBox}>
-              {uploadMessage}
-            </div>
-          )}
-        </div>
+        <ContentManager />
       )}
 
       {/* Users Tab */}
@@ -555,7 +430,7 @@ const AdminDashboard: React.FC = () => {
                       <td style={styles.td}>
                         {fb.has_screenshot ? (
                           <a
-                            href={`${backendUrl}/feedback_file/${fb.screenshot_id}`}
+                            href={`${BACKEND_URL}/feedback_file/${fb.screenshot_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={styles.viewLink}
@@ -651,19 +526,6 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     fontFamily: "'Inter', sans-serif",
   },
-  section: {
-    marginBottom: 32,
-    padding: 20,
-    backgroundColor: '#17213A',
-    borderRadius: 8,
-    border: '1px solid #253655',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 500,
-    marginBottom: 12,
-    color: '#F9FAFB',
-  },
   input: {
     width: '100%',
     padding: '10px 12px',
@@ -676,19 +538,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "'Inter', sans-serif",
     boxSizing: 'border-box' as const,
   },
-  textarea: {
-    width: '100%',
-    padding: '10px 12px',
-    marginBottom: 10,
-    backgroundColor: '#030E29',
-    border: '1px solid #353E56',
-    borderRadius: 6,
-    color: '#E5E7EB',
-    fontSize: 14,
-    fontFamily: "'Inter', sans-serif",
-    boxSizing: 'border-box' as const,
-    resize: 'vertical' as const,
-  },
   button: {
     padding: '8px 18px',
     backgroundColor: '#353E54',
@@ -699,14 +548,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     fontWeight: 500,
     fontFamily: "'Inter', sans-serif",
-  },
-  messageBox: {
-    marginTop: 16,
-    padding: '10px 14px',
-    backgroundColor: '#1a3b2a',
-    color: '#4ade80',
-    borderRadius: 6,
-    fontSize: 14,
   },
   filterBar: {
     display: 'flex',

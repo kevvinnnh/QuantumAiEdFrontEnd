@@ -17,7 +17,7 @@ const colors = {
   border: 'rgba(255,255,255,0.1)',
 };
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+import { BACKEND_URL } from '../api';
 
 interface SidebarProps {
   currentView: 'dashboard' | 'course-detail' | 'lesson';

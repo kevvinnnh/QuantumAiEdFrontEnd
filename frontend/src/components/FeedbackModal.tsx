@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MdClose, MdArrowBackIos } from 'react-icons/md';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+import api from '../api';
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -138,41 +138,23 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
   const handleSubmit = async () => {
     try {
-      let response;
+      let payload: any;
+      let headers: Record<string, string> | undefined;
+
       if (selectedFile) {
-        // Send as multipart/form-data if screenshot is included
         const formData = new FormData();
         formData.append('category', selectedCategory);
         formData.append('feedback', feedbackText);
         formData.append('screenshot', selectedFile);
-
-        response = await fetch(`${BACKEND_URL}/submit_feedback`, {
-          method: 'POST',
-          credentials: 'include',
-          body: formData,
-        });
+        payload = formData;
+        headers = { 'Content-Type': 'multipart/form-data' };
       } else {
-        // Send as JSON if no screenshot
-        response = await fetch(`${BACKEND_URL}/submit_feedback`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            category: selectedCategory,
-            feedback: feedbackText,
-          }),
-        });
+        payload = { category: selectedCategory, feedback: feedbackText };
       }
 
-      const result = await response.json();
-      if (response.ok) {
-        alert('Thank you for your feedback!');
-        handleClose();
-      } else {
-        alert(result.error || 'Failed to submit feedback.');
-      }
+      await api.post('/submit_feedback', payload, headers ? { headers } : undefined);
+      alert('Thank you for your feedback!');
+      handleClose();
     } catch (err) {
       alert('An error occurred while submitting feedback.');
       console.error(err);

@@ -19,8 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import TutorialPopup from './TutorialPopup';
 import { useAuth } from '../AuthContext';
 
-// Define BACKEND_URL - Replace with your actual backend URL
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'; // Use environment variable
+import api, { BACKEND_URL } from '../api';
 
 /* ------------------------------------------------------------------ */
 /* THEME COLORS                                                       */
@@ -304,6 +303,73 @@ const Dashboard: React.FC = () => {
 
   /* ---------- card FLIP animation refs --------------------------- */
   const cardElRefs = useRef<Map<number, HTMLElement>>(new Map());
+
+  /* ---------- API lesson data (quiz/content for current lesson) --- */
+  const [apiQuiz, setApiQuiz] = useState<any[] | null>(null);
+  const [apiLessonContent, setApiLessonContent] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (currentLesson === null) {
+      setApiQuiz(null);
+      setApiLessonContent(null);
+      return;
+    }
+    let cancelled = false;
+    api.get(`/api/lessons/${currentLesson}`)
+      .then(res => res.data)
+      .then(data => {
+        if (cancelled) return;
+        if (data.quiz && data.quiz.length > 0) {
+          setApiQuiz(data.quiz);
+        }
+        // Convert blocks to LessonContent format for Quiz component compatibility
+        if (data.blocks) {
+          const paragraphs = data.blocks
+            .filter((b: any) => b.type !== 'image')
+            .map((b: any) => b.type === 'paragraph' ? b.text : { text: b.text, type: b.type });
+          setApiLessonContent({
+            title: data.title,
+            paragraphs,
+            interactiveTerms: data.interactiveTerms || {},
+          });
+        }
+      })
+      .catch(() => {
+        // Fall back to hardcoded data
+      });
+    return () => { cancelled = true; };
+  }, [currentLesson]);
+
+  /* ---------- dashboard config (sections/courses from API) -------- */
+  interface DashboardSection { id: string; title: string; order: number; courses: number[]; }
+  interface DashboardConfig { sections: DashboardSection[]; courses: Course[]; }
+  const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/api/dashboard-config')
+      .then(res => res.data)
+      .then(data => {
+        if (cancelled || !data) return;
+        // Map image strings to imported assets
+        const imageMap: Record<string, string> = { 'lesson-0': lesson0Img, 'lesson-1': lesson1Img, 'lesson-2': lesson2Img };
+        const mappedCourses = (data.courses || []).map((c: any) => ({
+          ...c,
+          image: imageMap[c.image] || lesson0Img,
+        }));
+        setDashboardConfig({ sections: data.sections || [], courses: mappedCourses });
+      })
+      .catch(() => { /* fall back to hardcoded */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Use API config if available, otherwise fall back to hardcoded
+  const activeCourses: Course[] = dashboardConfig?.courses || courses;
+  const activeSections: DashboardSection[] = dashboardConfig?.sections || [
+    { id: 'foundations', title: 'Foundations', order: 0, courses: [0, 1, 2] },
+    { id: 'in-action', title: 'Quantum computing in action', order: 1, courses: [3, 4, 5] },
+    { id: 'deep-dive', title: 'Deep dive into quantum theory', order: 2, courses: [6, 7, 8] },
+  ];
 
   /* ---------- feedback state ------------------------------------- */
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
@@ -628,26 +694,8 @@ const Dashboard: React.FC = () => {
     console.log("Fetching user progress...");
     setIsLoadingProgress(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/get_user_progress`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 401) {
-        console.log("User not logged in, redirecting to login.");
-        navigate('/');
-        return;
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const response = await api.get('/get_user_progress');
+      const data = response.data;
       console.log("Progress data received:", data);
       setUnlocked(data.unlockedLevels || [0]);
       setCompletedQuizzes(data.completedQuizzes || []);
@@ -663,18 +711,12 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsLoadingProgress(false);
     }
-  }, [navigate]);
+  }, []);
 
   // Save first lesson view to backend
   const saveFirstLessonView = useCallback(async () => {
     try {
-      await fetch(`${BACKEND_URL}/save_first_lesson_view`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      await api.post('/save_first_lesson_view');
       console.log("First lesson view saved successfully");
     } catch (error) {
       console.error('Failed to save first lesson view:', error);
@@ -711,7 +753,7 @@ const Dashboard: React.FC = () => {
 
   // Calculate course progress based on completed topics
   const getCourseProgress = useCallback((courseId: number): number => {
-    const course = courses.find(c => c.id === courseId);
+    const course = activeCourses.find(c => c.id === courseId);
     if (!course || course.concepts.length === 0) return 0;
 
     const implementedTopics = course.concepts.reduce((sum, concept) => {
@@ -735,7 +777,7 @@ const Dashboard: React.FC = () => {
   const isCourseUnlocked = useCallback((courseId: number): boolean => {
     if (courseId === 0) return true;
     
-    const previousCourse = courses.find(c => c.id === courseId - 1);
+    const previousCourse = activeCourses.find(c => c.id === courseId - 1);
     if (!previousCourse) return false;
     
     const previousProgress = getCourseProgress(courseId - 1);
@@ -745,7 +787,7 @@ const Dashboard: React.FC = () => {
   // Check if a topic/lesson is unlocked
   const isTopicUnlocked = useCallback((topicId: number): boolean => {
     let topicImplemented = true;
-    for (const course of courses) {
+    for (const course of activeCourses) {
       for (const concept of course.concepts) {
         const topic = concept.topics.find(t => t.id === topicId);
         if (topic) {
@@ -758,7 +800,7 @@ const Dashboard: React.FC = () => {
 
     if (!topicImplemented) return false;
 
-    for (const course of courses) {
+    for (const course of activeCourses) {
       for (const concept of course.concepts) {
         const topic = concept.topics.find(t => t.id === topicId);
         if (topic) {
@@ -768,7 +810,7 @@ const Dashboard: React.FC = () => {
     }
 
     return false;
-  }, [courses, isCourseUnlocked]);
+  }, [activeCourses, isCourseUnlocked]);
 
   const openLesson = (topicId: number) => {
     if (isLoadingProgress) {
@@ -888,7 +930,7 @@ const Dashboard: React.FC = () => {
     );
 
     if (view === 'lesson' && currentCourse !== null) {
-      const course = courses.find(c => c.id === currentCourse);
+      const course = activeCourses.find(c => c.id === currentCourse);
       if (course) {
         breadcrumbItems.push(
           <button
@@ -943,8 +985,12 @@ const Dashboard: React.FC = () => {
   };
 
   /* ---------- quiz availability check ---------------------------- */
-  const currentQuiz = currentLesson !== null ? (allQuizData[currentLesson] || []) : [];
-  const currentLessonContent = currentLesson !== null ? lessonContents[currentLesson] : undefined;
+  const currentQuiz = currentLesson !== null
+    ? (apiQuiz || allQuizData[currentLesson] || [])
+    : [];
+  const currentLessonContent = currentLesson !== null
+    ? (apiLessonContent || lessonContents[currentLesson])
+    : undefined;
 
   useEffect(() => {
     if (quizOpen && currentLesson !== null && currentQuiz.length === 0) {
@@ -1008,7 +1054,7 @@ const Dashboard: React.FC = () => {
   // Course detail view
   const courseDetailView = () => {
     if (currentCourse === null) return <p>Loading course...</p>;
-    const course = courses.find(c => c.id === currentCourse);
+    const course = activeCourses.find(c => c.id === currentCourse);
     if (!course) return <p>Course not found.</p>;
 
     return (
@@ -1082,7 +1128,7 @@ const Dashboard: React.FC = () => {
     // let courseInfo = null;
     let topicInfo = null;
     
-    for (const course of courses) {
+    for (const course of activeCourses) {
       for (const concept of course.concepts) {
         const topic = concept.topics.find(t => t.id === currentLesson);
         if (topic) {
@@ -1238,20 +1284,20 @@ const Dashboard: React.FC = () => {
           ) : view === 'dashboard' ? (
             <>
               <h2 style={styles.title}>Lessons</h2>
-              <section style={styles.rowSection}>
-                <h2 style={styles.rowTitle}>Foundations</h2>
-                <div style={styles.cardGrid}>{courses.slice(0, 3).map(courseCard)}</div>
-              </section>
-
-              <section style={styles.rowSection}>
-                <h2 style={styles.rowTitle}>Quantum computing in action</h2>
-                <div style={styles.cardGrid}>{courses.slice(3, 6).map(courseCard)}</div>
-              </section>
-
-              <section style={styles.rowSection}>
-                <h2 style={styles.rowTitle}>Deep dive into quantum theory</h2>
-                <div style={styles.cardGrid}>{courses.slice(6, 9).map(courseCard)}</div>
-              </section>
+              {activeSections
+                .sort((a, b) => a.order - b.order)
+                .map(section => {
+                  const sectionCourses = section.courses
+                    .map(id => activeCourses.find(c => c.id === id))
+                    .filter((c): c is Course => !!c);
+                  if (sectionCourses.length === 0) return null;
+                  return (
+                    <section key={section.id} style={styles.rowSection}>
+                      <h2 style={styles.rowTitle}>{section.title}</h2>
+                      <div style={styles.cardGrid}>{sectionCourses.map(courseCard)}</div>
+                    </section>
+                  );
+                })}
             </>
           ) : view === 'course-detail' ? (
             courseDetailView()
@@ -1270,6 +1316,7 @@ const Dashboard: React.FC = () => {
           onClose={() => setChatOpen(false)}
           highlightText={highlightText}
           highlightMode={highlightMode}
+          courseId={currentLesson ?? 0}
           onWidthChange={handleChatWidthChange}
           sidebarWidth={currentSidebarWidth}
           animationDuration={effectiveDuration}

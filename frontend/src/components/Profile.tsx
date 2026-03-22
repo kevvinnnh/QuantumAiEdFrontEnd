@@ -3,8 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback, ChangeEvent } from 'react';
 import axios from 'axios';
 import { IoMdClose } from 'react-icons/io';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+import api, { BACKEND_URL } from '../api';
 
 const highSchoolLevels = ['9th Grade', '10th Grade', '11th Grade', '12th Grade'];
 const collegeLevels = ['Freshman', 'Sophomore', 'Junior', 'Senior'];
@@ -88,8 +87,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, userName: 
 
   const fetchProfile = useCallback(() => {
     setLoading(true);
-    axios
-      .get(`${BACKEND_URL}/get_user_profile`, { withCredentials: true })
+    api
+      .get('/get_user_profile')
       .then(res => {
         const d = res.data;
         // Parse education: educationLevel is stored as "High School - 10th Grade" or "College - Sophomore" etc
@@ -218,9 +217,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, userName: 
     if (!file) return;
     const form = new FormData();
     form.append('picture', file);
-    axios
-      .post(`${BACKEND_URL}/save_profile_picture`, form, {
-        withCredentials: true,
+    api
+      .post('/save_profile_picture', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then(res => setData(d => ({ ...d, profilePicture: res.data.url })))
@@ -268,8 +266,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, userName: 
     try {
       const payload: Record<string, string> = { new_password: newPassword };
       if (data.hasPassword) payload.current_password = currentPassword;
-      const res = await axios.post(`${BACKEND_URL}/auth/change-password`, payload, {
-        withCredentials: true,
+      const res = await api.post('/auth/change-password', payload, {
         headers: { 'Content-Type': 'application/json' },
       });
       setPasswordMessage(res.data.message);
@@ -291,9 +288,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, userName: 
   const handleSave = () => {
     setSaving(true);
     setSaveMessage('');
-    axios
+    api
       .post(
-        `${BACKEND_URL}/save_profile`,
+        '/save_profile',
         {
           educationCategory: data.educationCategory,
           educationLevel: data.educationLevel,
@@ -305,7 +302,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, userName: 
           customHobbies: data.customHobbies,
           hobbyPersonalization: data.hobbyPersonalization,
         },
-        { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
       )
       .then(() => setSaveMessage('Profile saved!'))
       .catch(() => setSaveMessage('Save failed. Please try again.'))

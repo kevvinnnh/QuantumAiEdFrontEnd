@@ -1,8 +1,8 @@
 // src/components/ProfileCreation.tsx
 
 import React, { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import api from '../api';
 import { IoMdClose } from "react-icons/io";
 import { LiaArrowLeftSolid } from "react-icons/lia";
 import QuizProgressBar from './QuizProgressBar';
@@ -750,13 +750,12 @@ const ProfileCreation: React.FC = () => {
     customHobbies: '',
   });
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const totalSteps = stepConfigs.length;
 
   // On mount, fetch user ID
   useEffect(() => {
-    axios
-      .get(`${backendUrl}/get_user_id`, { withCredentials: true })
+    api
+      .get('/get_user_id')
       .then((response) => {
         const uid = response.data.user_id;
         console.log('ProfileCreation: session user_id =', uid);
@@ -771,7 +770,7 @@ const ProfileCreation: React.FC = () => {
           setUserId('');
         }
       });
-  }, [backendUrl]);
+  }, []);
 
   if (userId === null) {
     return <p>Loading user info...</p>;
@@ -837,10 +836,8 @@ const ProfileCreation: React.FC = () => {
       // use_generic_analogies: true,
     };
 
-    axios
-      .post(`${backendUrl}/save_profile`, dataToSend, {
-        withCredentials: true,
-      })
+    api
+      .post('/save_profile', dataToSend)
       .then((response) => {
         console.log('Profile saved:', response.data);
         setShowVideoPopup(true);
