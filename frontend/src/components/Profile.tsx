@@ -87,7 +87,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, userName: 
 
   const fetchProfile = useCallback(() => {
     setLoading(true);
-    api
+    void api
       .get('/get_user_profile')
       .then(res => {
         const d = res.data;
@@ -217,12 +217,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, userName: 
     if (!file) return;
     const form = new FormData();
     form.append('picture', file);
-    api
+    void api
       .post('/save_profile_picture', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then(res => setData(d => ({ ...d, profilePicture: res.data.url })))
-      .catch(console.error);
+      .catch((err: unknown) => { console.error(err); });
   };
 
   const handleSubjectToggle = (subj: string) => {
@@ -288,7 +288,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, userName: 
   const handleSave = () => {
     setSaving(true);
     setSaveMessage('');
-    api
+    void api
       .post(
         '/save_profile',
         {
@@ -647,7 +647,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, userName: 
               {passwordError && <p style={{ color: '#ff6b6b', fontSize: 13, marginBottom: 8 }}>{passwordError}</p>}
               {passwordMessage && <p style={{ color: '#4ade80', fontSize: 13, marginBottom: 8 }}>{passwordMessage}</p>}
               <button
-                onClick={handleChangePassword}
+                onClick={() => { void handleChangePassword(); }}
                 disabled={changingPassword}
                 style={{
                   ...styles.secondaryBtn,

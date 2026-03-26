@@ -60,7 +60,7 @@ const ResetPassword: React.FC = () => {
         <h1 style={styles.title}>Reset Your Password</h1>
         <p style={styles.subtitle}>Enter your new password below.</p>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { void handleSubmit(e); }}>
           <div style={styles.inputContainer}>
             <label htmlFor="new-password" style={styles.label}>New Password</label>
             <input

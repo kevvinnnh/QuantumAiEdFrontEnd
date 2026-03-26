@@ -35,10 +35,10 @@ const QuizPage: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const id = Number(courseId);
-  const questions = allQuizData[id] || [];
+  const questions = allQuizData[id];
 
   // If no such course, redirect back to Dashboard
-  if (isNaN(id) || !allQuizData.hasOwnProperty(id)) {
+  if (isNaN(id) || !(id in allQuizData)) {
     return <Navigate to="/map" replace />;
   }
 

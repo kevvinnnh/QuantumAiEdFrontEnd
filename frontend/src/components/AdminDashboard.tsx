@@ -85,7 +85,7 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     if (activeTab === 'users') {
-      fetchUsers();
+      void fetchUsers();
     }
   }, [activeTab, fetchUsers]);
 
@@ -127,7 +127,7 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     if (activeTab === 'feedback') {
-      fetchFeedback();
+      void fetchFeedback();
     }
   }, [activeTab, fetchFeedback]);
 
@@ -239,10 +239,10 @@ const AdminDashboard: React.FC = () => {
               placeholder="Search by email or name..."
               value={usersSearch}
               onChange={(e) => setUsersSearch(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') fetchUsers(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') void fetchUsers(); }}
               style={{ ...styles.input, marginBottom: 0, maxWidth: 320 }}
             />
-            <button onClick={() => fetchUsers()} style={styles.button}>
+            <button onClick={() => { void fetchUsers(); }} style={styles.button}>
               Search
             </button>
             <span style={styles.countLabel}>
@@ -275,7 +275,7 @@ const AdminDashboard: React.FC = () => {
                     </td>
                     <td style={styles.td}>{user.name || '—'}</td>
                     <td style={{ ...styles.td, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {(user.auth_methods || []).map((method) => (
+                      {user.auth_methods.map((method) => (
                         <span
                           key={method}
                           style={{
@@ -287,7 +287,7 @@ const AdminDashboard: React.FC = () => {
                           {method === 'google' ? 'Google' : 'Email'}
                         </span>
                       ))}
-                      {(!user.auth_methods || user.auth_methods.length === 0) && (
+                      {user.auth_methods.length === 0 && (
                         <span style={{ color: '#6B7280' }}>—</span>
                       )}
                     </td>
@@ -307,7 +307,7 @@ const AdminDashboard: React.FC = () => {
                     <td style={styles.td}>{user.lastLoginAt ? formatDate(user.lastLoginAt) : '—'}</td>
                     <td style={styles.td}>
                       <button
-                        onClick={() => handleToggleDisable(user.user_id)}
+                        onClick={() => { void handleToggleDisable(user.user_id); }}
                         style={{
                           ...styles.statusBadge,
                           backgroundColor: user.disabled ? '#5f1e1e' : '#1a3b2a',
@@ -338,7 +338,7 @@ const AdminDashboard: React.FC = () => {
           {usersHasMore && !usersLoading && (
             <div style={{ textAlign: 'center', marginTop: 16 }}>
               <button
-                onClick={() => fetchUsers(usersList.length, true)}
+                onClick={() => { void fetchUsers(usersList.length, true); }}
                 style={styles.button}
               >
                 Load More
@@ -368,7 +368,7 @@ const AdminDashboard: React.FC = () => {
               {feedbackTotal} total
             </span>
 
-            <button onClick={handleExportCSV} style={styles.exportButton}>
+            <button onClick={() => { void handleExportCSV(); }} style={styles.exportButton}>
               Export CSV
             </button>
           </div>
@@ -394,7 +394,7 @@ const AdminDashboard: React.FC = () => {
                   const displayText = (!needsTruncate || isExpanded)
                     ? fb.feedback
                     : fb.feedback.slice(0, 80) + '...';
-                  const statusColor = STATUS_COLORS[fb.status] || STATUS_COLORS.open;
+                  const statusColor = STATUS_COLORS[fb.status];
 
                   return (
                     <tr key={fb._id} style={styles.tr}>
@@ -416,7 +416,7 @@ const AdminDashboard: React.FC = () => {
                       </td>
                       <td style={styles.td}>
                         <button
-                          onClick={() => handleStatusToggle(fb._id, fb.status)}
+                          onClick={() => { void handleStatusToggle(fb._id, fb.status); }}
                           style={{
                             ...styles.statusBadge,
                             backgroundColor: statusColor.bg,
@@ -443,7 +443,7 @@ const AdminDashboard: React.FC = () => {
                       </td>
                       <td style={styles.td}>
                         <button
-                          onClick={() => handleDeleteFeedback(fb._id)}
+                          onClick={() => { void handleDeleteFeedback(fb._id); }}
                           style={styles.deleteButton}
                           title="Delete feedback"
                         >
@@ -471,7 +471,7 @@ const AdminDashboard: React.FC = () => {
           {feedbackHasMore && !feedbackLoading && (
             <div style={{ textAlign: 'center', marginTop: 16 }}>
               <button
-                onClick={() => fetchFeedback(feedbackList.length, true)}
+                onClick={() => { void fetchFeedback(feedbackList.length, true); }}
                 style={styles.button}
               >
                 Load More

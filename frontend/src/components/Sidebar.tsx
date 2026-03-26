@@ -44,7 +44,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-  currentView,
+  currentView: _currentView, // will drive per-button active state when more tabs are added
   isCollapsed,
   onNavigateToDashboard,
   onCollapsedProfileClick,
@@ -80,8 +80,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       setShowProfileDropdown(!showProfileDropdown);
     }
   };
-
-  const isLessonsActive = currentView === 'dashboard' || currentView === 'course-detail' || currentView === 'lesson';
 
   const SIDEBAR_EXPANDED_WIDTH = 250;
   const SIDEBAR_COLLAPSED_WIDTH = 70;
@@ -123,9 +121,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     transition: `padding ${animationDuration}ms ${animationEasing}`,
   });
 
-  const getNavButtonStyles = () => ({
+  const getNavButtonStyles = (isActive: boolean) => ({
     ...styles.navButton,
-    ...(isLessonsActive ? styles.navButtonActive : {}),
+    ...(isActive ? styles.navButtonActive : {}),
     justifyContent: isCollapsed ? 'center' : 'flex-start',
     padding: isCollapsed ? '12px' : '12px 16px',
     gap: isCollapsed ? '0px' : '12px',
@@ -191,14 +189,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         
         <nav style={getNavStyles()}>
           <button
-            style={getNavButtonStyles()}
+            style={getNavButtonStyles(true)}
             onClick={onNavigateToDashboard}
-            className={`nav-button ${isLessonsActive ? 'nav-button-active' : ''}`}
+            className="nav-button nav-button-active"
             title={isCollapsed ? "Lessons" : undefined}
           >
-            <TfiBookmarkAlt 
+            <TfiBookmarkAlt
               size={22}
-              color={isLessonsActive ? colors.white : '#9D9D9D'}
+              color={colors.white}
               style={{
                 flexShrink: 0,
                 margin: isCollapsed ? '0 0 0 2px' : '0 0 0 0',

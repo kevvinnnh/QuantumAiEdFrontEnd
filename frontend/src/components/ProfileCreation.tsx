@@ -585,12 +585,12 @@ const DefaultStep: React.FC<{
       if (!modalElement) return;
 
       // Query all focusable elements within the modal
-      const focusableElements = modalElement.querySelectorAll(
+      const focusableElements = modalElement.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
-      
-      const firstElement = focusableElements[0] as HTMLElement;
-      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
 
       // Handle Tab key for circular navigation
       const handleTabKeyPress = (event: KeyboardEvent) => {
@@ -620,7 +620,7 @@ const DefaultStep: React.FC<{
       modalElement.addEventListener('keydown', handleEscapeKeyPress);
 
       // Focus the close button (first element) when modal opens
-      firstElement?.focus();
+      firstElement.focus();
 
       // Cleanup: remove event listeners when modal closes
       return () => {
@@ -731,7 +731,7 @@ const DefaultStep: React.FC<{
 };
 
 const ProfileCreation: React.FC = () => {
-  const [userId, setUserId] = useState<string>('');
+  const [userId, setUserId] = useState<string | null>(null);
   const [step, setStep] = useState<number>(0);
   const [showVideoPopup, setShowVideoPopup] = useState<boolean>(false);
 
@@ -842,7 +842,7 @@ const ProfileCreation: React.FC = () => {
         console.log('Profile saved:', response.data);
         setShowVideoPopup(true);
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error('Error saving profile:', error);
         alert('Failed to save profile. See console logs.');
       });
@@ -859,18 +859,6 @@ const ProfileCreation: React.FC = () => {
     skipOnboarding,
     handleSubmit,
   };
-
-  // Loading states
-  if (userId === null) {
-    return <p>Loading user info...</p>;
-  }
-  if (!userId) {
-    return (
-      <div style={{ color: 'red' }}>
-        <p>No user ID found in session or localStorage. Please log in again.</p>
-      </div>
-    );
-  }
 
   /** ------------------ VIDEO POPUP ------------------ **/
   if (showVideoPopup) {
@@ -903,9 +891,6 @@ const ProfileCreation: React.FC = () => {
 
   // Render current step
     const currentStepConfig = stepConfigs[step];
-    if (!currentStepConfig) {
-      return null;
-    }
 
     // Use custom render if provided, otherwise use default
     if (currentStepConfig.customRender) {

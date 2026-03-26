@@ -58,7 +58,9 @@ function loadSessions(courseId: number): StoredSession[] {
   try {
     const raw = localStorage.getItem(getStorageKey(courseId));
     if (!raw) return [];
-    return JSON.parse(raw) as StoredSession[];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- JSON.parse returns unknown
+    const parsed: StoredSession[] = JSON.parse(raw);
+    return parsed;
   } catch {
     return [];
   }
@@ -227,9 +229,9 @@ const GlobalChat: React.FC<Props> = ({
     lastKey.current = key;
 
     if (highlightMode === 'explain') {
-      requestExplanation(highlightText);
+      void requestExplanation(highlightText);
     } else {
-      requestAnalogy(highlightText);
+      void requestAnalogy(highlightText);
     }
   }, [highlightText, highlightMode, isOpen]);
 
@@ -250,7 +252,7 @@ const GlobalChat: React.FC<Props> = ({
       setLastTopic(null);
     } catch (err) {
       console.error('Explanation error:', err);
-      alert(`Unable to explain text: ${err instanceof Error ? err.message : err}`);
+      alert(`Unable to explain text: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
     }
@@ -270,7 +272,7 @@ const GlobalChat: React.FC<Props> = ({
       setLastTopic(text);
     } catch (err) {
       console.error('Analogy error:', err);
-      alert(`Unable to generate analogy: ${err instanceof Error ? err.message : err}`);
+      alert(`Unable to generate analogy: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
     }
@@ -291,7 +293,7 @@ const GlobalChat: React.FC<Props> = ({
       append({ role: 'assistant', content: analogy, type: 'analogy' });
     } catch (err) {
       console.error('Analogy error:', err);
-      alert(`Unable to generate analogy: ${err instanceof Error ? err.message : err}`);
+      alert(`Unable to generate analogy: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
     }
@@ -302,7 +304,7 @@ const GlobalChat: React.FC<Props> = ({
     const userMsg = draft.trim();
     setDraft('');
 
-    const newUserMessage = { role: 'user' as const, content: userMsg, type: 'general' as const };
+    const newUserMessage: ChatMessage = { role: 'user', content: userMsg, type: 'general' };
     append(newUserMessage);
 
     setIsLoading(true);
@@ -316,7 +318,7 @@ const GlobalChat: React.FC<Props> = ({
       setLastTopic(null);
     } catch (err) {
       console.error('Chat error:', err);
-      alert(`Chat error: ${err instanceof Error ? err.message : err}`);
+      alert(`Chat error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
     }
@@ -377,7 +379,7 @@ const GlobalChat: React.FC<Props> = ({
     width: width,
     transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
     transition: `transform ${animationDuration}ms ${animationEasing}`,
-    backfaceVisibility: 'hidden' as const,
+    backfaceVisibility: 'hidden',
     willChange: 'transform',
   });
 
@@ -543,7 +545,7 @@ const GlobalChat: React.FC<Props> = ({
                 <div style={styles.tryWrap}>
                   <button
                     style={styles.tryBtn}
-                    onClick={tryAnotherAnalogy}
+                    onClick={() => { void tryAnotherAnalogy(); }}
                     className="global-chat-try-btn"
                   >
                     Try another analogy
@@ -561,12 +563,12 @@ const GlobalChat: React.FC<Props> = ({
                   value={draft}
                   disabled={isLoading}
                   onChange={e => setDraft(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendFreeForm()}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { void sendFreeForm(); } }}
                   className="global-chat-input"
                 />
                 <button
                   style={styles.sendBtn}
-                  onClick={sendFreeForm}
+                  onClick={() => { void sendFreeForm(); }}
                   disabled={isLoading || !draft.trim()}
                   aria-label="Send"
                   className="global-chat-send-btn"

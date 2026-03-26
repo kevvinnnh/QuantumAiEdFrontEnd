@@ -10,8 +10,8 @@ import GlobalChat from './GlobalChat';
 import FeedbackModal from './FeedbackModal';
 import ProfileModal from './Profile';
 import HighlightableInstructionsForReading from './HighlightableInstructionsForReadings';
-import { allQuizData } from './QuizQuestion';
-import { lessonContents } from './LessonContents';
+import { allQuizData, type Question } from './QuizQuestion';
+import { lessonContents, type LessonContent, type ParagraphItem } from './LessonContents';
 import lesson0Img from '../assets/lessonIcons/lesson-0.svg';
 import lesson1Img from '../assets/lessonIcons/lesson-1.svg';
 import lesson2Img from '../assets/lessonIcons/lesson-2.svg';
@@ -19,7 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import TutorialPopup from './TutorialPopup';
 import { useAuth } from '../AuthContext';
 
-import api, { BACKEND_URL } from '../api';
+import api from '../api';
 
 /* ------------------------------------------------------------------ */
 /* THEME COLORS                                                       */
@@ -306,8 +306,8 @@ const Dashboard: React.FC = () => {
   const cardElRefs = useRef<Map<number, HTMLElement>>(new Map());
 
   /* ---------- API lesson data (quiz/content for current lesson) --- */
-  const [apiQuiz, setApiQuiz] = useState<any[] | null>(null);
-  const [apiLessonContent, setApiLessonContent] = useState<any | null>(null);
+  const [apiQuiz, setApiQuiz] = useState<Question[] | null>(null);
+  const [apiLessonContent, setApiLessonContent] = useState<LessonContent | null>(null);
 
   useEffect(() => {
     if (currentLesson === null) {
@@ -325,9 +325,15 @@ const Dashboard: React.FC = () => {
         }
         // Convert blocks to LessonContent format for Quiz component compatibility
         if (data.blocks) {
-          const paragraphs = data.blocks
-            .filter((b: any) => b.type !== 'image')
-            .map((b: any) => b.type === 'paragraph' ? b.text : { text: b.text, type: b.type });
+          const blocks: Array<{ type: string; text: string }> = data.blocks;
+          const paragraphs: (string | ParagraphItem)[] = blocks
+            .filter((b) => b.type !== 'image')
+            .map((b) => {
+              if (b.type === 'paragraph') return b.text;
+              const t = b.type;
+              if (t === 'heading' || t === 'subheading') return { text: b.text, type: t };
+              return b.text;
+            });
           setApiLessonContent({
             title: data.title,
             paragraphs,
@@ -354,7 +360,7 @@ const Dashboard: React.FC = () => {
         if (cancelled || !data) return;
         // Map image strings to imported assets
         const imageMap: Record<string, string> = { 'lesson-0': lesson0Img, 'lesson-1': lesson1Img, 'lesson-2': lesson2Img };
-        const mappedCourses = (data.courses || []).map((c: any) => ({
+        const mappedCourses = (data.courses || []).map((c: Course) => ({
           ...c,
           image: imageMap[c.image] || lesson0Img,
         }));
@@ -584,7 +590,7 @@ const Dashboard: React.FC = () => {
       observer.disconnect();
       cardAnimationsRef.current.forEach((anim) => anim.cancel());
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
 
@@ -610,11 +616,13 @@ const Dashboard: React.FC = () => {
   // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target: Node | null = event.target instanceof Node ? event.target : null;
       if (
-        profileDropdownRef.current && 
-        !profileDropdownRef.current.contains(event.target as Node) &&
+        target &&
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(target) &&
         profileButtonRef.current &&
-        !profileButtonRef.current.contains(event.target as Node)
+        !profileButtonRef.current.contains(target)
       ) {
         setShowProfileDropdown(false);
       }
@@ -724,7 +732,7 @@ const Dashboard: React.FC = () => {
 
   // Fetch progress when the component mounts
   useEffect(() => {
-    fetchUserProgress();
+    void fetchUserProgress();
   }, [fetchUserProgress]);
 
   // Calculate course progress based on completed topics
@@ -771,7 +779,7 @@ const Dashboard: React.FC = () => {
           break;
         }
       }
-      if (topicImplemented !== true) break;
+      if (!topicImplemented) break;
     }
 
     if (!topicImplemented) return false;
@@ -803,7 +811,7 @@ const Dashboard: React.FC = () => {
       setShowOnboardingPopup(true);
       if (userEmail !== FIRST_TIME_USER_EMAIL) {
         setHasViewedFirstLesson(true);
-        saveFirstLessonView();
+        void saveFirstLessonView();
       }
     }
     
@@ -837,10 +845,18 @@ const Dashboard: React.FC = () => {
 
   /* ---------- popup tutorial handlers ---------------------------- */
   const handleTutorialNext = () => {
-    setTutorialStep(prev => (prev < 3 ? (prev + 1) as 1 | 2 | 3 : prev));
+    setTutorialStep(prev => {
+      if (prev === 1) return 2;
+      if (prev === 2) return 3;
+      return prev;
+    });
   };
   const handleTutorialBack = () => {
-    setTutorialStep(prev => (prev > 1 ? (prev - 1) as 1 | 2 | 3 : prev));
+    setTutorialStep(prev => {
+      if (prev === 3) return 2;
+      if (prev === 2) return 1;
+      return prev;
+    });
   };
   const handleTutorialClose = () => {
     setShowOnboardingPopup(false);
@@ -875,10 +891,6 @@ const Dashboard: React.FC = () => {
 
   /* ---------- breadcrumb helpers --------------------------------- */
   const getCurrentTabName = () => {
-    if (view === 'course-detail' || view === 'lesson' || view === 'dashboard') {
-      return "Lessons";
-    }
-    
     return "Lessons";
   };
 
@@ -962,7 +974,7 @@ const Dashboard: React.FC = () => {
 
   /* ---------- quiz availability check ---------------------------- */
   const currentQuiz = currentLesson !== null
-    ? (apiQuiz || allQuizData[currentLesson] || [])
+    ? (apiQuiz || allQuizData[currentLesson])
     : [];
   const currentLessonContent = currentLesson !== null
     ? (apiLessonContent || lessonContents[currentLesson])
@@ -1188,7 +1200,7 @@ const Dashboard: React.FC = () => {
         onProfileClick={handleProfileClick}
         onSettingsClick={handleSettingsClick}
         onHelpClick={handleHelpClick}
-        onSignOutClick={handleSignOutClick}
+        onSignOutClick={() => { void handleSignOutClick(); }}
         onLeaveFeedbackClick={handleLeaveFeedbackClick}
         chatWidth={chatWidth}
         screenWidth={screenWidth}
@@ -1308,9 +1320,13 @@ const Dashboard: React.FC = () => {
             <Quiz
               courseId={currentLesson}
               questions={currentQuiz}
-              lessonContent={currentLessonContent as any}
+              lessonContent={currentLessonContent ? {
+                title: currentLessonContent.title,
+                paragraphs: currentLessonContent.paragraphs.map(p => typeof p === 'string' ? p : p.text),
+                interactiveTerms: currentLessonContent.interactiveTerms,
+              } : undefined}
               onExit={() => { setQuizOpen(false) }}
-              onComplete={onQuizComplete}
+              onComplete={(score: number, passed: boolean) => { void onQuizComplete(score, passed); }}
             />
           </div>
         </div>
@@ -1326,7 +1342,7 @@ const Dashboard: React.FC = () => {
       {/* PROFILE SETTINGS */}
       <ProfileModal
         isOpen={showProfileModal}
-        onClose={() => { setShowProfileModal(false); fetchUserProgress(); }}
+        onClose={() => { setShowProfileModal(false); void fetchUserProgress(); }}
         userName={userName}
         userPicture={userPicture}
       />

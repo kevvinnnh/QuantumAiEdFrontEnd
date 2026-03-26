@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import HighlightableInstructionsForReading from './HighlightableInstructionsForReadings';
 
 // Import hardcoded data as fallback
-import { lessonContents, type LessonContent, type ParagraphItem } from './LessonContents';
+import { lessonContents } from './LessonContents';
 
 import api, { BACKEND_URL } from '../api';
 
@@ -24,7 +24,7 @@ interface ApiLesson {
   courseId: number;
   title: string;
   blocks: ContentBlock[];
-  quiz: any[];
+  quiz: unknown[];
   interactiveTerms?: Record<string, string>;
 }
 
@@ -33,24 +33,6 @@ interface Props {
   onExplainRequest: (text: string) => void;
   onViewAnalogy: (text: string) => void;
 }
-
-// Dev: Enable/disable interactive terms
-const ENABLE_INTERACTIVE_TERMS = false;
-
-// Component for hover tooltip on interactive terms
-const InteractiveTerm: React.FC<{ term: string; definition: string }> = ({ term, definition }) => {
-  const [hover, setHover] = useState(false);
-  return (
-    <span
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={styles.interactive}
-    >
-      {term}
-      {hover && <div style={styles.tooltip}>{definition}</div>}
-    </span>
-  );
-};
 
 // Image block component — non-selectable, accessible
 const ImageBlock: React.FC<{ block: ContentBlock }> = ({ block }) => {
@@ -127,19 +109,10 @@ const Reading: React.FC<Props> = ({
 
   // Use API data if available, otherwise fall back to hardcoded
   const useApi = apiLesson !== null;
-  const fallbackContent: LessonContent | undefined = lessonContents[courseId];
-
-  if (!useApi && fetchAttempted && !fallbackContent) {
-    return <p>Lesson content not found.</p>;
-  }
-
-  // Get interactive terms
-  const interactiveTerms: Record<string, string> = useApi
-    ? (apiLesson.interactiveTerms || {})
-    : (fallbackContent?.interactiveTerms || {});
+  const fallbackContent = lessonContents[courseId];
 
   const renderedContent = useMemo(() => {
-    if (useApi && apiLesson) {
+    if (useApi) {
       // Render from API blocks
       return apiLesson.blocks.map((block, idx) => {
         if (block.type === 'image') {
@@ -148,7 +121,7 @@ const Reading: React.FC<Props> = ({
 
         const text = block.text || '';
         let elementStyle = styles.paragraph;
-        let Element: keyof JSX.IntrinsicElements = 'p';
+        let Element: keyof React.JSX.IntrinsicElements = 'p';
 
         if (block.type === 'heading') {
           elementStyle = styles.heading;
@@ -158,39 +131,11 @@ const Reading: React.FC<Props> = ({
           Element = 'h4';
         }
 
-        // Process interactive terms for paragraphs
-        if (block.type === 'paragraph' && interactiveTerms && ENABLE_INTERACTIVE_TERMS) {
-          let keyCounter = 0;
-          let nodes: Array<string | JSX.Element> = [text];
-
-          Object.entries(interactiveTerms).forEach(([term, definition]) => {
-            const regex = new RegExp(`(${term})`, 'gi');
-            nodes = nodes.flatMap((node) => {
-              if (typeof node !== 'string') return [node];
-              return node.split(regex).map((part) =>
-                part.toLowerCase() === term.toLowerCase() ? (
-                  <InteractiveTerm
-                    key={`${idx}-${keyCounter++}`}
-                    term={part}
-                    definition={definition}
-                  />
-                ) : (
-                  part
-                )
-              );
-            });
-          });
-
-          return <Element key={idx} style={elementStyle}>{nodes}</Element>;
-        }
-
         return <Element key={idx} style={elementStyle}>{text}</Element>;
       });
     }
 
     // Fallback: render from hardcoded content
-    if (!fallbackContent) return null;
-
     return fallbackContent.paragraphs.map((item, paraIdx) => {
       let text: string;
       let type: 'heading' | 'subheading' | 'paragraph' = 'paragraph';
@@ -203,7 +148,7 @@ const Reading: React.FC<Props> = ({
       }
 
       let elementStyle = styles.paragraph;
-      let Element: keyof JSX.IntrinsicElements = 'p';
+      let Element: keyof React.JSX.IntrinsicElements = 'p';
 
       if (type === 'heading') {
         elementStyle = styles.heading;
@@ -213,36 +158,11 @@ const Reading: React.FC<Props> = ({
         Element = 'h4';
       }
 
-      if (type === 'paragraph' && fallbackContent.interactiveTerms && ENABLE_INTERACTIVE_TERMS) {
-        let keyCounter = 0;
-        let nodes: Array<string | JSX.Element> = [text];
-
-        Object.entries(fallbackContent.interactiveTerms).forEach(([term, definition]) => {
-          const regex = new RegExp(`(${term})`, 'gi');
-          nodes = nodes.flatMap((node) => {
-            if (typeof node !== 'string') return [node];
-            return node.split(regex).map((part) =>
-              part.toLowerCase() === term.toLowerCase() ? (
-                <InteractiveTerm
-                  key={`${paraIdx}-${keyCounter++}`}
-                  term={part}
-                  definition={definition}
-                />
-              ) : (
-                part
-              )
-            );
-          });
-        });
-
-        return <Element key={paraIdx} style={elementStyle}>{nodes}</Element>;
-      }
-
       return <Element key={paraIdx} style={elementStyle}>{text}</Element>;
     });
-  }, [useApi, apiLesson, fallbackContent, interactiveTerms]);
+  }, [useApi, apiLesson, fallbackContent]);
 
-  if (!fetchAttempted && !fallbackContent) {
+  if (!fetchAttempted) {
     return <p style={{ color: '#aab4c8' }}>Loading lesson...</p>;
   }
 

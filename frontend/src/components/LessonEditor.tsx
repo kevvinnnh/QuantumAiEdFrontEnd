@@ -2,7 +2,15 @@
 // Block-based lesson editor for the admin Content Management tab.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import axios from 'axios';
 import api, { BACKEND_URL } from '../api';
+
+function getAxiosErrorMessage(err: unknown, fallback: string): string {
+  if (axios.isAxiosError<{ error?: string }>(err) && err.response?.data.error) {
+    return err.response.data.error;
+  }
+  return fallback;
+}
 
 interface ContentBlock {
   type: 'heading' | 'subheading' | 'paragraph' | 'image';
@@ -87,7 +95,7 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
     }
   }, []);
 
-  useEffect(() => { fetchLessons(); }, [fetchLessons]);
+  useEffect(() => { void fetchLessons(); }, [fetchLessons]);
 
   // Pre-select lesson if provided via props
   useEffect(() => {
@@ -114,7 +122,7 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
         setTitle(res.data.title || '');
         setQuiz(res.data.quiz || []);
       })
-      .catch(err => {
+      .catch((err: unknown) => {
         console.error('Error fetching lesson:', err);
         setMessage('Failed to load lesson');
       });
@@ -220,9 +228,9 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
     try {
       await api.put(`/admin/lessons/${selectedCourseId}`, { title, blocks, quiz });
       setMessage('Lesson saved successfully');
-      fetchLessons();
-    } catch (err: any) {
-      setMessage(`Error: ${err.response?.data?.error || 'Failed to save'}`);
+      void fetchLessons();
+    } catch (err: unknown) {
+      setMessage(`Error: ${getAxiosErrorMessage(err, 'Failed to save')}`);
     } finally {
       setSaving(false);
     }
@@ -241,8 +249,8 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
       setShowNewLessonForm(false);
       await fetchLessons();
       setSelectedCourseId(maxId + 1);
-    } catch (err: any) {
-      setMessage(`Error: ${err.response?.data?.error || 'Failed to create'}`);
+    } catch (err: unknown) {
+      setMessage(`Error: ${getAxiosErrorMessage(err, 'Failed to create')}`);
     }
   };
 
@@ -254,9 +262,9 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
       await api.delete(`/admin/lessons/${selectedCourseId}`);
       setMessage('Lesson deleted');
       setSelectedCourseId(null);
-      fetchLessons();
-    } catch (err: any) {
-      setMessage(`Error: ${err.response?.data?.error || 'Failed to delete'}`);
+      void fetchLessons();
+    } catch (err: unknown) {
+      setMessage(`Error: ${getAxiosErrorMessage(err, 'Failed to delete')}`);
     }
   };
 
@@ -282,9 +290,9 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
       setMessage('Lessons reordered');
       setShowReorder(false);
       setSelectedCourseId(null);
-      fetchLessons();
-    } catch (err: any) {
-      setMessage(`Error: ${err.response?.data?.error || 'Failed to reorder'}`);
+      void fetchLessons();
+    } catch (err: unknown) {
+      setMessage(`Error: ${getAxiosErrorMessage(err, 'Failed to reorder')}`);
     }
   };
 
@@ -347,7 +355,7 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
           </div>
         ))}
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-          <button onClick={saveReorder} style={editorStyles.saveBtn}>Save Order</button>
+          <button onClick={() => { void saveReorder(); }} style={editorStyles.saveBtn}>Save Order</button>
           <button onClick={() => setShowReorder(false)} style={editorStyles.cancelBtn}>Cancel</button>
         </div>
         {message && <span style={{ color: message.startsWith('Error') ? '#fa6060' : '#4ade80', fontSize: 14, marginLeft: 12 }}>{message}</span>}
@@ -357,7 +365,7 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
 
   return (
     <div>
-      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onFileSelected} />
+      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { void onFileSelected(e); }} />
 
       {/* Top action bar */}
       <div style={editorStyles.topBar}>
@@ -383,7 +391,7 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
         <button onClick={startReorder} style={editorStyles.actionBtn} title="Reorder lessons" disabled={lessons.length < 2}>
           Reorder
         </button>
-        <button onClick={handleExport} style={editorStyles.actionBtn} title="Export all lessons as JSON">
+        <button onClick={() => { void handleExport(); }} style={editorStyles.actionBtn} title="Export all lessons as JSON">
           Export
         </button>
 
@@ -403,9 +411,9 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
             onChange={e => setNewLessonTitle(e.target.value)}
             placeholder="New lesson title..."
             style={{ ...editorStyles.input, flex: 1, marginBottom: 0 }}
-            onKeyDown={e => e.key === 'Enter' && handleCreateLesson()}
+            onKeyDown={e => { if (e.key === 'Enter') void handleCreateLesson(); }}
           />
-          <button onClick={handleCreateLesson} style={editorStyles.saveBtn} disabled={!newLessonTitle.trim()}>Create</button>
+          <button onClick={() => { void handleCreateLesson(); }} style={editorStyles.saveBtn} disabled={!newLessonTitle.trim()}>Create</button>
           <button onClick={() => setShowNewLessonForm(false)} style={editorStyles.cancelBtn}>Cancel</button>
         </div>
       )}
@@ -425,7 +433,7 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
               <label style={editorStyles.label}>Lesson Title</label>
               <input value={title} onChange={e => setTitle(e.target.value)} style={editorStyles.titleInput} />
             </div>
-            <button onClick={handleDeleteLesson} style={editorStyles.deleteBtn} title="Delete this lesson">
+            <button onClick={() => { void handleDeleteLesson(); }} style={editorStyles.deleteBtn} title="Delete this lesson">
               Delete Lesson
             </button>
           </div>
@@ -473,7 +481,7 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
                           <input placeholder="Caption (shown below image)" value={block.caption || ''} onChange={e => updateBlock(idx, { caption: e.target.value })} style={editorStyles.input} />
                           <input placeholder="Alt text (for accessibility)" value={block.alt || ''} onChange={e => updateBlock(idx, { alt: e.target.value })} style={editorStyles.input} />
                           <div style={{ display: 'flex', gap: 8 }}>
-                            <select value={block.align || 'center'} onChange={e => updateBlock(idx, { align: e.target.value as any })} style={{ ...editorStyles.input, flex: 1 }}>
+                            <select value={block.align || 'center'} onChange={e => { const v = e.target.value; if (v === 'center' || v === 'left' || v === 'right') updateBlock(idx, { align: v }); }} style={{ ...editorStyles.input, flex: 1 }}>
                               <option value="center">Center</option>
                               <option value="left">Left</option>
                               <option value="right">Right</option>
@@ -557,7 +565,7 @@ const LessonEditor: React.FC<LessonEditorProps> = ({ initialCourseId, onBack }) 
 
               {/* Save bar */}
               <div style={editorStyles.saveBar}>
-                <button onClick={handleSave} disabled={saving} style={editorStyles.saveBtn}>
+                <button onClick={() => { void handleSave(); }} disabled={saving} style={editorStyles.saveBtn}>
                   {saving ? 'Saving...' : 'Save Lesson'}
                 </button>
               </div>

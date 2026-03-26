@@ -41,9 +41,13 @@ interface QuestionWithLesson extends Question {
   lessonContentIndices?: number[]; // Array of paragraph indices from lesson content
 }
 
+function isQuestionWithLesson(q: Question): q is QuestionWithLesson {
+  return 'lessonContentIndices' in q;
+}
+
 import api from '../api';
 
-const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent }) => {
+const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onExit, courseId, lessonContent }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -105,11 +109,13 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
   // Close settings dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
       if (
-        settingsDropdownRef.current && 
-        !settingsDropdownRef.current.contains(event.target as Node) &&
+        settingsDropdownRef.current &&
+        !settingsDropdownRef.current.contains(target) &&
         settingsButtonRef.current &&
-        !settingsButtonRef.current.contains(event.target as Node)
+        !settingsButtonRef.current.contains(target)
       ) {
         setShowSettingsDropdown(false);
       }
@@ -165,10 +171,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
       if (remaining <= 0) {
         console.log('Timer expired! hasSubmitted:', hasSubmitted);
         clearInterval(interval);
-        if (!hasSubmitted) {
-          console.log('Calling handleSubmitAnswer(true)');
-          handleSubmitAnswer(true);
-        }
+        console.log('Calling handleSubmitAnswer(true)');
+        handleSubmitAnswer(true);
       }
     }, 16);
 
@@ -182,7 +186,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
     if (!soundEnabled && !forcePlay) return;
     
     // Create audio context and play synthesized sounds
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new window.AudioContext();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
@@ -256,7 +260,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
     if (questionCompleted) return;
 
     // Auto-submission via timer or no selection
-    if (!autoSubmitted && selectedOption == null) return;
+    if (!autoSubmitted && selectedOption === null) return;
     
     const correctIdx = questions[currentIndex].correctAnswer;
     const isAnswerCorrect = selectedOption === correctIdx;
@@ -338,7 +342,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
       setPausedTimeRemaining(null);
     } else {
       setQuizEndTime(Date.now());
-      saveQuizProgress();
+      void saveQuizProgress();
       setShowResultsScreen(true);
     }
   };
@@ -349,10 +353,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
       return;
     }
 
-    if (!hasSubmitted || (!questionCompleted && showAnswersEnabled)) {
-      setSelectedOption(index);
-      playSound('click');
-    }
+    setSelectedOption(index);
+    playSound('click');
   };
 
   // const handleSideChatSubmit = async () => {
@@ -438,7 +440,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
     const firstEl = focusableEls[0];
     const lastEl = focusableEls[focusableEls.length - 1];
 
-    firstEl?.focus();
+    firstEl.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -449,12 +451,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
       if (e.shiftKey) {
         if (document.activeElement === firstEl) {
           e.preventDefault();
-          lastEl?.focus();
+          lastEl.focus();
         }
       } else {
         if (document.activeElement === lastEl) {
           e.preventDefault();
-          firstEl?.focus();
+          firstEl.focus();
         }
       }
     };
@@ -629,7 +631,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
       // Final question
       setHasSubmitted(true);
       setQuizEndTime(Date.now());
-      saveQuizProgress();
+      void saveQuizProgress();
       setShowResultsScreen(true);
     }
   };
@@ -649,8 +651,10 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
   const getRelevantLessonContent = () => {
     if (!lessonContent || !questions[currentIndex]) return null;
     
-    const currentQuestion = questions[currentIndex] as QuestionWithLesson;
-    const indices = currentQuestion.lessonContentIndices;
+    const currentQuestion = questions[currentIndex];
+    const indices = isQuestionWithLesson(currentQuestion)
+      ? currentQuestion.lessonContentIndices
+      : undefined;
     
     if (!indices || indices.length === 0) {
       // Default: show first few paragraphs if no specific indices
@@ -672,7 +676,11 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
   };
 
   const handleContinue = () => {
-    if (questionCompleted) {
+    if (showResultsScreen) {
+      // Results screen: finish quiz and notify parent
+      const pct = Math.round((score / questions.length) * 100);
+      onComplete(score, pct >= 70);
+    } else if (questionCompleted) {
       // If question is completed (correct answer or max attempts), this acts like "Next"
       handleNext();
     } else {
@@ -713,6 +721,14 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
     const rotation = -90 + (360 - (percent * 3.6)) / 2; // Center the gap at the top
     const strokeDashoffsetResults = circumferenceResults * (1 - (percent / 100));
 
+    const progressCircleStyle: React.CSSProperties & Record<string, unknown> = {
+      transform: `rotate(${rotation}deg)`,
+      transformOrigin: '35px 35px',
+      '--final-offset': strokeDashoffsetResults,
+      '--final-rotation': `${rotation}deg`,
+      animation: 'fillFromBottom 1s ease-out forwards'
+    };
+
     return (
       <div style={styles.resultsContainer}>
         <h1 style={styles.resultsTitle}>Lesson complete!</h1>
@@ -742,13 +758,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
                   strokeDasharray={circumferenceResults}
                   strokeDashoffset={strokeDashoffsetResults}
                   strokeLinecap="round"
-                  style={{
-                    transform: `rotate(${rotation}deg)`,
-                    transformOrigin: '35px 35px',
-                    '--final-offset': strokeDashoffsetResults,
-                    '--final-rotation': `${rotation}deg`,
-                    animation: 'fillFromBottom 1s ease-out forwards'
-                  } as React.CSSProperties}
+                  style={progressCircleStyle}
                 />
               </svg>
               <div style={styles.percentageText}>{percent}%</div>
@@ -770,6 +780,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
             <p style={styles.timeLabel}>Minutes</p>
           </div>
         </div>
+
       </div>
     );
   };
@@ -1113,34 +1124,36 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
 
           {/* Right side - Action buttons */}
           <div style={styles.actionsSection}>
+            {!showResultsScreen && (
+              <button
+                className="quiz-bottom-buttons"
+                onClick={
+                        ((!questionCompleted && showAnswersEnabled) || !showAnswersEnabled) ? handleSkip :
+                        (showReviewConcept ? handleCloseReviewConcept : handleReviewConcept)}
+                style={styles.actionButton}
+              >
+                {
+                ((!questionCompleted && showAnswersEnabled) || !showAnswersEnabled) ? 'SKIP' :
+                (showReviewConcept ? 'CLOSE CONCEPT' : 'REVIEW CONCEPT')}
+              </button>
+            )}
+
             <button
               className="quiz-bottom-buttons"
-              onClick={showResultsScreen ? onExit : 
-                      ((!questionCompleted && showAnswersEnabled) || (!showAnswersEnabled && !showResultsScreen)) ? handleSkip : 
-                      (showReviewConcept ? handleCloseReviewConcept : handleReviewConcept)}
-              style={styles.actionButton}
-            >
-              {showResultsScreen ? 'REVIEW LESSON' : 
-              ((!questionCompleted && showAnswersEnabled) || (!showAnswersEnabled && !showResultsScreen)) ? 'SKIP' : 
-              (showReviewConcept ? 'CLOSE CONCEPT' : 'REVIEW CONCEPT')}
-            </button>
-            
-            <button
-              className={`quiz-bottom-buttons ${showResultsScreen ? 'results-continue' : ''}`}
-              onClick={showResultsScreen ? onExit : handleContinue}
+              onClick={handleContinue}
               disabled={!showResultsScreen && !canContinue && !questionCompleted}
               style={{
                 ...styles.continueButton,
                 opacity: (!showResultsScreen && !canContinue && !questionCompleted) ? 0.5 : 1,
                 cursor: (!showResultsScreen && !canContinue && !questionCompleted) ? 'not-allowed' : 'pointer',
-                color: showResultsScreen ? '#0D103F' : (canContinue || questionCompleted ? '#FFFFFF' : '#AAABAF'),
+                color: showResultsScreen || canContinue || questionCompleted ? '#FFFFFF' : '#AAABAF',
                 backgroundColor: showResultsScreen
-                  ? '#3B6BBB'
-                  : (!showAnswersEnabled 
-                  ? (canContinue ? '#142748' : '#2A3A52')
-                  : (questionCompleted 
-                  ? (isCorrect ? '#406440' : '#A20F1D')
-                  : (canContinue ? '#142748' : '#2A3A52'))),
+                  ? '#142748'
+                  : !showAnswersEnabled
+                    ? (canContinue ? '#142748' : '#2A3A52')
+                    : (questionCompleted
+                    ? (isCorrect ? '#406440' : '#A20F1D')
+                    : (canContinue ? '#142748' : '#2A3A52')),
               }}
             >
               CONTINUE

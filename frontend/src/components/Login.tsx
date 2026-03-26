@@ -38,7 +38,7 @@ const Login: React.FC = () => {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   
   const login = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
+    onSuccess: (tokenResponse) => { void (async () => {
       setIsLoading(true);
       try {
         // Fetch user info from Google
@@ -85,7 +85,7 @@ const Login: React.FC = () => {
       } finally {
         setIsLoading(false);
       }
-    },
+    })(); },
     onError: (errorResponse) => {
       console.error('Login Failed:', errorResponse);
     },
@@ -230,10 +230,10 @@ const Login: React.FC = () => {
   const handleFormKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleManualSignupOrLogin();
+      void handleManualSignupOrLogin();
     }
   };
-  
+
   return (
     <>
       
@@ -379,7 +379,7 @@ const Login: React.FC = () => {
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
-                handleManualSignupOrLogin();
+                void handleManualSignupOrLogin();
               }}
               onKeyDown={handleFormKeyDown}
             >
@@ -477,7 +477,7 @@ const Login: React.FC = () => {
               <div style={styles.forgotPasswordContainer}>
                 <button
                   type="button"
-                  onClick={handleForgotPassword}
+                  onClick={() => { void handleForgotPassword(); }}
                   disabled={forgotCooldown}
                   style={{
                     ...styles.forgotPasswordLink,

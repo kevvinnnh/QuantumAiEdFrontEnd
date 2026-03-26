@@ -39,12 +39,12 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
       if (!modalElement) return;
 
       // Query all focusable elements within the modal
-      const focusableElements = modalElement.querySelectorAll(
+      const focusableElements = modalElement.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
-      
-      const firstElement = focusableElements[0] as HTMLElement;
-      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
 
       // Handle Tab key for circular navigation
       const handleTabKeyPress = (event: KeyboardEvent) => {
@@ -74,7 +74,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
       modalElement.addEventListener('keydown', handleEscapeKeyPress);
 
       // Focus first element when modal opens
-      firstElement?.focus();
+      firstElement.focus();
 
       // Cleanup: remove event listeners when modal closes
       return () => {
@@ -127,29 +127,26 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
     }
   };
 
-  const handleSubmit = async () => {
-    try {
-      let payload: any;
-      let headers: Record<string, string> | undefined;
-
-      if (selectedFile) {
-        const formData = new FormData();
-        formData.append('category', selectedCategory);
-        formData.append('feedback', feedbackText);
-        formData.append('screenshot', selectedFile);
-        payload = formData;
-        headers = { 'Content-Type': 'multipart/form-data' };
-      } else {
-        payload = { category: selectedCategory, feedback: feedbackText };
+  const handleSubmit = () => {
+    const submit = async () => {
+      try {
+        if (selectedFile) {
+          const formData = new FormData();
+          formData.append('category', selectedCategory);
+          formData.append('feedback', feedbackText);
+          formData.append('screenshot', selectedFile);
+          await api.post('/submit_feedback', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        } else {
+          await api.post('/submit_feedback', { category: selectedCategory, feedback: feedbackText });
+        }
+        alert('Thank you for your feedback!');
+        handleClose();
+      } catch (err: unknown) {
+        alert('An error occurred while submitting feedback.');
+        console.error(err);
       }
-
-      await api.post('/submit_feedback', payload, headers ? { headers } : undefined);
-      alert('Thank you for your feedback!');
-      handleClose();
-    } catch (err) {
-      alert('An error occurred while submitting feedback.');
-      console.error(err);
-    }
+    };
+    void submit();
   };
 
   if (!isOpen) return null;

@@ -174,8 +174,8 @@ const TutorialPopup: React.FC<TutorialPopupProps> = ({
 				...styles.container,
 				top: position.top,
 				left: position.left,
-				opacity: position.visible ? 1 : 0,
-				transform: position.visible ? 'scale(1)' : 'scale(0.9)',
+				opacity: 1,
+				transform: 'scale(1)',
 				transition: 'opacity 0.2s ease, transform 0.2s ease',
 			}}
 		>

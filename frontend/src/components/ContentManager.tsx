@@ -3,6 +3,7 @@
 // Shows dashboard structure (sections, courses, topics) and drills into LessonEditor.
 
 import React, { useCallback, useEffect, useState } from 'react';
+import axios from 'axios';
 import api from '../api';
 import LessonEditor from './LessonEditor';
 
@@ -85,7 +86,7 @@ const ContentManager: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => { fetchConfig(); }, [fetchConfig]);
+  useEffect(() => { void fetchConfig(); }, [fetchConfig]);
 
   // --- Save ---
   const handleSave = async () => {
@@ -95,8 +96,12 @@ const ContentManager: React.FC = () => {
     try {
       await api.put('/admin/dashboard-config', { sections: config.sections, courses: config.courses });
       setMessage('Dashboard config saved');
-    } catch (err: any) {
-      setMessage(`Error: ${err.response?.data?.error || 'Failed to save'}`);
+    } catch (err: unknown) {
+      let msg = 'Failed to save';
+      if (axios.isAxiosError<{ error?: string }>(err) && err.response?.data.error) {
+        msg = err.response.data.error;
+      }
+      setMessage(`Error: ${msg}`);
     } finally {
       setSaving(false);
     }
@@ -356,7 +361,7 @@ const ContentManager: React.FC = () => {
         <div style={s.topBarActions}>
           <button onClick={() => setShowNewSection(true)} style={s.actionBtn}>+ Section</button>
           <button onClick={() => setShowNewCourse(true)} style={s.actionBtn}>+ Course</button>
-          <button onClick={handleSave} disabled={saving} style={s.saveBtn}>
+          <button onClick={() => { void handleSave(); }} disabled={saving} style={s.saveBtn}>
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
@@ -585,7 +590,7 @@ const ContentManager: React.FC = () => {
                   <select
                     value=""
                     onChange={e => {
-                      if (!config || !e.target.value) return;
+                      if (!e.target.value) return;
                       setConfig({
                         ...config,
                         sections: config.sections.map(sec =>
