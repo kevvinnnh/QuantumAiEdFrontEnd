@@ -41,27 +41,13 @@ const Login: React.FC = () => {
     onSuccess: (tokenResponse) => { void (async () => {
       setIsLoading(true);
       try {
-        // Fetch user info from Google
-        const res = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: {
-            Authorization: `Bearer ${tokenResponse.access_token}`,
-          },
-        });
-        const userData = res.data;
-        const userEmail = userData.email || '';
-        localStorage.setItem('loggedInUserEmail', userEmail);
-        
-        // Send user info to the backend (includes google_sub for identity linking)
+        // Send access token to backend — it verifies with Google server-side
         const backendResponse = await api.post(
           '/append_user_id',
-          {
-            user_id: userEmail,
-            name: userData.name,
-            picture: userData.picture,
-            google_sub: userData.sub,
-          },
+          { access_token: tokenResponse.access_token },
         );
-        const { redirect_to: redirectTo, is_admin: isAdmin } = backendResponse.data;
+        const { redirect_to: redirectTo, is_admin: isAdmin, email: userEmail } = backendResponse.data;
+        localStorage.setItem('loggedInUserEmail', userEmail ?? '');
 
         // Update auth context
         authLogin(userEmail, isAdmin);
