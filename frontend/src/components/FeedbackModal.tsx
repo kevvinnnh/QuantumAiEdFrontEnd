@@ -16,7 +16,9 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
   onClose,
   initialCategory
 }) => {
-  const [currentStep, setCurrentStep] = useState<'category' | 'feedback'>('category');
+  const [currentStep, setCurrentStep] = useState<'category' | 'feedback'>(
+    initialCategory ? 'feedback' : 'category'
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || '');
   const [feedbackText, setFeedbackText] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -30,17 +32,6 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
     'Something didn\'t work as expected',
     'General thoughts or questions'
   ];
-
-  // Initialize at feedback step if initialCategory is provided
-  useEffect(() => {
-    if (initialCategory && isOpen) {
-      setSelectedCategory(initialCategory);
-      setCurrentStep('feedback');
-    } else if (isOpen) {
-      setCurrentStep('category');
-      setSelectedCategory('');
-    }
-  }, [initialCategory, isOpen]);
 
   useEffect(() => {
     if (isOpen) {

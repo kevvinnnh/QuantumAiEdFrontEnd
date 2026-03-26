@@ -284,6 +284,8 @@ const Dashboard: React.FC = () => {
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const sidebarCollapsedRef = useRef(sidebarCollapsed);
+  sidebarCollapsedRef.current = sidebarCollapsed;
 
   /* ---------- view / lesson state -------------------------------- */
   const [view, setView] = useState<'dashboard' | 'course-detail' | 'lesson'>('dashboard');
@@ -298,7 +300,6 @@ const Dashboard: React.FC = () => {
   const [hasViewedFirstLesson, setHasViewedFirstLesson] = useState<boolean>(false);
   const [showOnboardingPopup, setShowOnboardingPopup] = useState<boolean>(false);
   const [tutorialStep, setTutorialStep] = useState<1 | 2 | 3>(1);
-  const [, setTutorialAnchor] = useState<{ top: number; left: number } | null>(null);
   const lessonContentsRef = useRef<HTMLDivElement>(null);
 
   /* ---------- card FLIP animation refs --------------------------- */
@@ -381,6 +382,11 @@ const Dashboard: React.FC = () => {
   /* ---------- chat & highlight state and callback ---------------- */
   const [chatOpen, setChatOpen] = useState<boolean>(false);
   const [chatWidth, setChatWidth] = useState<number>(0);
+  // Refs for resize handler to access current layout state
+  const chatOpenRef = useRef(chatOpen);
+  chatOpenRef.current = chatOpen;
+  const chatWidthRef = useRef(chatWidth);
+  chatWidthRef.current = chatWidth;
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [highlightMode, setHighlightMode] = useState<'explain' | 'analogy' | null>(null);
 
@@ -419,11 +425,24 @@ const Dashboard: React.FC = () => {
   // Effective duration: 0 during resize/window-resize, animated otherwise
   const effectiveDuration = (isChatResizing || isWindowResizing) ? 0 : ANIMATION_DURATION;
 
+  // Ref for handleSidebarToggle so the resize handler can call it without stale closures
+  const handleSidebarToggleRef = useRef<() => void>(() => {});
+
   // Track screen size for responsive behavior (suppress transitions during window resize)
+  // Also auto-collapses/expands sidebar when screen width crosses threshold while chat is open
   useEffect(() => {
     const handleResize = () => {
-      setScreenWidth(window.innerWidth);
+      const newWidth = window.innerWidth;
+      setScreenWidth(newWidth);
       setIsWindowResizing(true);
+
+      // Auto-collapse/expand sidebar on resize when chat is open
+      const shouldCollapse = newWidth < collapsibleSidebarWidth && chatOpenRef.current && chatWidthRef.current > 0;
+      if (shouldCollapse && !sidebarCollapsedRef.current) {
+        handleSidebarToggleRef.current();
+      } else if (!shouldCollapse && sidebarCollapsedRef.current && chatOpenRef.current) {
+        handleSidebarToggleRef.current();
+      }
 
       if (windowResizeTimerRef.current) {
         clearTimeout(windowResizeTimerRef.current);
@@ -447,21 +466,15 @@ const Dashboard: React.FC = () => {
   const SIDEBAR_COLLAPSED_WIDTH = 70;
   const currentSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH;
 
-  // Auto-collapse logic
-  useEffect(() => {
-    const shouldCollapse = screenWidth < collapsibleSidebarWidth && chatOpen && chatWidth > 0;
-    
-    if (shouldCollapse !== sidebarCollapsed) {
-      handleSidebarToggle();
-    }
-  }, [screenWidth, chatOpen, chatWidth, sidebarCollapsed]);
-
   // Coordinated sidebar toggle
   const handleSidebarToggle = useCallback(() => {
     if (isAnimating) return;
 
     setIsAnimating(true);
-    setSidebarCollapsed(prev => !prev);
+    setSidebarCollapsed(prev => {
+      if (!prev) setShowProfileDropdown(false); // collapsing → close dropdown
+      return !prev;
+    });
 
     if (animationTimeoutRef.current) {
       clearTimeout(animationTimeoutRef.current);
@@ -471,6 +484,7 @@ const Dashboard: React.FC = () => {
       setIsAnimating(false);
     }, ANIMATION_DURATION);
   }, [isAnimating, ANIMATION_DURATION]);
+  handleSidebarToggleRef.current = handleSidebarToggle;
 
   // Cleanup animation timeout
   useEffect(() => {
@@ -615,12 +629,7 @@ const Dashboard: React.FC = () => {
     };
   }, [showProfileDropdown]);
 
-  // Close dropdown when sidebar collapses
-  useEffect(() => {
-    if (sidebarCollapsed && showProfileDropdown) {
-      setShowProfileDropdown(false);
-    }
-  }, [sidebarCollapsed, showProfileDropdown]);
+
 
   // Calculate main panel positioning and dimensions
   const getMainPanelStyles = useCallback(() => {
@@ -645,44 +654,33 @@ const Dashboard: React.FC = () => {
   }, [currentSidebarWidth, chatOpen, chatWidth, effectiveDuration, ANIMATION_EASING]);
 
   // Chat width change handler — suppress transitions while actively dragging
+  // Also auto-collapses sidebar if chat widens enough on a narrow screen
   const handleChatWidthChange = useCallback((width: number, isResizing?: boolean) => {
     setChatWidth(width);
     setIsChatResizing(!!isResizing);
-  }, []);
+    // Auto-collapse sidebar if chat is taking space on a narrow screen
+    if (width > 0 && screenWidth < collapsibleSidebarWidth && !sidebarCollapsed) {
+      handleSidebarToggle();
+    }
+  }, [screenWidth, sidebarCollapsed, handleSidebarToggle]);
 
-  // Chat toggle also collapses sidebar based on screen width
+  // Chat toggle — also manages chatWidth and collapses sidebar based on screen width
+  const CHAT_DEFAULT_WIDTH = 420;
   const handleChatToggle = useCallback(() => {
-
     const newChatState = !chatOpen;
     setChatOpen(newChatState);
+    setChatWidth(newChatState ? CHAT_DEFAULT_WIDTH : 0);
 
     if (newChatState && screenWidth < collapsibleSidebarWidth && !sidebarCollapsed) {
       handleSidebarToggle();
     }
-    
+
     if (!newChatState && screenWidth >= collapsibleSidebarWidth && sidebarCollapsed) {
       setTimeout(() => {
         handleSidebarToggle();
       }, 50);
     }
   }, [chatOpen, screenWidth, sidebarCollapsed, handleSidebarToggle]);
-
-  // Set tutorial popup anchor position
-  const handlePositionUpdate = () => {
-    if (lessonContentsRef.current) {
-      const rect = lessonContentsRef.current.getBoundingClientRect();
-      setTutorialAnchor({
-        top: rect.top,
-        left: rect.left,
-      });
-    } else {
-      setTutorialAnchor(null);
-    }
-  };
-
-  useEffect(() => {
-    handlePositionUpdate();
-  }, [view, showOnboardingPopup, chatOpen, chatWidth, sidebarCollapsed, screenWidth]);
 
   // Navigation handlers
   const handleNavigateToDashboard = useCallback(() => {
@@ -728,28 +726,6 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchUserProgress();
   }, [fetchUserProgress]);
-
-  // Close profile dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        profileDropdownRef.current && 
-        !profileDropdownRef.current.contains(event.target as Node) &&
-        profileButtonRef.current &&
-        !profileButtonRef.current.contains(event.target as Node)
-      ) {
-        setShowProfileDropdown(false);
-      }
-    };
-
-    if (showProfileDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showProfileDropdown]);
 
   // Calculate course progress based on completed topics
   const getCourseProgress = useCallback((courseId: number): number => {
@@ -992,12 +968,13 @@ const Dashboard: React.FC = () => {
     ? (apiLessonContent || lessonContents[currentLesson])
     : undefined;
 
-  useEffect(() => {
-    if (quizOpen && currentLesson !== null && currentQuiz.length === 0) {
-      alert(`Quiz not available for this lesson yet.`);
-      setQuizOpen(false);
+  const handleOpenQuiz = useCallback(() => {
+    if (currentLesson !== null && currentQuiz.length === 0) {
+      alert('Quiz not available for this lesson yet.');
+      return;
     }
-  }, [quizOpen, currentQuiz, currentLesson]);
+    setQuizOpen(true);
+  }, [currentLesson, currentQuiz]);
 
   /* ---------- render helpers ------------------------------------- */
   const courseCard = (c: Course) => {
@@ -1153,7 +1130,7 @@ const Dashboard: React.FC = () => {
           {currentQuiz.length > 0 && (
             <button 
               style={styles.takeQuizButton} 
-              onClick={() => setQuizOpen(true)}
+              onClick={handleOpenQuiz}
               aria-label="Start quiz for this lesson"
             >
               TAKE QUIZ
@@ -1182,7 +1159,7 @@ const Dashboard: React.FC = () => {
             <p style={styles.lessonDescription}>
               Ready to see if you've grasped these concepts? Take this quiz and find out where you stand!
             </p>
-            <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
+            <button style={styles.takeQuizButton} onClick={handleOpenQuiz}>
               START QUIZ
             </button>
           </div>
@@ -1341,6 +1318,7 @@ const Dashboard: React.FC = () => {
 
       {/* FEEDBACK */}
       <FeedbackModal
+        key={showFeedbackModal ? 'open' : 'closed'}
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
       />

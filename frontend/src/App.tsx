@@ -11,7 +11,11 @@ import '@fontsource/sarabun/600.css';
 import React from 'react';
 import {
   useParams,
-  useNavigate
+  useNavigate,
+  Navigate,
+  HashRouter as Router,
+  Routes,
+  Route
 } from 'react-router-dom';
 import Login from './components/Login';
 import ProfileCreation from './components/ProfileCreation';
@@ -22,7 +26,6 @@ import ResetPassword from './components/ResetPassword';
 import { allQuizData } from './components/QuizQuestion';
 import { AuthProvider, ProtectedRoute, AdminRoute, AdminToggle } from './AuthContext';
 import './App.css';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 
 /**
  * QuizPage acts as a thin wrapper around the Quiz component,
@@ -34,23 +37,19 @@ const QuizPage: React.FC = () => {
   const id = Number(courseId);
   const questions = allQuizData[id] || [];
 
-  // If no such course or no questions, redirect back to Dashboard
-  React.useEffect(() => {
-    if (isNaN(id) || !allQuizData.hasOwnProperty(id)) {
-      navigate('/map', { replace: true });
-    }
-  }, [id, navigate]);
+  // If no such course, redirect back to Dashboard
+  if (isNaN(id) || !allQuizData.hasOwnProperty(id)) {
+    return <Navigate to="/map" replace />;
+  }
 
   return (
     <Quiz
       courseId={id}
       questions={questions}
       onComplete={() => {
-        // After finishing the quiz, go back to the map/dashboard
         navigate('/map');
       }}
       onExit={() => {
-        // If user clicks “Back to Courses”
         navigate('/map');
       }}
     />

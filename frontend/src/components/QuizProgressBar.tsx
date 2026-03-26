@@ -1,13 +1,12 @@
 // src/components/QuizProgressBar.tsx
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 interface QuizProgressBarProps {
   currentIndex: number;
   totalQuestions: number;
   isLastQuestion?: boolean;
   hasSubmittedLastAnswer?: boolean;
-  // onComplete?: () => void; // Called when animation fully completes
   style?: React.CSSProperties; // Custom container styles from parent
   fillColor?: string;
   animationDuration?: number; // in milliseconds
@@ -18,30 +17,18 @@ const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
   totalQuestions,
   isLastQuestion = false,
   hasSubmittedLastAnswer = false,
-  // onComplete,
   style = {}, // Accept custom styles from parent
   fillColor = "#7BA8ED",
   animationDuration = 600,
 }) => {
-  const [displayProgress, setDisplayProgress] = useState(0);
-
   // Calculate the actual progress percentage
   const actualProgress = ((currentIndex) / totalQuestions) * 100;
-  
+
   // For the last question, we want to show progress as if we're at the question
   // but not 100% until the answer is submitted
-  const targetProgress = isLastQuestion && hasSubmittedLastAnswer 
-    ? 100 
+  const progress = isLastQuestion && hasSubmittedLastAnswer
+    ? 100
     : actualProgress;
-
-  useEffect(() => {
-    // Smooth animation to the target progress
-    const timer = setTimeout(() => {
-      setDisplayProgress(targetProgress);
-    }, 100); // Small delay to ensure smooth transition
-
-    return () => clearTimeout(timer);
-  }, [targetProgress]);
 
   // Default container styles that can be overridden
   const defaultContainerStyle: React.CSSProperties = {
@@ -62,7 +49,7 @@ const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
 
   const fillStyle: React.CSSProperties = {
     height: '100%',
-    width: `${displayProgress}%`,
+    width: `${progress}%`,
     backgroundColor: fillColor,
     borderRadius: containerStyle.borderRadius || 4,
     transition: `width ${animationDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`,
@@ -78,7 +65,7 @@ const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
     width: '100%',
     height: '100%',
     background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
-    animation: displayProgress > 0 ? 'shimmer 2s infinite' : 'none',
+    animation: progress > 0 ? 'shimmer 2s infinite' : 'none',
   };
 
   return (

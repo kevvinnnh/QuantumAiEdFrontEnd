@@ -196,13 +196,6 @@ const GlobalChat: React.FC<Props> = ({
     };
   }, [isResizing, sidebarWidth, width, onWidthChange]);
 
-  // Notify parent of width changes
-  useEffect(() => {
-    if (onWidthChange && !isResizing) {
-      onWidthChange(isOpen ? width : 0, false);
-    }
-  }, [isOpen, width, onWidthChange, isResizing]);
-
   // Auto-scroll when new messages arrive or chat opens
   useEffect(() => {
     if (!isOpen) return;

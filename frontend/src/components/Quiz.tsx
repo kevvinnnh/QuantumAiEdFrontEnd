@@ -1169,6 +1169,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
 
       {/* Feedback Modal */}
       <FeedbackModal
+        key={showFeedbackModal ? 'open' : 'closed'}
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
         initialCategory="Quizzes"
