@@ -1,19 +1,23 @@
 // src/components/Login.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import GoogleIcon from '../assets/google-icon.svg';
 import LoginGraphic from '../assets/login-graphic.svg';
 import QuantaidLogo from '../assets/quantaid-logo.svg';
+import { useAuth } from '../AuthContext';
+import api from '../api';
 
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+  const { login: authLogin } = useAuth();
+
 
   // State to track if user is signing up (true) or logging in (false)
-  const [isSignUpMode, setIsSignUpMode] = useState(true);
+  // Returning users (have logged in before) start in login mode
+  const [isSignUpMode, setIsSignUpMode] = useState(() => !localStorage.getItem('loggedInUserEmail'));
   
   // Local state for manual sign-up fields (if needed)
   const [email, setEmail] = useState("");
@@ -22,44 +26,40 @@ const Login: React.FC = () => {
   
   // Loading state for the login process
   const [isLoading, setIsLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formMessage, setFormMessage] = useState("");
+  const [forgotCooldown, setForgotCooldown] = useState(false);
+  
+  // Refs for managing focus
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const googleButtonRef = useRef<HTMLButtonElement>(null);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
   
   const login = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
+    onSuccess: (tokenResponse) => { void (async () => {
       setIsLoading(true);
       try {
-        // Fetch user info from Google
-        const res = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: {
-            Authorization: `Bearer ${tokenResponse.access_token}`,
-          },
-        });
-        const userData = res.data;
-        const userEmail = userData.email || '';
-        localStorage.setItem('loggedInUserEmail', userEmail);
+        // Send access token to backend — it verifies with Google server-side
+        const backendResponse = await api.post(
+          '/append_user_id',
+          { access_token: tokenResponse.access_token },
+        );
+        const { redirect_to: redirectTo, is_admin: isAdmin, email: userEmail } = backendResponse.data;
+        localStorage.setItem('loggedInUserEmail', userEmail ?? '');
 
-        // Dev route to profile creation
+        // Update auth context
+        authLogin(userEmail, isAdmin);
+
+        // Dev route to profile creation (after auth/session is established)
         if (String(import.meta.env.VITE_FORCE_PROFILE_CREATION).toLowerCase() === 'true') {
           navigate('/profile-creation');
           return;
         }
-        
-        // Send user info to the backend
-        const backendResponse = await axios.post(
-          `${backendUrl}/append_user_id`,
-          {
-            user_id: userEmail,
-            name: userData.name,
-            picture: userData.picture,
-          },
-          {
-            withCredentials: true,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-        const redirectTo = backendResponse.data.redirect_to;
-        
+
         // If admin, redirect to admin dashboard
-        if (userEmail.toLowerCase() === 'kh78@rice.edu') {
+        if (isAdmin) {
           navigate('/admin-dashboard');
         } else if (redirectTo === 'map') {
           navigate('/map');
@@ -71,35 +71,155 @@ const Login: React.FC = () => {
       } finally {
         setIsLoading(false);
       }
-    },
+    })(); },
     onError: (errorResponse) => {
       console.error('Login Failed:', errorResponse);
     },
   });
   
-  const handleManualSignupOrLogin = () => {
+  const handleManualSignupOrLogin = async () => {
+    setFormError("");
+    setFormMessage("");
+
+    if (!email.trim()) {
+      setFormError("Please enter your email address.");
+      return;
+    }
+
     if (isSignUpMode) {
-      console.log("Manual signup with:", { email, fullName, password });
-      alert("Manual signup is not yet implemented.");
+      if (!fullName.trim()) {
+        setFormError("Please enter your name.");
+        return;
+      }
+      if (password.length < 8) {
+        setFormError("Password must be at least 8 characters.");
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const res = await api.post('/auth/signup', {
+          email: email.trim(),
+          name: fullName.trim(),
+          password,
+        });
+
+        const { redirect_to: redirectTo, is_admin: isAdmin } = res.data;
+        localStorage.setItem('loggedInUserEmail', email.trim().toLowerCase());
+        authLogin(email.trim().toLowerCase(), isAdmin);
+
+        if (isAdmin) {
+          navigate('/admin-dashboard');
+        } else if (redirectTo === 'map') {
+          navigate('/map');
+        } else {
+          navigate('/profile-creation');
+        }
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.data?.error) {
+          setFormError(err.response.data.error);
+        } else {
+          setFormError("An unexpected error occurred. Please try again.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
     } else {
-      console.log("Manual login with:", { email, password });
-      alert("Manual login is not yet implemented.");
+      if (!password) {
+        setFormError("Please enter your password.");
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const res = await api.post('/auth/login', {
+          email: email.trim(),
+          password,
+        });
+
+        const { redirect_to: redirectTo, is_admin: isAdmin } = res.data;
+        localStorage.setItem('loggedInUserEmail', email.trim().toLowerCase());
+        authLogin(email.trim().toLowerCase(), isAdmin);
+
+        if (isAdmin) {
+          navigate('/admin-dashboard');
+        } else if (redirectTo === 'map') {
+          navigate('/map');
+        } else {
+          navigate('/profile-creation');
+        }
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.data?.error) {
+          setFormError(err.response.data.error);
+        } else {
+          setFormError("An unexpected error occurred. Please try again.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleForgotPassword = () => {
-    console.log("Forgot password for:", email);
-    alert("Forgot password functionality is not yet implemented.");
+  const forgotPasswordTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (forgotPasswordTimeoutRef.current !== null) {
+        clearTimeout(forgotPasswordTimeoutRef.current);
+        forgotPasswordTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleForgotPassword = async () => {
+    setFormError("");
+    setFormMessage("");
+
+    if (!email.trim()) {
+      setFormError("Please enter your email address first.");
+      return;
+    }
+
+    // Clear any existing cooldown timeout before starting a new one
+    if (forgotPasswordTimeoutRef.current !== null) {
+      clearTimeout(forgotPasswordTimeoutRef.current);
+      forgotPasswordTimeoutRef.current = null;
+    }
+
+    setForgotCooldown(true);
+    try {
+      const res = await api.post('/auth/forgot-password', {
+        email: email.trim(),
+      });
+      setFormMessage(res.data.message);
+    } catch {
+      setFormMessage("If an account exists with that email, a reset link has been sent.");
+    }
+
+    // 30-second cooldown to prevent spam
+    forgotPasswordTimeoutRef.current = window.setTimeout(() => {
+      setForgotCooldown(false);
+      forgotPasswordTimeoutRef.current = null;
+    }, 30000);
   };
 
   const toggleMode = () => {
     setIsSignUpMode(!isSignUpMode);
-    // Clear form fields when switching modes
     setEmail("");
     setFullName("");
     setPassword("");
+    setFormError("");
+    setFormMessage("");
   };
   
+  // Handle keyboard navigation for form submission
+  const handleFormKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      void handleManualSignupOrLogin();
+    }
+  };
+
   return (
     <>
       
@@ -127,7 +247,8 @@ const Login: React.FC = () => {
           input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
             background-color: rgba(116, 142, 203, 1) !important;
             color: #1F1A2A !important;
-            outline: none !important;
+            outline: 3px solid #A4C5FF !important;
+            outline-offset: 2px !important;
             border: none !important;
             font-style: normal !important;
             text-align: left !important;
@@ -157,6 +278,19 @@ const Login: React.FC = () => {
             text-align: left !important;
             padding-left: 1rem !important;
           }
+          
+          /* Focus visible styles for buttons */
+          button:focus-visible {
+            outline: 3px solid #A4C5FF !important;
+            outline-offset: 2px !important;
+          }
+          
+          /* Focus visible styles for text buttons */
+          button.text-button:focus-visible {
+            outline: 2px solid #A4C5FF !important;
+            outline-offset: 1px !important;
+            border-radius: 2px;
+          }
 
           /* Responsive breakpoint - hide right column on screens smaller than 768px */
           @media screen and (max-width: 768px) {
@@ -172,13 +306,26 @@ const Login: React.FC = () => {
       </style>
       {/* Loading Animation Overlay */}
       {isLoading && (
-        <div style={styles.loadingOverlay}>
+        <div 
+          style={styles.loadingOverlay}
+          role="status"
+          aria-live="polite"
+          aria-label="Loading, please wait"
+        >
           <div style={styles.spinner}></div>
+          <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
+            Loading...
+          </span>
         </div>
       )}
       <div style={styles.container}>
         {/* LEFT COLUMN */}
-        <div style={styles.leftColumn} className="left-column-responsive">
+        <main 
+          style={styles.leftColumn} 
+          className="left-column-responsive"
+          role="main"
+          aria-label={isSignUpMode ? "Sign up form" : "Login form"}
+        >
         <div
           style={styles.logoStyle}
           role="img"
@@ -192,6 +339,7 @@ const Login: React.FC = () => {
             
             {/* Sign up/Continue with Google */}
             <button
+              ref={googleButtonRef}
               style={styles.googleButton}
               onClick={() => login()}
               onMouseEnter={(e) => {
@@ -200,63 +348,86 @@ const Login: React.FC = () => {
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = '#F2F2F2';
               }}
+              aria-label={isSignUpMode ? 'Sign up with Google' : 'Continue with Google'}
             >
-              <img src={GoogleIcon} alt="Google icon" style={styles.googleIcon} />
+              <img src={GoogleIcon} alt="" style={styles.googleIcon} aria-hidden="true" />
               <span>{isSignUpMode ? 'Sign up with Google' : 'Continue with Google'}</span>
             </button>
             
             {/* Divider */}
-            <div style={styles.divider}>
+            <div style={styles.divider} aria-hidden="true">
               <div style={styles.line} />
               <span style={styles.dividerText}>OR</span>
               <div style={styles.line} />
             </div>
             
             {/* Manual signup fields */}
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleManualSignupOrLogin();
+              }}
+              onKeyDown={handleFormKeyDown}
+            >
             <div style={styles.inputContainer}>
-              <label style={styles.label}>Email</label>
+              <label htmlFor="email-input" style={styles.label}>Email</label>
               <input
+                id="email-input"
+                ref={emailInputRef}
                 type="email"
                 placeholder="Name@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 style={styles.input}
+                required
+                aria-required="true"
+                autoComplete="email"
               />
             </div>
 
             {/* Name field - only show in sign up mode */}
             {isSignUpMode && (
               <div style={styles.inputContainer}>
-                <label style={styles.label}>Name</label>
-                <p style={styles.labelText}>
+                <label htmlFor="name-input" style={styles.label}>Name</label>
+                <p style={styles.labelText} id="name-description">
                   This name will appear on your profile
                 </p>
                 <input
+                  id="name-input"
                   key="name-input"
+                  ref={nameInputRef}
                   type="text"
                   placeholder="John/Jane Doe"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   style={styles.input}
                   autoComplete="name"
+                  required={isSignUpMode}
+                  aria-required={isSignUpMode}
+                  aria-describedby="name-description"
                 />
               </div>
             )}
 
             <div style={styles.inputContainer}>
-              <label style={styles.label}>Password</label>
+              <label htmlFor="password-input" style={styles.label}>Password</label>
               <input
+                id="password-input"
+                ref={passwordInputRef}
                 type="password"
                 placeholder="********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={styles.input}
+                required
+                aria-required="true"
+                autoComplete={isSignUpMode ? "new-password" : "current-password"}
               />
             </div>
 
             {/* Terms text for sign up mode, Forgot password for login mode */}
             {isSignUpMode ? (
-              <p style={styles.termsText}>
+              <p style={styles.termsText} id="terms-text">
                 By clicking SIGN UP, you acknowledge that you have read and agree to QuantAid's{' '}
                 <a
                   href="/terms"
@@ -291,29 +462,49 @@ const Login: React.FC = () => {
             ) : (
               <div style={styles.forgotPasswordContainer}>
                 <button
-                  onClick={handleForgotPassword}
-                  style={styles.forgotPasswordLink}
+                  type="button"
+                  onClick={() => { void handleForgotPassword(); }}
+                  disabled={forgotCooldown}
+                  style={{
+                    ...styles.forgotPasswordLink,
+                    opacity: forgotCooldown ? 0.5 : 1,
+                    cursor: forgotCooldown ? 'default' : 'pointer',
+                  }}
+                  className="text-button"
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.textDecoration = 'underline';
+                    if (!forgotCooldown) e.currentTarget.style.textDecoration = 'underline';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.textDecoration = 'none';
                   }}
+                  aria-label="Forgot password"
                 >
-                  Forgot my password
+                  {forgotCooldown ? 'Reset link sent — check your email' : 'Forgot my password'}
                 </button>
               </div>
             )}
             
+            {/* Error/success messages */}
+            {formError && <p style={styles.formError} role="alert">{formError}</p>}
+            {formMessage && <p style={styles.formMessage} role="status">{formMessage}</p>}
+
             {/* Sign Up/Log In Button */}
             <button
-              style={styles.signupButton}
-              onClick={handleManualSignupOrLogin}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1F4ADB'; }}
+              ref={submitButtonRef}
+              type="submit"
+              disabled={isLoading}
+              style={{
+                ...styles.signupButton,
+                opacity: isLoading ? 0.6 : 1,
+                cursor: isLoading ? 'default' : 'pointer',
+              }}
+              onMouseEnter={(e) => { if (!isLoading) e.currentTarget.style.backgroundColor = '#1F4ADB'; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2C5CE6'; }}
+              aria-describedby={isSignUpMode ? "terms-text" : undefined}
             >
-              {isSignUpMode ? 'SIGN UP' : 'LOG IN'}
+              {isLoading ? (isSignUpMode ? 'SIGNING UP...' : 'LOGGING IN...') : (isSignUpMode ? 'SIGN UP' : 'LOG IN')}
             </button>
+            </form>
 
             {/* Toggle between sign up and log in */}
             <p style={styles.loginLink}>
@@ -321,14 +512,17 @@ const Login: React.FC = () => {
                 <>
                   Already have an account?{' '}
                   <button 
+                    type="button"
                     onClick={toggleMode}
                     style={styles.toggleButton}
+                    className="text-button"
                     onMouseEnter={(e) => {
                       e.currentTarget.style.textDecoration = 'underline';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.textDecoration = 'none';
                     }}
+                    aria-label="Switch to login mode"
                   >
                     Log in
                   </button>
@@ -337,14 +531,17 @@ const Login: React.FC = () => {
                 <>
                   Don't have an account?{' '}
                   <button 
+                    type="button"
                     onClick={toggleMode}
                     style={styles.toggleButton}
+                    className="text-button"
                     onMouseEnter={(e) => {
                       e.currentTarget.style.textDecoration = 'underline';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.textDecoration = 'none';
                     }}
+                    aria-label="Switch to sign up mode"
                   >
                     Sign up
                   </button>
@@ -352,16 +549,20 @@ const Login: React.FC = () => {
               )}
             </p>
           </div>
-        </div>
+        </main>
         
         {/* RIGHT COLUMN */}
-        <div style={styles.rightColumn} className="right-column-responsive">
+        <aside 
+          style={styles.rightColumn} 
+          className="right-column-responsive"
+          aria-label="Decorative illustration"
+        >
         <img
           src={LoginGraphic}
-          alt="Illustration of a student using QuantAid"
+          alt="Illustration of a student using QuantAid to learn quantum computing"
           style={styles.rightContent}
         />
-        </div>
+        </aside>
       </div>
     </>
   );
@@ -579,6 +780,20 @@ const styles: { [key: string]: React.CSSProperties } = {
   forgotPasswordContainer: {
     textAlign: 'left',
     marginBottom: '0.5rem',
+  },
+  formError: {
+    color: '#fa6060',
+    fontSize: '0.85rem',
+    marginBottom: '0.5rem',
+    textAlign: 'center',
+    fontFamily: "'Inter', sans-serif",
+  },
+  formMessage: {
+    color: '#4ade80',
+    fontSize: '0.85rem',
+    marginBottom: '0.5rem',
+    textAlign: 'center',
+    fontFamily: "'Inter', sans-serif",
   },
   forgotPasswordLink: {
     background: 'none',

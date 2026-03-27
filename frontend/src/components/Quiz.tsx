@@ -41,9 +41,13 @@ interface QuestionWithLesson extends Question {
   lessonContentIndices?: number[]; // Array of paragraph indices from lesson content
 }
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+function isQuestionWithLesson(q: Question): q is QuestionWithLesson {
+  return 'lessonContentIndices' in q;
+}
 
-const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent }) => {
+import api from '../api';
+
+const Quiz: React.FC<QuizProps> = ({ questions, onComplete, onExit, courseId, lessonContent }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -81,6 +85,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
   const [showExitModal, setShowExitModal] = useState(false);
+  const exitModalRef = useRef<HTMLDivElement>(null);
+  const quizContainerRef = useRef<HTMLDivElement>(null);
 
   // // Side chat state
   // const [sideChatMessages, setSideChatMessages] = useState<ChatMessage[]>([]);
@@ -103,11 +109,13 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
   // Close settings dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
       if (
-        settingsDropdownRef.current && 
-        !settingsDropdownRef.current.contains(event.target as Node) &&
+        settingsDropdownRef.current &&
+        !settingsDropdownRef.current.contains(target) &&
         settingsButtonRef.current &&
-        !settingsButtonRef.current.contains(event.target as Node)
+        !settingsButtonRef.current.contains(target)
       ) {
         setShowSettingsDropdown(false);
       }
@@ -163,10 +171,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
       if (remaining <= 0) {
         console.log('Timer expired! hasSubmitted:', hasSubmitted);
         clearInterval(interval);
-        if (!hasSubmitted) {
-          console.log('Calling handleSubmitAnswer(true)');
-          handleSubmitAnswer(true);
-        }
+        console.log('Calling handleSubmitAnswer(true)');
+        handleSubmitAnswer(true);
       }
     }, 16);
 
@@ -180,7 +186,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
     if (!soundEnabled && !forcePlay) return;
     
     // Create audio context and play synthesized sounds
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new window.AudioContext();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
@@ -239,22 +245,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
 
     try {
       console.log("Sending quiz result:", quizResultData);
-      const response = await fetch(`${backendUrl}/save_quiz_result`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(quizResultData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log("Quiz result saved successfully:", result);
+      const response = await api.post('/save_quiz_result', quizResultData);
+      console.log("Quiz result saved successfully:", response.data);
       setProgressSaved(true); // Mark as saved
       
     } catch (error) {
@@ -268,7 +260,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
     if (questionCompleted) return;
 
     // Auto-submission via timer or no selection
-    if (!autoSubmitted && selectedOption == null) return;
+    if (!autoSubmitted && selectedOption === null) return;
     
     const correctIdx = questions[currentIndex].correctAnswer;
     const isAnswerCorrect = selectedOption === correctIdx;
@@ -350,7 +342,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
       setPausedTimeRemaining(null);
     } else {
       setQuizEndTime(Date.now());
-      saveQuizProgress();
+      void saveQuizProgress();
       setShowResultsScreen(true);
     }
   };
@@ -361,10 +353,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
       return;
     }
 
-    if (!hasSubmitted || (!questionCompleted && showAnswersEnabled)) {
-      setSelectedOption(index);
-      playSound('click');
-    }
+    setSelectedOption(index);
+    playSound('click');
   };
 
   // const handleSideChatSubmit = async () => {
@@ -437,6 +427,94 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
       setShowExitModal(false);
     }
   };
+
+  // Exit modal focus trap & Escape key
+  useEffect(() => {
+    if (!showExitModal) return;
+    const modalEl = exitModalRef.current;
+    if (!modalEl) return;
+
+    const focusableEls = modalEl.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstEl = focusableEls[0];
+    const lastEl = focusableEls[focusableEls.length - 1];
+
+    firstEl.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleCloseExitModal();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl.focus();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showExitModal]);
+
+  // Quiz-level focus trap: keep Tab within the quiz container
+  useEffect(() => {
+    const containerEl = quizContainerRef.current;
+    if (!containerEl) return;
+
+    // Focus the first interactive element when quiz mounts or question changes
+    const focusFirst = () => {
+      const focusableEls = containerEl.querySelectorAll<HTMLElement>(
+        'button:not([disabled]):not([tabindex="-1"]), [href], input:not([disabled]):not([tabindex="-1"]), select, textarea, [tabindex="0"]'
+      );
+      if (focusableEls.length > 0) {
+        focusableEls[0].focus();
+      }
+    };
+
+    // Small delay to let React render the new question's DOM
+    const timerId = setTimeout(focusFirst, 50);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      // Don't interfere if exit modal or feedback modal is open (they have their own traps)
+      if (showExitModal || showFeedbackModal) return;
+
+      const focusableEls = containerEl.querySelectorAll<HTMLElement>(
+        'button:not([disabled]):not([tabindex="-1"]), [href], input:not([disabled]):not([tabindex="-1"]), select, textarea, [tabindex="0"]'
+      );
+      if (focusableEls.length === 0) return;
+
+      const firstEl = focusableEls[0];
+      const lastEl = focusableEls[focusableEls.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl.focus();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timerId);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [currentIndex, hasSubmitted, wrongChoices.length, showResultsScreen, showReviewConcept, showExitModal, showFeedbackModal]);
 
   // Feedback modal handler
   const handleLeaveFeedbackClick = () => {
@@ -553,7 +631,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
       // Final question
       setHasSubmitted(true);
       setQuizEndTime(Date.now());
-      saveQuizProgress();
+      void saveQuizProgress();
       setShowResultsScreen(true);
     }
   };
@@ -573,8 +651,10 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
   const getRelevantLessonContent = () => {
     if (!lessonContent || !questions[currentIndex]) return null;
     
-    const currentQuestion = questions[currentIndex] as QuestionWithLesson;
-    const indices = currentQuestion.lessonContentIndices;
+    const currentQuestion = questions[currentIndex];
+    const indices = isQuestionWithLesson(currentQuestion)
+      ? currentQuestion.lessonContentIndices
+      : undefined;
     
     if (!indices || indices.length === 0) {
       // Default: show first few paragraphs if no specific indices
@@ -596,7 +676,11 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
   };
 
   const handleContinue = () => {
-    if (questionCompleted) {
+    if (showResultsScreen) {
+      // Results screen: finish quiz and notify parent
+      const pct = Math.round((score / questions.length) * 100);
+      onComplete(score, pct >= 70);
+    } else if (questionCompleted) {
       // If question is completed (correct answer or max attempts), this acts like "Next"
       handleNext();
     } else {
@@ -637,6 +721,14 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
     const rotation = -90 + (360 - (percent * 3.6)) / 2; // Center the gap at the top
     const strokeDashoffsetResults = circumferenceResults * (1 - (percent / 100));
 
+    const progressCircleStyle: React.CSSProperties & Record<string, unknown> = {
+      transform: `rotate(${rotation}deg)`,
+      transformOrigin: '35px 35px',
+      '--final-offset': strokeDashoffsetResults,
+      '--final-rotation': `${rotation}deg`,
+      animation: 'fillFromBottom 1s ease-out forwards'
+    };
+
     return (
       <div style={styles.resultsContainer}>
         <h1 style={styles.resultsTitle}>Lesson complete!</h1>
@@ -666,13 +758,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
                   strokeDasharray={circumferenceResults}
                   strokeDashoffset={strokeDashoffsetResults}
                   strokeLinecap="round"
-                  style={{
-                    transform: `rotate(${rotation}deg)`,
-                    transformOrigin: '35px 35px',
-                    '--final-offset': strokeDashoffsetResults,
-                    '--final-rotation': `${rotation}deg`,
-                    animation: 'fillFromBottom 1s ease-out forwards'
-                  } as React.CSSProperties}
+                  style={progressCircleStyle}
                 />
               </svg>
               <div style={styles.percentageText}>{percent}%</div>
@@ -694,23 +780,27 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
             <p style={styles.timeLabel}>Minutes</p>
           </div>
         </div>
+
       </div>
     );
   };
 
   return (
-    <div style={styles.container}>
+    <div ref={quizContainerRef} style={styles.container} role="main" aria-label="Quiz">
       {showResultsScreen ? (
         <div style={styles.resultsScreenContainer}>
           <ResultsScreen />
         </div>
       ) : (
         <>
-          <div style={styles.topBar}>
+          <div style={styles.topBar} role="navigation" aria-label="Quiz navigation">
             <button 
               ref={settingsButtonRef}
               onClick={toggleSettingsDropdown} 
               style={styles.dotsButton}
+              aria-label="Quiz settings"
+              aria-expanded={showSettingsDropdown}
+              aria-haspopup="true"
             >
               <BsThreeDots size={24} color={'#424E62'} />
             </button>
@@ -725,7 +815,11 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
               animationDuration={600}
             />
 
-            <button onClick={progressSaved ? onExit : handleBackButtonClick} style={styles.backButton}>
+            <button 
+              onClick={progressSaved ? onExit : handleBackButtonClick} 
+              style={styles.backButton}
+              aria-label="Exit quiz"
+            >
               <IoCloseOutline size={24} color={'#424E62'} />
             </button>
           </div>
@@ -733,10 +827,16 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
           {/* Exit Confirmation Modal */}
           {showExitModal && (
             <div style={styles.modalOverlay} onClick={handleModalOverlayClick}>
-              <div style={styles.modalContent}>
+              <div
+                ref={exitModalRef}
+                style={styles.modalContent}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="exit-modal-title"
+              >
                 <div style={styles.modalHeader}>
-                  <h2 style={styles.modalTitle}>Exit Quiz?</h2>
-                  <button onClick={handleCloseExitModal} style={styles.closeButton}>
+                  <h2 id="exit-modal-title" style={styles.modalTitle}>Exit Quiz?</h2>
+                  <button onClick={handleCloseExitModal} style={styles.closeButton} aria-label="Close">
                     <IoMdClose size={24} color="#FFFFFF" />
                   </button>
                 </div>
@@ -776,6 +876,15 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
               <div 
                 style={styles.settingsOption}
                 onClick={() => handleSettingToggle('sound', soundEnabled)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSettingToggle('sound', soundEnabled);
+                  }
+                }}
+                aria-label={`Sound effects ${soundEnabled ? 'on' : 'off'}`}
               >
                 <div style={styles.optionLeft}>
                   <span style={styles.optionText}>Sound effects</span>
@@ -797,6 +906,15 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
               <div 
                 style={styles.settingsOption}
                 onClick={() => handleSettingToggle('answers', showAnswersEnabled)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSettingToggle('answers', showAnswersEnabled);
+                  }
+                }}
+                aria-label={`Show correct answers ${showAnswersEnabled ? 'on' : 'off'}`}
               >
                 <div style={styles.optionLeft}>
                   <span style={styles.optionText}>Show correct answers</span>
@@ -818,6 +936,15 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
               <div 
                 style={styles.settingsOption}
                 onClick={() => handleSettingToggle('time', timeModeEnabled)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSettingToggle('time', timeModeEnabled);
+                  }
+                }}
+                aria-label={`Time mode ${timeModeEnabled ? 'on' : 'off'}`}
               >
                 <div style={styles.optionLeft}>
                   <span style={styles.optionText}>Time mode</span>
@@ -856,13 +983,14 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
                           ))}
                         </div>
                         <div style={styles.revisitLessonContainer}>
-                          <span 
+                          <button
                             onClick={progressSaved ? onExit : handleBackButtonClick}
                             className="revisit-lesson-link"
                             style={styles.revisitLessonLink}
+                            aria-label="Revisit full lesson"
                           >
                             Revisit full lesson
-                          </span>
+                          </button>
                         </div>
                       </>
                     );
@@ -996,34 +1124,36 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
 
           {/* Right side - Action buttons */}
           <div style={styles.actionsSection}>
+            {!showResultsScreen && (
+              <button
+                className="quiz-bottom-buttons"
+                onClick={
+                        ((!questionCompleted && showAnswersEnabled) || !showAnswersEnabled) ? handleSkip :
+                        (showReviewConcept ? handleCloseReviewConcept : handleReviewConcept)}
+                style={styles.actionButton}
+              >
+                {
+                ((!questionCompleted && showAnswersEnabled) || !showAnswersEnabled) ? 'SKIP' :
+                (showReviewConcept ? 'CLOSE CONCEPT' : 'REVIEW CONCEPT')}
+              </button>
+            )}
+
             <button
               className="quiz-bottom-buttons"
-              onClick={showResultsScreen ? onExit : 
-                      ((!questionCompleted && showAnswersEnabled) || (!showAnswersEnabled && !showResultsScreen)) ? handleSkip : 
-                      (showReviewConcept ? handleCloseReviewConcept : handleReviewConcept)}
-              style={styles.actionButton}
-            >
-              {showResultsScreen ? 'REVIEW LESSON' : 
-              ((!questionCompleted && showAnswersEnabled) || (!showAnswersEnabled && !showResultsScreen)) ? 'SKIP' : 
-              (showReviewConcept ? 'CLOSE CONCEPT' : 'REVIEW CONCEPT')}
-            </button>
-            
-            <button
-              className={`quiz-bottom-buttons ${showResultsScreen ? 'results-continue' : ''}`}
-              onClick={showResultsScreen ? onExit : handleContinue}
-              disabled={!canContinue && !questionCompleted}
+              onClick={handleContinue}
+              disabled={!showResultsScreen && !canContinue && !questionCompleted}
               style={{
                 ...styles.continueButton,
-                opacity: (!canContinue && !questionCompleted) ? 0.5 : 1,
-                cursor: (!canContinue && !questionCompleted) ? 'not-allowed' : 'pointer',
-                color: showResultsScreen ? '#0D103F' : (canContinue || questionCompleted ? '#FFFFFF' : '#AAABAF'),
+                opacity: (!showResultsScreen && !canContinue && !questionCompleted) ? 0.5 : 1,
+                cursor: (!showResultsScreen && !canContinue && !questionCompleted) ? 'not-allowed' : 'pointer',
+                color: showResultsScreen || canContinue || questionCompleted ? '#FFFFFF' : '#AAABAF',
                 backgroundColor: showResultsScreen
-                  ? '#3B6BBB'
-                  : (!showAnswersEnabled 
-                  ? (canContinue ? '#142748' : '#2A3A52')
-                  : (questionCompleted 
-                  ? (isCorrect ? '#406440' : '#A20F1D')
-                  : (canContinue ? '#142748' : '#2A3A52'))),
+                  ? '#142748'
+                  : !showAnswersEnabled
+                    ? (canContinue ? '#142748' : '#2A3A52')
+                    : (questionCompleted
+                    ? (isCorrect ? '#406440' : '#A20F1D')
+                    : (canContinue ? '#142748' : '#2A3A52')),
               }}
             >
               CONTINUE
@@ -1052,6 +1182,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onExit, courseId, lessonContent 
 
       {/* Feedback Modal */}
       <FeedbackModal
+        key={showFeedbackModal ? 'open' : 'closed'}
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
         initialCategory="Quizzes"
@@ -1432,6 +1563,9 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     transition: 'color 0.2s ease',
     lineHeight: '1.4',
+    background: 'none',
+    border: 'none',
+    padding: 0,
   },
   continueButton: {
     padding: '12px 42px',
@@ -1538,13 +1672,24 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-// Add hover effects
+// Add hover effects and focus styles
 const addHoverStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
     .quiz-bottom-buttons:hover:not(:disabled) {
       opacity: 0.9 !important;
       transition: opacity 0.2s ease;
+    }
+    
+    /* Focus visible styles for accessibility */
+    button:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+    
+    .quiz-option:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
     }
 
     .revisit-lesson-link:hover:not(:disabled) {

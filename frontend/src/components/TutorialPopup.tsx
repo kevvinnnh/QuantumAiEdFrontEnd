@@ -12,6 +12,10 @@ interface TutorialPopupProps {
 	onNext?: () => void;
 	onBack?: () => void;
 	onClose?: () => void;
+	/** Pass layout-affecting state so the popup repositions during transitions */
+	chatOpen?: boolean;
+	sidebarCollapsed?: boolean;
+	animationDuration?: number;
 }
 
 const tutorialSteps = [
@@ -47,8 +51,11 @@ const TutorialPopup: React.FC<TutorialPopupProps> = ({
 	onNext,
 	onBack,
 	onClose,
+	chatOpen,
+	sidebarCollapsed,
+	animationDuration = 200,
 }) => {
-	const [position, setPosition] = useState({ top: 0, left: 0, visible: false });
+	const [position, setPosition] = useState({ top: 0, left: 0, visible: false, flipped: false });
 	const popupRef = useRef<HTMLDivElement>(null);
 	const animationFrameRef = useRef<number>();
 
@@ -75,10 +82,12 @@ const TutorialPopup: React.FC<TutorialPopupProps> = ({
 		// Calculate position - try to place to the left of the anchor
 		let left = rect.left - popupWidth - offset;
 		let top = rect.top + offset;
+		let flipped = false;
 
-		// Adjust if popup would go off-screen
+		// If popup would go off-screen to the left, flip to the right side
 		if (left < 0) {
-			left = rect.right + offset; // Place to the right instead
+			left = rect.left + offset;
+			flipped = true;
 		}
 		if (left + popupWidth > window.innerWidth) {
 			left = window.innerWidth - popupWidth - 20;
@@ -90,7 +99,7 @@ const TutorialPopup: React.FC<TutorialPopupProps> = ({
 			top = 20;
 		}
 
-		setPosition({ top, left, visible: true });
+		setPosition({ top, left, visible: true, flipped });
 	}, [anchorElement]);
 
 	// Update position on scroll or resize
@@ -128,6 +137,25 @@ const TutorialPopup: React.FC<TutorialPopupProps> = ({
 		};
 	}, [updatePosition]);
 
+	// Re-poll position during layout transitions (chat open/close, sidebar toggle)
+	useEffect(() => {
+		if (!anchorElement) return;
+
+		const start = performance.now();
+		const duration = animationDuration + 50; // slight buffer past transition end
+		let rafId: number;
+
+		const poll = () => {
+			updatePosition();
+			if (performance.now() - start < duration) {
+				rafId = requestAnimationFrame(poll);
+			}
+		};
+		rafId = requestAnimationFrame(poll);
+
+		return () => cancelAnimationFrame(rafId);
+	}, [chatOpen, sidebarCollapsed, anchorElement, animationDuration, updatePosition]);
+
 	const stepIndex = step - 1;
 	const { title, description, buttonLabel, showBack, showNext, image } = tutorialSteps[stepIndex];
 
@@ -146,15 +174,15 @@ const TutorialPopup: React.FC<TutorialPopupProps> = ({
 				...styles.container,
 				top: position.top,
 				left: position.left,
-				opacity: position.visible ? 1 : 0,
-				transform: position.visible ? 'scale(1)' : 'scale(0.9)',
+				opacity: 1,
+				transform: 'scale(1)',
 				transition: 'opacity 0.2s ease, transform 0.2s ease',
 			}}
 		>
 			{/* Arrow */}
-			<div style={styles.arrowWrapper}>
-				<div style={styles.arrowOuter} />
-				<div style={styles.arrowInner} />
+			<div style={position.flipped ? styles.arrowWrapperFlipped : styles.arrowWrapper}>
+				<div style={position.flipped ? styles.arrowOuterFlipped : styles.arrowOuter} />
+				<div style={position.flipped ? styles.arrowInnerFlipped : styles.arrowInner} />
 			</div>
 			
 			<div className="popup" style={styles.popup}>
@@ -192,6 +220,8 @@ const TutorialPopup: React.FC<TutorialPopupProps> = ({
 									...styles.backButton,
 									visibility: showBack ? 'visible' : 'hidden',
 								}}
+								tabIndex={showBack ? 0 : -1}
+								aria-hidden={!showBack}
 							>
 								Back
 							</button>
@@ -218,6 +248,8 @@ const TutorialPopup: React.FC<TutorialPopupProps> = ({
 									...styles.nextButton,
 									visibility: (showNext || buttonLabel === 'Got it') ? 'visible' : 'hidden',
 								}}
+								tabIndex={(showNext || buttonLabel === 'Got it') ? 0 : -1}
+								aria-hidden={!(showNext || buttonLabel === 'Got it')}
 							>
 								{buttonLabel}
 							</button>
@@ -265,11 +297,38 @@ const styles: Record<string, React.CSSProperties> = {
 		borderRight: '16px solid transparent',
 		borderBottom: '12px solid transparent',
 	},
+	// Flipped arrow — left side, pointing left
+	arrowWrapperFlipped: {
+		position: 'absolute',
+		top: 35,
+		left: -22,
+		width: 0,
+		height: 0,
+		pointerEvents: 'none',
+	},
+	arrowOuterFlipped: {
+		position: 'absolute',
+		top: 0,
+		left: -8,
+		borderRight: '16px solid #2B3854',
+		borderTop: '16px solid transparent',
+		borderLeft: '16px solid transparent',
+		borderBottom: '12px solid transparent',
+	},
+	arrowInnerFlipped: {
+		position: 'absolute',
+		top: 0,
+		left: -6,
+		borderRight: '16px solid #030C34',
+		borderTop: '16px solid transparent',
+		borderLeft: '16px solid transparent',
+		borderBottom: '12px solid transparent',
+	},
 	popup: {
 		position: 'relative',
 		alignItems: 'center',
 		borderRadius: '10px',
-		overflow: 'hidden',
+		overflow: 'clip',
 	},
 	closeButton: {
 		background: 'transparent',

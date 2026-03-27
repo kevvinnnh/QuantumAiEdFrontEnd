@@ -49,7 +49,7 @@ const HighlightableInstructionsForReading: React.FC<Props> = ({
           const contentTop = HEADER_HEIGHT;
           
           let finalTop = preferredTop;
-          let finalLeft = Math.max(10, preferredLeft);
+          const finalLeft = Math.max(10, preferredLeft);
           
           // Ensure popup stays below header and within viewport
           if (finalTop < contentTop) {
@@ -208,7 +208,7 @@ const HighlightableInstructionsForReading: React.FC<Props> = ({
     const globalClickHandler = (event: MouseEvent) => {
       // Check if click is on the popup itself
       const popupElement = document.querySelector('[data-highlight-popup="true"]');
-      if (popupElement && popupElement.contains(event.target as Node)) {
+      if (popupElement && event.target instanceof Node && popupElement.contains(event.target)) {
         return; // Don't hide if clicking on popup
       }
 

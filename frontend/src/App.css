@@ -721,17 +721,27 @@ body {
 
 /* Sidebar width transitions */
 .sidebar-coordinated {
-  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Default transition for main panel */
 .main-panel-coordinated {
-  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* GlobalChat slide animation */
 .global-chat-coordinated {
-  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Disable transitions during resize (chat drag or window resize) */
+.no-transition.sidebar-coordinated,
+.no-transition.main-panel-coordinated,
+.no-transition.global-chat-coordinated,
+.no-transition .sidebar-coordinated,
+.no-transition .main-panel-coordinated,
+.no-transition .global-chat-coordinated {
+  transition: none !important;
 }
 
 /* -------------------------------- */
@@ -907,11 +917,6 @@ body {
   min-width: 0;
 }
 
-/* Card grid responsiveness for narrow panels */
-.main-panel-coordinated .cardGrid {
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-}
-
 /* Responsive safety for very narrow screens */
 @media (max-width: 800px) {
   .main-panel-coordinated {
@@ -946,6 +951,12 @@ body {
 .global-chat-coordinated button:focus-visible {
   outline: 2px solid #3B89FF;
   outline-offset: 2px;
+}
+
+/* Tutorial popup close button: inset focus ring so it's visible at container edge */
+.tutorial-popup .popup > button:focus-visible {
+  outline: 2px solid #3B89FF;
+  outline-offset: -3px;
 }
 
 /* High contrast mode support */

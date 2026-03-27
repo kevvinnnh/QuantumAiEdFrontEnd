@@ -8,17 +8,18 @@ import Reading from './Reading';
 import Quiz from './Quiz';
 import GlobalChat from './GlobalChat';
 import FeedbackModal from './FeedbackModal';
+import ProfileModal from './Profile';
 import HighlightableInstructionsForReading from './HighlightableInstructionsForReadings';
-import { allQuizData } from './QuizQuestion';
-import { lessonContents } from './LessonContents';
+import { allQuizData, type Question } from './QuizQuestion';
+import { lessonContents, type LessonContent, type ParagraphItem } from './LessonContents';
 import lesson0Img from '../assets/lessonIcons/lesson-0.svg';
 import lesson1Img from '../assets/lessonIcons/lesson-1.svg';
 import lesson2Img from '../assets/lessonIcons/lesson-2.svg';
 import { useNavigate } from 'react-router-dom';
 import TutorialPopup from './TutorialPopup';
+import { useAuth } from '../AuthContext';
 
-// Define BACKEND_URL - Replace with your actual backend URL
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'; // Use environment variable
+import api from '../api';
 
 /* ------------------------------------------------------------------ */
 /* THEME COLORS                                                       */
@@ -271,8 +272,11 @@ interface CompletedQuiz {
 
 const Dashboard: React.FC = () => {
   /* ---------- dev state ----------------------------------------- */
-  const DEV_LOGIN_EMAIL = import.meta.env.DEV_LOGIN_EMAIL;
+  const FIRST_TIME_USER_EMAIL = import.meta.env.VITE_FIRST_TIME_USER_EMAIL;
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('');
+  const [userPicture, setUserPicture] = useState<string>('');
+  const { logout: authLogout } = useAuth();
 
   /* ---------- animation state ------------------------------------ */
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
@@ -280,6 +284,8 @@ const Dashboard: React.FC = () => {
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const sidebarCollapsedRef = useRef(sidebarCollapsed);
+  sidebarCollapsedRef.current = sidebarCollapsed;
 
   /* ---------- view / lesson state -------------------------------- */
   const [view, setView] = useState<'dashboard' | 'course-detail' | 'lesson'>('dashboard');
@@ -294,11 +300,87 @@ const Dashboard: React.FC = () => {
   const [hasViewedFirstLesson, setHasViewedFirstLesson] = useState<boolean>(false);
   const [showOnboardingPopup, setShowOnboardingPopup] = useState<boolean>(false);
   const [tutorialStep, setTutorialStep] = useState<1 | 2 | 3>(1);
-  const [, setTutorialAnchor] = useState<{ top: number; left: number } | null>(null);
   const lessonContentsRef = useRef<HTMLDivElement>(null);
+
+  /* ---------- card FLIP animation refs --------------------------- */
+  const cardElRefs = useRef<Map<number, HTMLElement>>(new Map());
+
+  /* ---------- API lesson data (quiz/content for current lesson) --- */
+  const [apiQuiz, setApiQuiz] = useState<Question[] | null>(null);
+  const [apiLessonContent, setApiLessonContent] = useState<LessonContent | null>(null);
+
+  useEffect(() => {
+    if (currentLesson === null) {
+      setApiQuiz(null);
+      setApiLessonContent(null);
+      return;
+    }
+    let cancelled = false;
+    api.get(`/api/lessons/${currentLesson}`)
+      .then(res => res.data)
+      .then(data => {
+        if (cancelled) return;
+        if (data.quiz && data.quiz.length > 0) {
+          setApiQuiz(data.quiz);
+        }
+        // Convert blocks to LessonContent format for Quiz component compatibility
+        if (data.blocks) {
+          const blocks: Array<{ type: string; text: string }> = data.blocks;
+          const paragraphs: (string | ParagraphItem)[] = blocks
+            .filter((b) => b.type !== 'image')
+            .map((b) => {
+              if (b.type === 'paragraph') return b.text;
+              const t = b.type;
+              if (t === 'heading' || t === 'subheading') return { text: b.text, type: t };
+              return b.text;
+            });
+          setApiLessonContent({
+            title: data.title,
+            paragraphs,
+            interactiveTerms: data.interactiveTerms || {},
+          });
+        }
+      })
+      .catch(() => {
+        // Fall back to hardcoded data
+      });
+    return () => { cancelled = true; };
+  }, [currentLesson]);
+
+  /* ---------- dashboard config (sections/courses from API) -------- */
+  interface DashboardSection { id: string; title: string; order: number; courses: number[]; }
+  interface DashboardConfig { sections: DashboardSection[]; courses: Course[]; }
+  const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/api/dashboard-config')
+      .then(res => res.data)
+      .then(data => {
+        if (cancelled || !data) return;
+        // Map image strings to imported assets
+        const imageMap: Record<string, string> = { 'lesson-0': lesson0Img, 'lesson-1': lesson1Img, 'lesson-2': lesson2Img };
+        const mappedCourses = (data.courses || []).map((c: Course) => ({
+          ...c,
+          image: imageMap[c.image] || lesson0Img,
+        }));
+        setDashboardConfig({ sections: data.sections || [], courses: mappedCourses });
+      })
+      .catch(() => { /* fall back to hardcoded */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Use API config if available, otherwise fall back to hardcoded
+  const activeCourses: Course[] = dashboardConfig?.courses || courses;
+  const activeSections: DashboardSection[] = dashboardConfig?.sections || [
+    { id: 'foundations', title: 'Foundations', order: 0, courses: [0, 1, 2] },
+    { id: 'in-action', title: 'Quantum computing in action', order: 1, courses: [3, 4, 5] },
+    { id: 'deep-dive', title: 'Deep dive into quantum theory', order: 2, courses: [6, 7, 8] },
+  ];
 
   /* ---------- feedback state ------------------------------------- */
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
 
   /* ---------- search state --------------------------------------- */
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -306,6 +388,11 @@ const Dashboard: React.FC = () => {
   /* ---------- chat & highlight state and callback ---------------- */
   const [chatOpen, setChatOpen] = useState<boolean>(false);
   const [chatWidth, setChatWidth] = useState<number>(0);
+  // Refs for resize handler to access current layout state
+  const chatOpenRef = useRef(chatOpen);
+  chatOpenRef.current = chatOpen;
+  const chatWidthRef = useRef(chatWidth);
+  chatWidthRef.current = chatWidth;
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [highlightMode, setHighlightMode] = useState<'explain' | 'analogy' | null>(null);
 
@@ -334,24 +421,50 @@ const Dashboard: React.FC = () => {
     setChatOpen(false);
   }, []);
 
-  // const goBackFromCourseDetail = useCallback(() => {
-  //   setView('dashboard');
-  //   setCurrentCourse(null);
-  //   setCurrentLesson(null);
-  // }, []);
-
   // Animation constants
-  const ANIMATION_DURATION = 300;
+  const ANIMATION_DURATION = 200;
   const ANIMATION_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
+  const [isChatResizing, setIsChatResizing] = useState(false);
+  const [isWindowResizing, setIsWindowResizing] = useState(false);
+  const windowResizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Track screen size for responsive behavior
+  // Effective duration: 0 during resize/window-resize, animated otherwise
+  const effectiveDuration = (isChatResizing || isWindowResizing) ? 0 : ANIMATION_DURATION;
+
+  // Ref for handleSidebarToggle so the resize handler can call it without stale closures
+  const handleSidebarToggleRef = useRef<() => void>(() => {});
+
+  // Track screen size for responsive behavior (suppress transitions during window resize)
+  // Also auto-collapses/expands sidebar when screen width crosses threshold while chat is open
   useEffect(() => {
     const handleResize = () => {
-      setScreenWidth(window.innerWidth);
+      const newWidth = window.innerWidth;
+      setScreenWidth(newWidth);
+      setIsWindowResizing(true);
+
+      // Auto-collapse/expand sidebar on resize when chat is open
+      const shouldCollapse = newWidth < collapsibleSidebarWidth && chatOpenRef.current && chatWidthRef.current > 0;
+      if (shouldCollapse && !sidebarCollapsedRef.current) {
+        handleSidebarToggleRef.current();
+      } else if (!shouldCollapse && sidebarCollapsedRef.current && chatOpenRef.current) {
+        handleSidebarToggleRef.current();
+      }
+
+      if (windowResizeTimerRef.current) {
+        clearTimeout(windowResizeTimerRef.current);
+      }
+      windowResizeTimerRef.current = setTimeout(() => {
+        setIsWindowResizing(false);
+      }, 150);
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (windowResizeTimerRef.current) {
+        clearTimeout(windowResizeTimerRef.current);
+      }
+    };
   }, []);
 
   // Calculate sidebar dimensions
@@ -359,21 +472,15 @@ const Dashboard: React.FC = () => {
   const SIDEBAR_COLLAPSED_WIDTH = 70;
   const currentSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH;
 
-  // Auto-collapse logic
-  useEffect(() => {
-    const shouldCollapse = screenWidth < collapsibleSidebarWidth && chatOpen && chatWidth > 0;
-    
-    if (shouldCollapse !== sidebarCollapsed) {
-      handleSidebarToggle();
-    }
-  }, [screenWidth, chatOpen, chatWidth, sidebarCollapsed]);
-
   // Coordinated sidebar toggle
   const handleSidebarToggle = useCallback(() => {
     if (isAnimating) return;
 
     setIsAnimating(true);
-    setSidebarCollapsed(prev => !prev);
+    setSidebarCollapsed(prev => {
+      if (!prev) setShowProfileDropdown(false); // collapsing → close dropdown
+      return !prev;
+    });
 
     if (animationTimeoutRef.current) {
       clearTimeout(animationTimeoutRef.current);
@@ -383,6 +490,7 @@ const Dashboard: React.FC = () => {
       setIsAnimating(false);
     }, ANIMATION_DURATION);
   }, [isAnimating, ANIMATION_DURATION]);
+  handleSidebarToggleRef.current = handleSidebarToggle;
 
   // Cleanup animation timeout
   useEffect(() => {
@@ -392,6 +500,99 @@ const Dashboard: React.FC = () => {
       }
     };
   }, []);
+
+  // FLIP animation — Web Animations API for interruptible, smooth card reflow
+  const cardAnimationsRef = useRef<Map<number, Animation>>(new Map());
+  const prevPositionsRef = useRef<Map<number, DOMRect>>(new Map());
+
+  const FLIP_DURATION = 120;
+  const FLIP_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
+
+  // Stable FLIP function via ref — called by ResizeObserver
+  const runFlipRef = useRef<() => void>(() => {});
+  runFlipRef.current = () => {
+    if (cardElRefs.current.size === 0) return;
+
+    // 1. Snapshot previous positions (from last call) before we overwrite them
+    const oldPositions = new Map(prevPositionsRef.current);
+
+    // 2. Capture where each card VISUALLY is right now (includes in-flight animation transforms)
+    const visualRects = new Map<number, DOMRect>();
+    cardElRefs.current.forEach((el, id) => {
+      visualRects.set(id, el.getBoundingClientRect());
+    });
+
+    // 3. Cancel all in-flight WAAPI animations (synchronous, no paint yet)
+    cardAnimationsRef.current.forEach((anim) => anim.cancel());
+    cardAnimationsRef.current.clear();
+
+    // 4. Force reflow — elements are now at clean layout positions
+    void document.body.offsetHeight;
+
+    // 5. For each card, compute where to animate FROM
+    cardElRefs.current.forEach((el, id) => {
+      const layoutRect = el.getBoundingClientRect();
+
+      // Always update previous positions to current layout for the next call
+      prevPositionsRef.current.set(id, layoutRect);
+
+      const visualRect = visualRects.get(id);
+      if (!visualRect) return;
+
+      // If an animation was in-flight, the visual rect differs from layout rect
+      let fromDx = visualRect.left - layoutRect.left;
+      let fromDy = visualRect.top - layoutRect.top;
+
+      // If no animation was running, use previous positions (one resize-step behind)
+      if (Math.abs(fromDx) < 1 && Math.abs(fromDy) < 1) {
+        const prevRect = oldPositions.get(id);
+        if (prevRect) {
+          fromDx = prevRect.left - layoutRect.left;
+          fromDy = prevRect.top - layoutRect.top;
+        }
+      }
+
+      // No significant movement — skip
+      if (Math.abs(fromDx) < 1 && Math.abs(fromDy) < 1) return;
+
+      // 6. Animate from visual/previous position to layout position
+      const anim = el.animate(
+        [
+          { transform: `translate(${fromDx}px, ${fromDy}px)` },
+          { transform: 'translate(0, 0)' },
+        ],
+        { duration: FLIP_DURATION, easing: FLIP_EASING, fill: 'none' }
+      );
+
+      cardAnimationsRef.current.set(id, anim);
+      anim.onfinish = () => {
+        cardAnimationsRef.current.delete(id);
+      };
+    });
+  };
+
+  // Set up ResizeObserver once on mount
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver(() => {
+      runFlipRef.current();
+    });
+    observer.observe(container);
+
+    // Initialize previous positions
+    cardElRefs.current.forEach((el, id) => {
+      prevPositionsRef.current.set(id, el.getBoundingClientRect());
+    });
+
+    return () => {
+      observer.disconnect();
+      cardAnimationsRef.current.forEach((anim) => anim.cancel());
+    };
+   
+  }, []);
+
 
   const handleCollapsedProfileClick = useCallback(() => {
     if (chatOpen) {
@@ -415,11 +616,13 @@ const Dashboard: React.FC = () => {
   // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target: Node | null = event.target instanceof Node ? event.target : null;
       if (
-        profileDropdownRef.current && 
-        !profileDropdownRef.current.contains(event.target as Node) &&
+        target &&
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(target) &&
         profileButtonRef.current &&
-        !profileButtonRef.current.contains(event.target as Node)
+        !profileButtonRef.current.contains(target)
       ) {
         setShowProfileDropdown(false);
       }
@@ -434,24 +637,19 @@ const Dashboard: React.FC = () => {
     };
   }, [showProfileDropdown]);
 
-  // Close dropdown when sidebar collapses
-  useEffect(() => {
-    if (sidebarCollapsed && showProfileDropdown) {
-      setShowProfileDropdown(false);
-    }
-  }, [sidebarCollapsed, showProfileDropdown]);
+
 
   // Calculate main panel positioning and dimensions
   const getMainPanelStyles = useCallback(() => {
     return {
       marginLeft: currentSidebarWidth,
-      maxWidth: chatOpen && chatWidth > 0 
+      maxWidth: chatOpen && chatWidth > 0
         ? `calc(100vw - ${currentSidebarWidth}px - ${chatWidth}px)`
         : `calc(100vw - ${currentSidebarWidth}px)`,
       flex: 1,
-      transition: `all ${ANIMATION_DURATION}ms ${ANIMATION_EASING}`,
+      transition: effectiveDuration > 0 ? `all ${effectiveDuration}ms ${ANIMATION_EASING}` : 'none',
     };
-  }, [currentSidebarWidth, chatOpen, chatWidth, ANIMATION_DURATION, ANIMATION_EASING]);
+  }, [currentSidebarWidth, chatOpen, chatWidth, effectiveDuration, ANIMATION_EASING]);
 
   // Calculate header positioning and dimensions
   const getHeaderStyles = useCallback(() => {
@@ -459,52 +657,38 @@ const Dashboard: React.FC = () => {
       marginLeft: currentSidebarWidth,
       width: `calc(100vw - ${currentSidebarWidth}px)`,
       flex: 1,
-      transition: `all ${ANIMATION_DURATION}ms ${ANIMATION_EASING} !important`,
+      transition: effectiveDuration > 0 ? `all ${effectiveDuration}ms ${ANIMATION_EASING} !important` : 'none !important',
     };
-  }, [currentSidebarWidth, chatOpen, chatWidth, ANIMATION_DURATION, ANIMATION_EASING]);
+  }, [currentSidebarWidth, chatOpen, chatWidth, effectiveDuration, ANIMATION_EASING]);
 
-  // Chat width change handler (simple for now, can update for zero transition time during resize?)
-  const handleChatWidthChange = useCallback((width: number) => {
+  // Chat width change handler — suppress transitions while actively dragging
+  // Also auto-collapses sidebar if chat widens enough on a narrow screen
+  const handleChatWidthChange = useCallback((width: number, isResizing?: boolean) => {
     setChatWidth(width);
-  }, []);
+    setIsChatResizing(!!isResizing);
+    // Auto-collapse sidebar if chat is taking space on a narrow screen
+    if (width > 0 && screenWidth < collapsibleSidebarWidth && !sidebarCollapsed) {
+      handleSidebarToggle();
+    }
+  }, [screenWidth, sidebarCollapsed, handleSidebarToggle]);
 
-  // Chat toggle also collapses sidebar based on screen width
+  // Chat toggle — also manages chatWidth and collapses sidebar based on screen width
+  const CHAT_DEFAULT_WIDTH = 420;
   const handleChatToggle = useCallback(() => {
-
     const newChatState = !chatOpen;
     setChatOpen(newChatState);
+    setChatWidth(newChatState ? CHAT_DEFAULT_WIDTH : 0);
 
     if (newChatState && screenWidth < collapsibleSidebarWidth && !sidebarCollapsed) {
       handleSidebarToggle();
     }
-    
+
     if (!newChatState && screenWidth >= collapsibleSidebarWidth && sidebarCollapsed) {
       setTimeout(() => {
         handleSidebarToggle();
       }, 50);
     }
   }, [chatOpen, screenWidth, sidebarCollapsed, handleSidebarToggle]);
-
-  // Set tutorial popup anchor position
-  const handlePositionUpdate = () => {
-    if (lessonContentsRef.current) {
-      const rect = lessonContentsRef.current.getBoundingClientRect();
-      setTutorialAnchor({
-        top: rect.top,
-        left: rect.left,
-      });
-    } else {
-      setTutorialAnchor(null);
-    }
-  };
-
-  useEffect(() => {
-    handlePositionUpdate();
-    return () => {
-      window.removeEventListener('resize', handlePositionUpdate);
-      window.removeEventListener('scroll', handlePositionUpdate);
-    };
-  }, [view, showOnboardingPopup, chatOpen, chatWidth, sidebarCollapsed, screenWidth]);
 
   // Navigation handlers
   const handleNavigateToDashboard = useCallback(() => {
@@ -516,31 +700,15 @@ const Dashboard: React.FC = () => {
     console.log("Fetching user progress...");
     setIsLoadingProgress(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/get_user_progress`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 401) {
-        console.log("User not logged in, redirecting to login.");
-        navigate('/');
-        return;
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const response = await api.get('/get_user_progress');
+      const data = response.data;
       console.log("Progress data received:", data);
       setUnlocked(data.unlockedLevels || [0]);
       setCompletedQuizzes(data.completedQuizzes || []);
       setHasViewedFirstLesson(data.hasViewedFirstLesson || false);
       if (data.email) setUserEmail(data.email);
+      if (data.name) setUserName(data.name);
+      if (data.picture) setUserPicture(data.picture);
     } catch (error) {
       console.error('Failed to fetch user progress:', error);
       setUnlocked([0]);
@@ -549,18 +717,12 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsLoadingProgress(false);
     }
-  }, [navigate]);
+  }, []);
 
   // Save first lesson view to backend
   const saveFirstLessonView = useCallback(async () => {
     try {
-      await fetch(`${BACKEND_URL}/save_first_lesson_view`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      await api.post('/save_first_lesson_view');
       console.log("First lesson view saved successfully");
     } catch (error) {
       console.error('Failed to save first lesson view:', error);
@@ -570,34 +732,12 @@ const Dashboard: React.FC = () => {
 
   // Fetch progress when the component mounts
   useEffect(() => {
-    fetchUserProgress();
+    void fetchUserProgress();
   }, [fetchUserProgress]);
-
-  // Close profile dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        profileDropdownRef.current && 
-        !profileDropdownRef.current.contains(event.target as Node) &&
-        profileButtonRef.current &&
-        !profileButtonRef.current.contains(event.target as Node)
-      ) {
-        setShowProfileDropdown(false);
-      }
-    };
-
-    if (showProfileDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showProfileDropdown]);
 
   // Calculate course progress based on completed topics
   const getCourseProgress = useCallback((courseId: number): number => {
-    const course = courses.find(c => c.id === courseId);
+    const course = activeCourses.find(c => c.id === courseId);
     if (!course || course.concepts.length === 0) return 0;
 
     const implementedTopics = course.concepts.reduce((sum, concept) => {
@@ -621,7 +761,7 @@ const Dashboard: React.FC = () => {
   const isCourseUnlocked = useCallback((courseId: number): boolean => {
     if (courseId === 0) return true;
     
-    const previousCourse = courses.find(c => c.id === courseId - 1);
+    const previousCourse = activeCourses.find(c => c.id === courseId - 1);
     if (!previousCourse) return false;
     
     const previousProgress = getCourseProgress(courseId - 1);
@@ -631,7 +771,7 @@ const Dashboard: React.FC = () => {
   // Check if a topic/lesson is unlocked
   const isTopicUnlocked = useCallback((topicId: number): boolean => {
     let topicImplemented = true;
-    for (const course of courses) {
+    for (const course of activeCourses) {
       for (const concept of course.concepts) {
         const topic = concept.topics.find(t => t.id === topicId);
         if (topic) {
@@ -639,12 +779,12 @@ const Dashboard: React.FC = () => {
           break;
         }
       }
-      if (topicImplemented !== true) break;
+      if (!topicImplemented) break;
     }
 
     if (!topicImplemented) return false;
 
-    for (const course of courses) {
+    for (const course of activeCourses) {
       for (const concept of course.concepts) {
         const topic = concept.topics.find(t => t.id === topicId);
         if (topic) {
@@ -654,7 +794,7 @@ const Dashboard: React.FC = () => {
     }
 
     return false;
-  }, [courses, isCourseUnlocked]);
+  }, [activeCourses, isCourseUnlocked]);
 
   const openLesson = (topicId: number) => {
     if (isLoadingProgress) {
@@ -669,10 +809,10 @@ const Dashboard: React.FC = () => {
     // Check if this is the user's first lesson ever
     if (!hasViewedFirstLesson) {
       setShowOnboardingPopup(true);
-      if (userEmail !== DEV_LOGIN_EMAIL) {
+      if (userEmail !== FIRST_TIME_USER_EMAIL) {
         setHasViewedFirstLesson(true);
-        saveFirstLessonView();
-    }
+        void saveFirstLessonView();
+      }
     }
     
     setCurrentLesson(topicId);
@@ -705,10 +845,18 @@ const Dashboard: React.FC = () => {
 
   /* ---------- popup tutorial handlers ---------------------------- */
   const handleTutorialNext = () => {
-    setTutorialStep(prev => (prev < 3 ? (prev + 1) as 1 | 2 | 3 : prev));
+    setTutorialStep(prev => {
+      if (prev === 1) return 2;
+      if (prev === 2) return 3;
+      return prev;
+    });
   };
   const handleTutorialBack = () => {
-    setTutorialStep(prev => (prev > 1 ? (prev - 1) as 1 | 2 | 3 : prev));
+    setTutorialStep(prev => {
+      if (prev === 3) return 2;
+      if (prev === 2) return 1;
+      return prev;
+    });
   };
   const handleTutorialClose = () => {
     setShowOnboardingPopup(false);
@@ -718,7 +866,7 @@ const Dashboard: React.FC = () => {
   /* ---------- profile dropdown handlers -------------------------- */
   const handleProfileClick = () => {
     setShowProfileDropdown(false);
-    navigate('/profile');
+    setShowProfileModal(true);
   };
 
   const handleSettingsClick = () => {
@@ -731,9 +879,10 @@ const Dashboard: React.FC = () => {
     console.log('Help clicked');
   };
 
-  const handleSignOutClick = () => {
+  const handleSignOutClick = async () => {
     setShowProfileDropdown(false);
-    console.log('Sign out clicked');
+    await authLogout();
+    navigate('/');
   };
 
   const handleLeaveFeedbackClick = () => {
@@ -742,10 +891,6 @@ const Dashboard: React.FC = () => {
 
   /* ---------- breadcrumb helpers --------------------------------- */
   const getCurrentTabName = () => {
-    if (view === 'course-detail' || view === 'lesson' || view === 'dashboard') {
-      return "Lessons";
-    }
-    
     return "Lessons";
   };
 
@@ -762,6 +907,7 @@ const Dashboard: React.FC = () => {
         style={styles.breadcrumbButton}
         onClick={goDashboard}
         className="breadcrumb-button"
+        aria-label="Go back to lessons overview"
       >
         {rootTabName}
       </button>
@@ -772,7 +918,7 @@ const Dashboard: React.FC = () => {
     );
 
     if (view === 'lesson' && currentCourse !== null) {
-      const course = courses.find(c => c.id === currentCourse);
+      const course = activeCourses.find(c => c.id === currentCourse);
       if (course) {
         breadcrumbItems.push(
           <button
@@ -780,6 +926,7 @@ const Dashboard: React.FC = () => {
             style={styles.breadcrumbButton}
             onClick={() => goToCourseDetail(currentCourse)}
             className="breadcrumb-button"
+            aria-label={`Go back to ${course.title}`}
           >
             {course.title}
           </button>
@@ -826,15 +973,20 @@ const Dashboard: React.FC = () => {
   };
 
   /* ---------- quiz availability check ---------------------------- */
-  const currentQuiz = currentLesson !== null ? (allQuizData[currentLesson] || []) : [];
-  const currentLessonContent = currentLesson !== null ? lessonContents[currentLesson] : undefined;
+  const currentQuiz = currentLesson !== null
+    ? (apiQuiz || allQuizData[currentLesson])
+    : [];
+  const currentLessonContent = currentLesson !== null
+    ? (apiLessonContent || lessonContents[currentLesson])
+    : undefined;
 
-  useEffect(() => {
-    if (quizOpen && currentLesson !== null && currentQuiz.length === 0) {
-      alert(`Quiz not available for this lesson yet.`);
-      setQuizOpen(false);
+  const handleOpenQuiz = useCallback(() => {
+    if (currentLesson !== null && currentQuiz.length === 0) {
+      alert('Quiz not available for this lesson yet.');
+      return;
     }
-  }, [quizOpen, currentQuiz, currentLesson]);
+    setQuizOpen(true);
+  }, [currentLesson, currentQuiz]);
 
   /* ---------- render helpers ------------------------------------- */
   const courseCard = (c: Course) => {
@@ -844,11 +996,25 @@ const Dashboard: React.FC = () => {
     return (
       <div
         key={c.id}
+        ref={(el) => {
+          if (el) cardElRefs.current.set(c.id, el);
+          else cardElRefs.current.delete(c.id);
+        }}
+        role="button"
+        tabIndex={isUnlocked ? 0 : -1}
         style={{
           ...styles.card,
           ...(isUnlocked ? styles.cardEnabled : styles.cardDisabled),
         }}
         onClick={() => isUnlocked && goToCourseDetail(c.id)}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && isUnlocked) {
+            e.preventDefault();
+            goToCourseDetail(c.id);
+          }
+        }}
+        aria-label={`${c.title}. ${isUnlocked ? progress > 0 ? `${progress}% complete` : 'Not started' : 'Locked'}`}
+        aria-disabled={!isUnlocked}
       >
         <img src={c.image} alt={c.title} style={styles.cardImg} />
         <div style={styles.cardContent}>
@@ -877,7 +1043,7 @@ const Dashboard: React.FC = () => {
   // Course detail view
   const courseDetailView = () => {
     if (currentCourse === null) return <p>Loading course...</p>;
-    const course = courses.find(c => c.id === currentCourse);
+    const course = activeCourses.find(c => c.id === currentCourse);
     if (!course) return <p>Course not found.</p>;
 
     return (
@@ -917,7 +1083,15 @@ const Dashboard: React.FC = () => {
                         ...(!isUnlocked ? styles.topicButtonDisabled : {}),
                       }}
                       onClick={() => isUnlocked && openLesson(topic.id)}
+                      onKeyDown={(e) => {
+                        if ((e.key === 'Enter' || e.key === ' ') && isUnlocked) {
+                          e.preventDefault();
+                          openLesson(topic.id);
+                        }
+                      }}
                       disabled={!isUnlocked}
+                      aria-label={`${topic.title}. ${isTopicCompleted ? 'Completed' : isUnlocked ? 'Available' : 'Locked'}`}
+                      aria-disabled={!isUnlocked}
                     >
                       <span style={styles.topicTitle}>{topic.title}</span>
                       {isTopicCompleted && (
@@ -943,7 +1117,7 @@ const Dashboard: React.FC = () => {
     // let courseInfo = null;
     let topicInfo = null;
     
-    for (const course of courses) {
+    for (const course of activeCourses) {
       for (const concept of course.concepts) {
         const topic = concept.topics.find(t => t.id === currentLesson);
         if (topic) {
@@ -966,7 +1140,11 @@ const Dashboard: React.FC = () => {
           )}
 
           {currentQuiz.length > 0 && (
-            <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
+            <button 
+              style={styles.takeQuizButton} 
+              onClick={handleOpenQuiz}
+              aria-label="Start quiz for this lesson"
+            >
               TAKE QUIZ
             </button>
           )}
@@ -993,7 +1171,7 @@ const Dashboard: React.FC = () => {
             <p style={styles.lessonDescription}>
               Ready to see if you've grasped these concepts? Take this quiz and find out where you stand!
             </p>
-            <button style={styles.takeQuizButton} onClick={() => setQuizOpen(true)}>
+            <button style={styles.takeQuizButton} onClick={handleOpenQuiz}>
               START QUIZ
             </button>
           </div>
@@ -1006,7 +1184,7 @@ const Dashboard: React.FC = () => {
   /* JSX                                                              */
   /* ---------------------------------------------------------------- */
   return (
-    <div style={styles.container}>
+    <div style={styles.container} className={effectiveDuration === 0 ? 'no-transition' : ''}>
 
       {/* SIDEBAR */}
       <Sidebar
@@ -1022,14 +1200,17 @@ const Dashboard: React.FC = () => {
         onProfileClick={handleProfileClick}
         onSettingsClick={handleSettingsClick}
         onHelpClick={handleHelpClick}
-        onSignOutClick={handleSignOutClick}
+        onSignOutClick={() => { void handleSignOutClick(); }}
         onLeaveFeedbackClick={handleLeaveFeedbackClick}
         chatWidth={chatWidth}
         screenWidth={screenWidth}
-        animationDuration={ANIMATION_DURATION}
+        animationDuration={effectiveDuration}
         animationEasing={ANIMATION_EASING}
+        userEmail={userEmail || ''}
+        userName={userName}
+        userPicture={userPicture}
       />
-      
+
       {/* HEADER */}
       <header 
         style={{
@@ -1037,10 +1218,11 @@ const Dashboard: React.FC = () => {
           ...getHeaderStyles(),
         }}
         className='main-panel-coordinated'
+        role="banner"
       >
-        <form onSubmit={handleSearchSubmit} style={styles.headerSearch}>
+        <form onSubmit={handleSearchSubmit} style={styles.headerSearch} role="search">
           <div style={styles.searchContainer} className="search-container">
-            <FaSearch style={styles.searchIcon} />
+            <FaSearch style={styles.searchIcon} aria-hidden="true" />
             <input
               type="text"
               placeholder="Search Quantaid"
@@ -1048,6 +1230,7 @@ const Dashboard: React.FC = () => {
               onChange={handleSearchChange}
               style={styles.searchInput}
               className="search-input"
+              aria-label="Search Quantaid"
             />
           </div>
         </form>
@@ -1073,32 +1256,37 @@ const Dashboard: React.FC = () => {
           ...getMainPanelStyles(),
         }}
         className="main-panel-coordinated"
+        role="main"
+        aria-label="Course content"
       >
         
         <div
           ref={contentRef}
           style={styles.content}
           className="dashboard-content default-scrollbar"
+          tabIndex={0}
+          role="region"
+          aria-label="Scrollable content area"
         >
           {isLoadingProgress ? (
              <p style={styles.loadingText}>Loading your progress...</p>
           ) : view === 'dashboard' ? (
             <>
               <h2 style={styles.title}>Lessons</h2>
-              <section style={styles.rowSection}>
-                <h2 style={styles.rowTitle}>Foundations</h2>
-                <div style={styles.cardGrid}>{courses.slice(0, 3).map(courseCard)}</div>
-              </section>
-
-              <section style={styles.rowSection}>
-                <h2 style={styles.rowTitle}>Quantum computing in action</h2>
-                <div style={styles.cardGrid}>{courses.slice(3, 6).map(courseCard)}</div>
-              </section>
-
-              <section style={styles.rowSection}>
-                <h2 style={styles.rowTitle}>Deep dive into quantum theory</h2>
-                <div style={styles.cardGrid}>{courses.slice(6, 9).map(courseCard)}</div>
-              </section>
+              {activeSections
+                .sort((a, b) => a.order - b.order)
+                .map(section => {
+                  const sectionCourses = section.courses
+                    .map(id => activeCourses.find(c => c.id === id))
+                    .filter((c): c is Course => !!c);
+                  if (sectionCourses.length === 0) return null;
+                  return (
+                    <section key={section.id} style={styles.rowSection}>
+                      <h2 style={styles.rowTitle}>{section.title}</h2>
+                      <div style={styles.cardGrid}>{sectionCourses.map(courseCard)}</div>
+                    </section>
+                  );
+                })}
             </>
           ) : view === 'course-detail' ? (
             courseDetailView()
@@ -1117,11 +1305,11 @@ const Dashboard: React.FC = () => {
           onClose={() => setChatOpen(false)}
           highlightText={highlightText}
           highlightMode={highlightMode}
+          courseId={currentLesson ?? 0}
           onWidthChange={handleChatWidthChange}
           sidebarWidth={currentSidebarWidth}
-          animationDuration={ANIMATION_DURATION}
+          animationDuration={effectiveDuration}
           animationEasing={ANIMATION_EASING}
-          isAnimating={isAnimating}
         />
       )}
 
@@ -1132,9 +1320,13 @@ const Dashboard: React.FC = () => {
             <Quiz
               courseId={currentLesson}
               questions={currentQuiz}
-              lessonContent={currentLessonContent as any}
+              lessonContent={currentLessonContent ? {
+                title: currentLessonContent.title,
+                paragraphs: currentLessonContent.paragraphs.map(p => typeof p === 'string' ? p : p.text),
+                interactiveTerms: currentLessonContent.interactiveTerms,
+              } : undefined}
               onExit={() => { setQuizOpen(false) }}
-              onComplete={onQuizComplete}
+              onComplete={(score: number, passed: boolean) => { void onQuizComplete(score, passed); }}
             />
           </div>
         </div>
@@ -1142,8 +1334,17 @@ const Dashboard: React.FC = () => {
 
       {/* FEEDBACK */}
       <FeedbackModal
+        key={showFeedbackModal ? 'open' : 'closed'}
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
+      />
+
+      {/* PROFILE SETTINGS */}
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => { setShowProfileModal(false); void fetchUserProgress(); }}
+        userName={userName}
+        userPicture={userPicture}
       />
 
       {/* TUTORIAL POPUP */}
@@ -1154,6 +1355,9 @@ const Dashboard: React.FC = () => {
           onNext={handleTutorialNext}
           onBack={handleTutorialBack}
           onClose={handleTutorialClose}
+          chatOpen={chatOpen}
+          sidebarCollapsed={sidebarCollapsed}
+          animationDuration={ANIMATION_DURATION}
         />
       )}
     </div>
@@ -1169,14 +1373,14 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100vh',
     background: '#030E29',
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    overflow: 'hidden', // Prevent body scrolling
+    overflow: 'clip', // Prevent body scrolling without clipping focus outlines
   },
   main: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
     height: '100vh',
-    overflow: 'hidden', // Prevent main from scrolling
+    overflow: 'clip', // Prevent main from scrolling without clipping focus outlines
     minWidth: 300,
     // Transition is now handled dynamically in getMainPanelStyles
   },
@@ -1316,12 +1520,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, 300px)',
     gap: '15px',
     gridAutoRows: '360px',
     alignItems: 'start',
-    justifyItems: 'stretch',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     width: '100%',
     boxSizing: 'border-box',
   },
@@ -1330,7 +1532,8 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 10,
     overflow: 'hidden',
     position: 'relative',
-    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease-in-out',border: `1px solid ${colors.border}`,
+    transition: 'box-shadow 0.2s ease-in-out',
+    border: `1px solid ${colors.border}`,
     height: '360px',
     display: 'flex',
     flexDirection: 'column',
@@ -1644,6 +1847,22 @@ const styles: Record<string, React.CSSProperties> = {
 const addAllStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
+    /* Focus visible styles for accessibility */
+    button:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+    
+    [role="button"]:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+    
+    input:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+    
     /* Make lesson header non-selectable */
     .lesson-header {
       user-select: none !important;

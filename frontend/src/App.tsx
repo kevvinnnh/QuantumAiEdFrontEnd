@@ -11,17 +11,21 @@ import '@fontsource/sarabun/600.css';
 import React from 'react';
 import {
   useParams,
-  useNavigate
+  useNavigate,
+  Navigate,
+  HashRouter as Router,
+  Routes,
+  Route
 } from 'react-router-dom';
 import Login from './components/Login';
 import ProfileCreation from './components/ProfileCreation';
 import Dashboard from './components/Dashboard';
-import Profile from './components/Profile';
 import Quiz from './components/Quiz';
 import AdminDashboard from './components/AdminDashboard';
+import ResetPassword from './components/ResetPassword';
 import { allQuizData } from './components/QuizQuestion';
+import { AuthProvider, ProtectedRoute, AdminRoute, AdminToggle } from './AuthContext';
 import './App.css';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 
 /**
  * QuizPage acts as a thin wrapper around the Quiz component,
@@ -31,25 +35,21 @@ const QuizPage: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const id = Number(courseId);
-  const questions = allQuizData[id] || [];
+  const questions = allQuizData[id];
 
-  // If no such course or no questions, redirect back to Dashboard
-  React.useEffect(() => {
-    if (isNaN(id) || !allQuizData.hasOwnProperty(id)) {
-      navigate('/map', { replace: true });
-    }
-  }, [id, navigate]);
+  // If no such course, redirect back to Dashboard
+  if (isNaN(id) || !(id in allQuizData)) {
+    return <Navigate to="/map" replace />;
+  }
 
   return (
     <Quiz
       courseId={id}
       questions={questions}
       onComplete={() => {
-        // After finishing the quiz, go back to the map/dashboard
         navigate('/map');
       }}
       onExit={() => {
-        // If user clicks “Back to Courses”
         navigate('/map');
       }}
     />
@@ -59,19 +59,20 @@ const QuizPage: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Router>
-      <div className="app-container">
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/profile-creation" element={<ProfileCreation />} />
-          <Route path="/map" element={<Dashboard />} />
-          <Route path="/profile" element={<Profile />} />
-          {/* Use a URL parameter courseId so TS knows we supply it */}
-          <Route path="/quiz/:courseId" element={<QuizPage />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          {/* Redirect any unknown route back to dashboard */}
-          <Route path="*" element={<Dashboard />} />
-        </Routes>
-      </div>
+      <AuthProvider>
+        <div className="app-container">
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/profile-creation" element={<ProtectedRoute><ProfileCreation /></ProtectedRoute>} />
+            <Route path="/map" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/quiz/:courseId" element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
+            <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          </Routes>
+          <AdminToggle />
+        </div>
+      </AuthProvider>
     </Router>
   );
 };

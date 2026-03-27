@@ -1,9 +1,9 @@
 // src/components/FeedbackModal.tsx
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MdClose, MdArrowBackIos } from 'react-icons/md';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+import api from '../api';
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -16,11 +16,14 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
   onClose,
   initialCategory
 }) => {
-  const [currentStep, setCurrentStep] = useState<'category' | 'feedback'>('category');
+  const [currentStep, setCurrentStep] = useState<'category' | 'feedback'>(
+    initialCategory ? 'feedback' : 'category'
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || '');
   const [feedbackText, setFeedbackText] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const categories = [
     'Analogies and chat responses',
@@ -30,16 +33,56 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
     'General thoughts or questions'
   ];
 
-  // Initialize at feedback step if initialCategory is provided
-  React.useEffect(() => {
-    if (initialCategory && isOpen) {
-      setSelectedCategory(initialCategory);
-      setCurrentStep('feedback');
-    } else if (isOpen) {
-      setCurrentStep('category');
-      setSelectedCategory('');
+  useEffect(() => {
+    if (isOpen) {
+      const modalElement = modalRef.current;
+      if (!modalElement) return;
+
+      // Query all focusable elements within the modal
+      const focusableElements = modalElement.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      // Handle Tab key for circular navigation
+      const handleTabKeyPress = (event: KeyboardEvent) => {
+        if (event.key === 'Tab') {
+          // Shift+Tab on first element: go to last
+          if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+          } 
+          // Tab on last element: go to first
+          else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+          }
+        }
+      };
+
+      // Handle Escape key to close modal
+      const handleEscapeKeyPress = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          handleClose();
+        }
+      };
+
+      // Attach event listeners
+      modalElement.addEventListener('keydown', handleTabKeyPress);
+      modalElement.addEventListener('keydown', handleEscapeKeyPress);
+
+      // Focus first element when modal opens
+      firstElement.focus();
+
+      // Cleanup: remove event listeners when modal closes
+      return () => {
+        modalElement.removeEventListener('keydown', handleTabKeyPress);
+        modalElement.removeEventListener('keydown', handleEscapeKeyPress);
+      };
     }
-  }, [initialCategory, isOpen]);
+  }, [isOpen, currentStep]);
 
   const handleModalOverlayClick = (event: React.MouseEvent) => {
     if (event.target === event.currentTarget) {
@@ -84,60 +127,39 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
     }
   };
 
-  const handleSubmit = async () => {
-    try {
-      let response;
-      if (selectedFile) {
-        // Send as multipart/form-data if screenshot is included
-        const formData = new FormData();
-        formData.append('category', selectedCategory);
-        formData.append('feedback', feedbackText);
-        formData.append('screenshot', selectedFile);
-
-        response = await fetch(`${BACKEND_URL}/submit_feedback`, {
-          method: 'POST',
-          credentials: 'include',
-          body: formData,
-        });
-      } else {
-        // Send as JSON if no screenshot
-        response = await fetch(`${BACKEND_URL}/submit_feedback`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            category: selectedCategory,
-            feedback: feedbackText,
-          }),
-        });
-      }
-
-      const result = await response.json();
-      if (response.ok) {
+  const handleSubmit = () => {
+    const submit = async () => {
+      try {
+        if (selectedFile) {
+          const formData = new FormData();
+          formData.append('category', selectedCategory);
+          formData.append('feedback', feedbackText);
+          formData.append('screenshot', selectedFile);
+          await api.post('/submit_feedback', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        } else {
+          await api.post('/submit_feedback', { category: selectedCategory, feedback: feedbackText });
+        }
         alert('Thank you for your feedback!');
         handleClose();
-      } else {
-        alert(result.error || 'Failed to submit feedback.');
+      } catch (err: unknown) {
+        alert('An error occurred while submitting feedback.');
+        console.error(err);
       }
-    } catch (err) {
-      alert('An error occurred while submitting feedback.');
-      console.error(err);
-    }
+    };
+    void submit();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div style={styles.modalOverlay} onClick={handleModalOverlayClick}>
-      <div style={styles.modalContent}>
+    <div style={styles.modalOverlay} onClick={handleModalOverlayClick} ref={modalRef}>
+      <div style={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
         {currentStep === 'category' ? (
           // Category Selection Step
           <>
             <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Help us improve Quantaid</h2>
-              <button onClick={handleClose} style={styles.closeButton}>
+              <h2 id="feedback-modal-title" style={styles.modalTitle}>Help us improve Quantaid</h2>
+              <button onClick={handleClose} style={styles.closeButton} aria-label="Close">
                 <MdClose size={24} color="#FFFFFF" />
               </button>
             </div>
@@ -161,11 +183,11 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
           // Feedback Form Step
           <>
             <div style={styles.modalHeader}>
-              <button onClick={handleBack} style={styles.backButton}>
+              <button onClick={handleBack} style={styles.backButton} aria-label="Go back to categories">
                 <MdArrowBackIos size={18} color="#FFFFFF" />
               </button>
-              <h2 style={styles.modalTitle}>{selectedCategory}</h2>
-              <button onClick={handleClose} style={styles.closeButton}>
+              <h2 id="feedback-modal-title" style={styles.modalTitle}>{selectedCategory}</h2>
+              <button onClick={handleClose} style={styles.closeButton} aria-label="Close">
                 <MdClose size={24} color="#FFFFFF" />
               </button>
             </div>
@@ -178,6 +200,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
               placeholder="Describe your experience here."
               style={styles.feedbackTextarea}
               className="feedback-textarea"
+              aria-label="Feedback description"
             />
             
             <div style={styles.actionButtons}>

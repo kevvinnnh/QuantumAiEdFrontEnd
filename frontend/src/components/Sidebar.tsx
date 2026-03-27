@@ -17,6 +17,8 @@ const colors = {
   border: 'rgba(255,255,255,0.1)',
 };
 
+import { BACKEND_URL } from '../api';
+
 interface SidebarProps {
   currentView: 'dashboard' | 'course-detail' | 'lesson';
   isCollapsed: boolean;
@@ -36,10 +38,13 @@ interface SidebarProps {
   screenWidth: number;
   animationDuration: number;
   animationEasing: string;
+  userEmail: string;
+  userName: string;
+  userPicture: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-  currentView,
+  currentView: _currentView, // will drive per-button active state when more tabs are added
   isCollapsed,
   onNavigateToDashboard,
   onCollapsedProfileClick,
@@ -53,8 +58,16 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSignOutClick,
   onLeaveFeedbackClick,
   animationDuration,
-  animationEasing
+  animationEasing,
+  userEmail,
+  userName,
+  userPicture,
 }) => {
+
+  const profilePicSrc = userPicture
+    ? (userPicture.startsWith('http') ? userPicture : `${BACKEND_URL}${userPicture}`)
+    : '';
+  const displayName = userName || 'Profile';
 
   const handleLeaveFeedbackClick = () => {
     onLeaveFeedbackClick();
@@ -67,8 +80,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       setShowProfileDropdown(!showProfileDropdown);
     }
   };
-
-  const isLessonsActive = currentView === 'dashboard' || currentView === 'course-detail' || currentView === 'lesson';
 
   const SIDEBAR_EXPANDED_WIDTH = 250;
   const SIDEBAR_COLLAPSED_WIDTH = 70;
@@ -110,9 +121,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     transition: `padding ${animationDuration}ms ${animationEasing}`,
   });
 
-  const getNavButtonStyles = () => ({
+  const getNavButtonStyles = (isActive: boolean) => ({
     ...styles.navButton,
-    ...(isLessonsActive ? styles.navButtonActive : {}),
+    ...(isActive ? styles.navButtonActive : {}),
     justifyContent: isCollapsed ? 'center' : 'flex-start',
     padding: isCollapsed ? '12px' : '12px 16px',
     gap: isCollapsed ? '0px' : '12px',
@@ -178,14 +189,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         
         <nav style={getNavStyles()}>
           <button
-            style={getNavButtonStyles()}
+            style={getNavButtonStyles(true)}
             onClick={onNavigateToDashboard}
-            className={`nav-button ${isLessonsActive ? 'nav-button-active' : ''}`}
+            className="nav-button nav-button-active"
             title={isCollapsed ? "Lessons" : undefined}
           >
-            <TfiBookmarkAlt 
+            <TfiBookmarkAlt
               size={22}
-              color={isLessonsActive ? colors.white : '#9D9D9D'}
+              color={colors.white}
               style={{
                 flexShrink: 0,
                 margin: isCollapsed ? '0 0 0 2px' : '0 0 0 0',
@@ -207,17 +218,33 @@ const Sidebar: React.FC<SidebarProps> = ({
           className="profile-button"
           title={isCollapsed ? "Profile" : undefined}
         >
-          <HiUserCircle
-            size={22}
-            color="#9D9D9D"
-            style={{
-              flexShrink: 0,
-              margin: isCollapsed ? '0 0 0 1px' : '0 0 0 0',
-              transition: `margin ${animationDuration}ms ${animationEasing}`,
-            }}
-          />
+          {profilePicSrc ? (
+            <img
+              src={profilePicSrc}
+              alt=""
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                flexShrink: 0,
+                margin: isCollapsed ? '0 0 0 1px' : '0 0 0 0',
+                transition: `margin ${animationDuration}ms ${animationEasing}`,
+              }}
+            />
+          ) : (
+            <HiUserCircle
+              size={22}
+              color="#9D9D9D"
+              style={{
+                flexShrink: 0,
+                margin: isCollapsed ? '0 0 0 1px' : '0 0 0 0',
+                transition: `margin ${animationDuration}ms ${animationEasing}`,
+              }}
+            />
+          )}
           <>
-            <span style={getTextStyles(styles.profileButtonText)}>Profile name</span>
+            <span style={getTextStyles(styles.profileButtonText)}>{displayName}</span>
             <MdKeyboardArrowUp 
               size={20} 
               color="#9D9D9D" 
@@ -266,13 +293,33 @@ const Sidebar: React.FC<SidebarProps> = ({
             style={styles.profileDropdownItem}
             className="profile-dropdown-item"
           >
-            <HiUserCircle 
-              size={21} 
-              color="#9D9D9D" 
-              style={{ flexShrink: 0 }}
-            />
-            <span style={getTextStyles(styles.emailText)}>
-              email@gmail.com
+            {profilePicSrc ? (
+              <img
+                src={profilePicSrc}
+                alt=""
+                style={{
+                  width: 21,
+                  height: 21,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <HiUserCircle
+                size={21}
+                color="#9D9D9D"
+                style={{ flexShrink: 0 }}
+              />
+            )}
+            <span style={{
+              ...getTextStyles(styles.emailText),
+              textOverflow: 'ellipsis',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              maxWidth: '160px',
+            }}>
+              {userEmail || 'email@gmail.com'}
             </span>
           </button>
           
@@ -340,7 +387,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100vh',
     zIndex: 100,
     justifyContent: 'space-between',
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   logoContainer: {
     display: 'flex',
@@ -373,7 +420,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     flex: 1,
     paddingBottom: 20,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   navButton: {
     display: 'flex',
@@ -390,7 +437,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '8px',
     width: '100%',
     marginBottom: '4px',
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   navButtonText: {
     fontSize: '18px',
@@ -410,7 +457,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: '8px',
     position: 'relative',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   profileButton: {
     display: 'flex',
@@ -424,7 +471,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     width: '100%',
     backgroundColor: 'transparent',
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   profileButtonText: {
     fontSize: '14px',
@@ -447,7 +494,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '8px',
     cursor: 'pointer',
     width: '100%',
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   sidebarFeedbackText: {
     fontSize: '14px',
@@ -470,7 +517,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
     padding: '8px 4px',
     zIndex: 1000,
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   emailText: {
     fontSize: '14px',
@@ -499,7 +546,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     backgroundColor: 'transparent',
     transition: 'background-color 0.2s ease',
-    overflow: 'hidden',
+    overflow: 'clip',
   },
   profileDropdownItemText: {
     fontSize: '14px',
@@ -553,12 +600,12 @@ const addSidebarAnimations = () => {
     /* Smooth button layouts during animations */
     .sidebar-coordinated button {
       transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1) !important;
-      overflow: hidden !important;
+      overflow: clip !important;
     }
 
     /* Profile dropdown text handling */
     .sidebar-coordinated .profile-dropdown-item {
-      overflow: hidden !important;
+      overflow: clip !important;
     }
 
     .sidebar-coordinated .profile-dropdown-item span {

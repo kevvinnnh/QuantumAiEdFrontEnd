@@ -1,8 +1,8 @@
 // src/components/ProfileCreation.tsx
 
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api';
 import { IoMdClose } from "react-icons/io";
 import { LiaArrowLeftSolid } from "react-icons/lia";
 import QuizProgressBar from './QuizProgressBar';
@@ -190,6 +190,7 @@ const stepConfigs: StepConfig[] = [
                   type="checkbox"
                   checked={formData.whereHeard.includes(option)}
                   onChange={() => handlers.handleWhereHeardChange(option)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handlers.handleWhereHeardChange(option); } }}
                   style={styles.checkbox}
                 />
                 <div style={styles.optionContent}>
@@ -221,6 +222,7 @@ const stepConfigs: StepConfig[] = [
                   type="checkbox"
                   checked={formData.whereHeard.includes(option)}
                   onChange={() => handlers.handleWhereHeardChange(option)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handlers.handleWhereHeardChange(option); } }}
                   style={styles.checkbox}
                 />
                 {option}
@@ -244,8 +246,8 @@ const stepConfigs: StepConfig[] = [
             <h4 style={styles.radioGroupLabel}>HIGH SCHOOL</h4>
             <div style={styles.radioRowGroup}>
               {highSchoolLevels.map((lvl) => (
-                <label 
-                  key={lvl} 
+                <label
+                  key={lvl}
                   style={{
                     ...styles.radioItemCompact,
                     backgroundColor: (formData.educationCategory === 'HighSchool' && formData.educationLevel === lvl) ? '#10204D' : 'transparent',
@@ -254,7 +256,6 @@ const stepConfigs: StepConfig[] = [
                 >
                   <input
                     type="radio"
-                    name="educationCategory"
                     checked={formData.educationCategory === 'HighSchool' && formData.educationLevel === lvl}
                     onChange={() =>
                       handlers.setFormData(prev => ({
@@ -264,6 +265,17 @@ const stepConfigs: StepConfig[] = [
                         otherEducationLevel: '',
                       }))
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handlers.setFormData(prev => ({
+                          ...prev,
+                          educationCategory: 'HighSchool',
+                          educationLevel: lvl,
+                          otherEducationLevel: '',
+                        }));
+                      }
+                    }}
                     style={styles.radio}
                   />
                   {lvl}
@@ -277,8 +289,8 @@ const stepConfigs: StepConfig[] = [
             <h4 style={styles.radioGroupLabel}>COLLEGE</h4>
             <div style={styles.radioRowGroup}>
               {collegeLevels.map((lvl) => (
-                <label 
-                  key={lvl} 
+                <label
+                  key={lvl}
                   style={{
                     ...styles.radioItemCompact,
                     backgroundColor: (formData.educationCategory === 'College' && formData.educationLevel === lvl) ? '#10204D' : 'transparent',
@@ -287,7 +299,6 @@ const stepConfigs: StepConfig[] = [
                 >
                   <input
                     type="radio"
-                    name="educationCategory"
                     checked={formData.educationCategory === 'College' && formData.educationLevel === lvl}
                     onChange={() =>
                       handlers.setFormData(prev => ({
@@ -297,6 +308,17 @@ const stepConfigs: StepConfig[] = [
                         otherEducationLevel: '',
                       }))
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handlers.setFormData(prev => ({
+                          ...prev,
+                          educationCategory: 'College',
+                          educationLevel: lvl,
+                          otherEducationLevel: '',
+                        }));
+                      }
+                    }}
                     style={styles.radio}
                   />
                   {lvl}
@@ -318,7 +340,6 @@ const stepConfigs: StepConfig[] = [
             >
               <input
                 type="radio"
-                name="educationCategory"
                 checked={formData.educationCategory === 'Other'}
                 onChange={() =>
                   handlers.setFormData(prev => ({
@@ -327,6 +348,16 @@ const stepConfigs: StepConfig[] = [
                     educationLevel: '',
                   }))
                 }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handlers.setFormData(prev => ({
+                      ...prev,
+                      educationCategory: 'Other',
+                      educationLevel: '',
+                    }));
+                  }
+                }}
                 style={styles.radio}
               />
               <div style={styles.optionContent}>
@@ -380,6 +411,7 @@ const stepConfigs: StepConfig[] = [
                   type="checkbox"
                   checked={formData.subjects.includes(subj)}
                   onChange={() => handlers.handleSubjectsChange(subj)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handlers.handleSubjectsChange(subj); } }}
                   style={styles.checkbox}
                 />
                 <div style={styles.optionContent}>
@@ -411,6 +443,7 @@ const stepConfigs: StepConfig[] = [
                   type="checkbox"
                   checked={formData.subjects.includes(subj)}
                   onChange={() => handlers.handleSubjectsChange(subj)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handlers.handleSubjectsChange(subj); } }}
                   style={styles.checkbox}
                 />
                 {subj}
@@ -427,8 +460,8 @@ const stepConfigs: StepConfig[] = [
     renderContent: (formData, handlers) => (
       <div style={styles.radioGroup}>
         {codingExperienceOptions.map((option) => (
-          <label 
-            key={option} 
+          <label
+            key={option}
             style={{
               ...styles.radioItem,
               backgroundColor: formData.codingExperience === option ? '#10204D' : 'transparent',
@@ -437,11 +470,17 @@ const stepConfigs: StepConfig[] = [
           >
             <input
               type="radio"
-              name="codingExp"
+              name="codingExperience"
               checked={formData.codingExperience === option}
               onChange={() =>
                 handlers.setFormData(prev => ({ ...prev, codingExperience: option }))
               }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handlers.setFormData(prev => ({ ...prev, codingExperience: option }));
+                }
+              }}
               style={styles.radio}
             />
             {option}
@@ -505,6 +544,7 @@ const DefaultStep: React.FC<{
   const { step, setStep, totalSteps, skipOnboarding, handleSubmit } = commonProps;
   const hasSelection = stepConfig.hasSelection(formData);
   const [showSkipModal, setShowSkipModal] = useState(false);
+  const skipModalRef = useRef<HTMLDivElement>(null);
 
   const handleContinue = () => {
     if (stepConfig.isLast) {
@@ -538,11 +578,67 @@ const DefaultStep: React.FC<{
     }
   };
 
+  // Focus trapping for skip modal
+  useEffect(() => {
+    if (showSkipModal) {
+      const modalElement = skipModalRef.current;
+      if (!modalElement) return;
+
+      // Query all focusable elements within the modal
+      const focusableElements = modalElement.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      // Handle Tab key for circular navigation
+      const handleTabKeyPress = (event: KeyboardEvent) => {
+        if (event.key === 'Tab') {
+          // Shift+Tab on first element: go to last
+          if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+          } 
+          // Tab on last element: go to first
+          else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+          }
+        }
+      };
+
+      // Handle Escape key to close modal
+      const handleEscapeKeyPress = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          handleCloseSkipModal();
+        }
+      };
+
+      // Attach event listeners
+      modalElement.addEventListener('keydown', handleTabKeyPress);
+      modalElement.addEventListener('keydown', handleEscapeKeyPress);
+
+      // Focus the close button (first element) when modal opens
+      firstElement.focus();
+
+      // Cleanup: remove event listeners when modal closes
+      return () => {
+        modalElement.removeEventListener('keydown', handleTabKeyPress);
+        modalElement.removeEventListener('keydown', handleEscapeKeyPress);
+      };
+    }
+  }, [showSkipModal]);
+
   return (
-    <div style={styles.container}>
-      <div style={styles.topBar}>
+    <div style={styles.container} role="main" aria-label="Profile creation form">
+      <div style={styles.topBar} role="navigation" aria-label="Progress navigation">
         {!stepConfig.isFirst ? (
-          <button style={styles.backArrow} onClick={handleBack}>
+          <button 
+            style={styles.backArrow} 
+            onClick={handleBack}
+            aria-label="Go back to previous step"
+          >
             <LiaArrowLeftSolid size={24} color={'#FFFFFF'} />
           </button>
         ) : (
@@ -560,11 +656,11 @@ const DefaultStep: React.FC<{
 
       {/* Skip Confirmation Modal */}
       {showSkipModal && (
-        <div style={styles.modalOverlay} onClick={handleModalOverlayClick}>
-          <div style={styles.modalContent}>
+        <div style={styles.modalOverlay} onClick={handleModalOverlayClick} ref={skipModalRef}>
+          <div style={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="skip-modal-title">
             <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Your answers help Quantaid teach in a way that clicks for <span style={{ fontStyle: 'italic' }}>you</span>.</h2>
-              <button onClick={handleCloseSkipModal} style={styles.closeModalButton}>
+              <h2 id="skip-modal-title" style={styles.modalTitle}>Your answers help Quantaid teach in a way that clicks for <span style={{ fontStyle: 'italic' }}>you</span>.</h2>
+              <button onClick={handleCloseSkipModal} style={styles.closeModalButton} aria-label="Close">
                 <IoMdClose size={24} color="#FFFFFF" />
               </button>
             </div>
@@ -608,6 +704,7 @@ const DefaultStep: React.FC<{
               className="profile-bottom-buttons"
               onClick={handleSkipButtonClick}
               style={styles.skipButton}
+              aria-label="Skip onboarding questions"
             >
               SKIP FOR NOW
             </button>
@@ -621,6 +718,8 @@ const DefaultStep: React.FC<{
               }} 
               onClick={() => hasSelection && handleContinue()}
               disabled={!hasSelection}
+              aria-label={stepConfig.isLast ? 'Submit profile' : 'Continue to next step'}
+              aria-disabled={!hasSelection}
             >
               {stepConfig.isLast ? 'SAVE AND CONTINUE' : 'CONTINUE'}
             </button>
@@ -632,7 +731,7 @@ const DefaultStep: React.FC<{
 };
 
 const ProfileCreation: React.FC = () => {
-  const [userId, setUserId] = useState<string>('');
+  const [userId, setUserId] = useState<string | null>(null);
   const [step, setStep] = useState<number>(0);
   const [showVideoPopup, setShowVideoPopup] = useState<boolean>(false);
 
@@ -651,13 +750,12 @@ const ProfileCreation: React.FC = () => {
     customHobbies: '',
   });
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const totalSteps = stepConfigs.length;
 
   // On mount, fetch user ID
   useEffect(() => {
-    axios
-      .get(`${backendUrl}/get_user_id`, { withCredentials: true })
+    api
+      .get('/get_user_id')
       .then((response) => {
         const uid = response.data.user_id;
         console.log('ProfileCreation: session user_id =', uid);
@@ -672,7 +770,7 @@ const ProfileCreation: React.FC = () => {
           setUserId('');
         }
       });
-  }, [backendUrl]);
+  }, []);
 
   if (userId === null) {
     return <p>Loading user info...</p>;
@@ -738,16 +836,13 @@ const ProfileCreation: React.FC = () => {
       // use_generic_analogies: true,
     };
 
-    axios
-      .post(`${backendUrl}/save_profile`, dataToSend, {
-        withCredentials: true,
-      })
+    api
+      .post('/save_profile', dataToSend)
       .then((response) => {
         console.log('Profile saved:', response.data);
-        navigate('/map');
         setShowVideoPopup(true);
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error('Error saving profile:', error);
         alert('Failed to save profile. See console logs.');
       });
@@ -765,24 +860,12 @@ const ProfileCreation: React.FC = () => {
     handleSubmit,
   };
 
-  // Loading states
-  if (userId === null) {
-    return <p>Loading user info...</p>;
-  }
-  if (!userId) {
-    return (
-      <div style={{ color: 'red' }}>
-        <p>No user ID found in session or localStorage. Please log in again.</p>
-      </div>
-    );
-  }
-
   /** ------------------ VIDEO POPUP ------------------ **/
   if (showVideoPopup) {
     return (
       <div style={styles.videoOverlay}>
-        <h2 style={{ color: '#fff', marginBottom: '20px', fontSize: '2rem' }}>
-          Welcome to QuantumAiEd!
+        <h2 style={{ color: '#FFFFFF', marginBottom: '20px', fontSize: '34px', fontFamily: "'Inter', sans-serif", fontWeight: '400', letterSpacing: '.02em' }}>
+          Welcome to Quantaid!
         </h2>
         <video
           width="80%"
@@ -798,8 +881,9 @@ const ProfileCreation: React.FC = () => {
         <button
           onClick={() => navigate('/map')}
           style={styles.skipVideoButton}
+          className="skip-button"
         >
-          Skip Video
+          Continue
         </button>
       </div>
     );
@@ -807,9 +891,6 @@ const ProfileCreation: React.FC = () => {
 
   // Render current step
     const currentStepConfig = stepConfigs[step];
-    if (!currentStepConfig) {
-      return null;
-    }
 
     // Use custom render if provided, otherwise use default
     if (currentStepConfig.customRender) {
@@ -1307,19 +1388,34 @@ const styles: { [key: string]: React.CSSProperties } = {
   skipVideoButton: {
     marginTop: '20px',
     padding: '12px 24px',
-    backgroundColor: '#566395',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '1.1em',
+    fontSize: '16px',
+    fontWeight: '500',
     fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    backgroundColor: '#3D4C65',
+    border: 'none',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    minWidth: '120px',
   },
 };
 
 const addHoverStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
+    /* Focus visible styles for accessibility */
+    button:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+    
+    input:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+    
+    /* Hover effects */
     .profile-bottom-buttons:hover:not(:disabled) {
       opacity: 0.9 !important;
       transition: opacity 0.2s ease;
