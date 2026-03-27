@@ -1,0 +1,508 @@
+import React from 'react';
+
+export const styles: Record<string, React.CSSProperties> = {
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+    background: '#030E29',
+    color: '#FFFFFF',
+    overflow: 'hidden',
+    margin: '0 auto',
+  },
+  topBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    width: '70%',
+    maxWidth: '1350px',
+    zIndex: 10,
+    marginTop: '3rem',
+    marginBottom: '4rem',
+  },
+  backButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+    border: 'none',
+    padding: 0,
+    width: '24px',
+    height: '24px',
+    cursor: 'pointer',
+    zIndex: 10,
+  },
+  progressBar: {
+    width: '90%',
+    height: 10,
+    backgroundColor: '#424E62',
+    borderRadius: 6,
+    border: 'none',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+    marginRight: '2.5rem',
+  },
+  dotsButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+    border: 'none',
+    padding: 0,
+    width: '24px',
+    height: '24px',
+    cursor: 'pointer',
+    zIndex: 10,
+    marginRight: '2.5rem',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+  },
+  modalContent: {
+    backgroundColor: '#182549',
+    borderRadius: '16px',
+    padding: '40px',
+    maxWidth: '440px',
+    width: '90%',
+    textAlign: 'center' as const,
+    boxShadow: '0 15px 30px rgba(0, 0, 0, 0.5)',
+  },
+  modalHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '24px',
+    position: 'relative',
+  },
+  modalTitle: {
+    fontSize: '28px',
+    fontWeight: '600',
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    margin: 0,
+    flex: 1,
+    textAlign: 'center',
+  },
+  closeButton: {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    right: -28,
+    top: -28,
+  },
+  modalSubtext: {
+    fontSize: '16px',
+    fontWeight: '400',
+    fontFamily: "'Inter', sans-serif",
+    color: '#AAAAC1',
+    margin: '0 0 32px 0',
+    lineHeight: '1.5',
+  },
+  modalButtons: {
+    display: 'flex',
+    gap: '16px',
+    justifyContent: 'center',
+  },
+  goBackButton: {
+    padding: '12px 24px',
+    fontSize: '16px',
+    fontWeight: '500',
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    backgroundColor: 'transparent',
+    border: '2px solid #424E62',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    minWidth: '120px',
+  },
+  exitQuizButton: {
+    padding: '12px 24px',
+    fontSize: '16px',
+    fontWeight: '500',
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    backgroundColor: '#3D4C65',
+    border: 'none',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    minWidth: '120px',
+  },
+  quizPane: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    padding: '60px 40px 40px',
+    boxSizing: 'border-box',
+    width: '62%',
+    maxWidth: '1195px',
+    margin: '0 auto',
+  },
+  questionStyles: {
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '28px',
+    fontWeight: '400',
+    lineHeight: '1.6',
+    letterSpacing: '.02em',
+    color: '#FFFFFF',
+    textAlign: 'left' as const,
+    maxWidth: '1195px',
+    width: '100%',
+    margin: '0 auto 5.5rem auto',
+  },
+  optionStyles: {
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '18px',
+    fontWeight: 'normal',
+    lineHeight: '1.4',
+    color: '#AAAAC1',
+  },
+  header: {
+    fontSize: '1.8rem',
+    margin: 0,
+    marginBottom: 8,
+  },
+  subheader: {
+    fontSize: '1rem',
+    margin: 0,
+    marginBottom: 32,
+    opacity: 0.8,
+  },
+  settingsDropdown: {
+    backgroundColor: '#1a2332',
+    border: '1px solid #424E62',
+    borderRadius: '8px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+    padding: '12px',
+    minWidth: '250px',
+    zIndex: 1000,
+  },
+  settingsOption: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '2px 2px',
+    cursor: 'pointer',
+    borderRadius: '6px',
+    transition: 'background-color 0.2s ease',
+    marginBottom: '4px',
+  },
+  optionLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  optionText: {
+    color: '#7A7C92',
+    fontSize: '14px',
+    fontWeight: '400',
+    fontFamily: "'Inter', sans-serif",
+  },
+  toggle: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  toggleTrack: {
+    width: '32px',
+    height: '16px',
+    borderRadius: '8px',
+    position: 'relative',
+    transition: 'background-color 0.2s ease',
+  },
+  toggleThumb: {
+    width: '12px',
+    height: '12px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '50%',
+    position: 'absolute',
+    top: '2px',
+    transition: 'transform 0.2s ease',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+  },
+  bottomBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    width: '100%',
+    zIndex: 10,
+    borderTop: '1px solid rgba(66, 78, 98, 0.3)',
+    marginTop: 'auto',
+    transition: 'background-color 0.15s ease',
+  },
+  resultIconContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '60px',
+  },
+  resultSvg: {},
+  footer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '65%',
+    maxWidth: '1350px',
+    marginTop: '1.5rem',
+    marginBottom: '1.5rem',
+  },
+  timerSection: {
+    display: 'flex',
+    alignItems: 'center',
+    minWidth: '60px',
+    height: '60px',
+  },
+  timerContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timerSvg: {
+    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
+  },
+  leaveFeedbackButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '12px 36px',
+    fontSize: '16px',
+    fontWeight: '500',
+    fontFamily: "'Sarabun', sans-serif",
+    color: '#9D9D9D',
+    backgroundColor: 'transparent',
+    border: 'transparent',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    minWidth: '140px',
+    height: 'auto',
+  },
+  leaveFeedbackText: {
+    fontSize: '16px',
+    fontWeight: '500',
+    fontFamily: "'Sarabun', sans-serif",
+    color: '#9D9D9D',
+    lineHeight: 1,
+  },
+  actionsSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+  },
+  actionButton: {
+    padding: '12px 42px',
+    fontSize: '22px',
+    fontWeight: '500',
+    fontFamily: "'Sarabun', sans-serif",
+    color: '#AAABAF',
+    backgroundColor: 'transparent',
+    border: 'transparent',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    minWidth: '80px',
+  },
+  reviewConceptContainer: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
+  reviewConceptTitle: {},
+  reviewConceptContent: {
+    fontSize: '20px',
+    fontWeight: '400',
+    fontFamily: "'Inter', sans-serif",
+    flex: 1,
+    overflowY: 'auto',
+    padding: '0 20px',
+    scrollBehavior: 'smooth',
+  },
+  reviewConceptParagraphs: {
+    marginBottom: '30px',
+  },
+  reviewConceptParagraph: {
+    fontSize: '18px',
+    fontWeight: '400',
+    fontFamily: "'Inter', sans-serif",
+    lineHeight: '1.6',
+    marginBottom: '16px',
+  },
+  revisitLessonContainer: {
+    marginTop: '30px',
+    textAlign: 'left' as const,
+  },
+  revisitLessonLink: {
+    fontSize: '14px',
+    fontWeight: '400',
+    fontFamily: "'Inter', sans-serif",
+    color: '#AFAFAF',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    transition: 'color 0.2s ease',
+    lineHeight: '1.4',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+  },
+  continueButton: {
+    padding: '12px 42px',
+    fontSize: '22px',
+    fontWeight: '500',
+    fontFamily: "'Sarabun', sans-serif",
+    border: 'none',
+    borderRadius: '16px',
+    transition: 'all 0.2s ease',
+    minWidth: '100px',
+  },
+  resultsContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+    padding: '40px',
+  },
+  resultsTitle: {
+    fontSize: '36px',
+    fontWeight: '600',
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    marginBottom: '50px',
+    textAlign: 'center',
+  },
+  resultsContent: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '80px',
+    marginBottom: '60px',
+  },
+  accuracySection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  accuracyCircle: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '0',
+  },
+  accuracySvg: {},
+  percentageText: {
+    position: 'absolute',
+    fontSize: '16px',
+    fontWeight: '600',
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+  },
+  accuracyLabel: {
+    fontSize: '18px',
+    fontWeight: '400',
+    fontFamily: "'Inter', sans-serif",
+    color: '#AAAAC1',
+    margin: 0,
+  },
+  timeSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  timeDisplay: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: '2%',
+    marginBottom: '-2%',
+    height: '70px',
+  },
+  timeNumber: {
+    fontSize: '18px',
+    fontWeight: '600',
+    fontFamily: "'Inter', sans-serif",
+    color: '#FFFFFF',
+  },
+  timeLabel: {
+    fontSize: '18px',
+    fontWeight: '400',
+    fontFamily: "'Inter', sans-serif",
+    color: '#AAAAC1',
+    margin: 0,
+  },
+  resultsScreenContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+  },
+};
+
+export const addQuizHoverStyles = () => {
+  const style = document.createElement('style');
+  style.textContent = `
+    .quiz-bottom-buttons:hover:not(:disabled) {
+      opacity: 0.9 !important;
+      transition: opacity 0.2s ease;
+    }
+
+    button:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+
+    .quiz-option:focus-visible {
+      outline: 3px solid #A4C5FF !important;
+      outline-offset: 2px !important;
+    }
+
+    .revisit-lesson-link:hover:not(:disabled) {
+      opacity: 0.9 !important;
+      transition: opacity 0.2s ease;
+    }
+
+    @keyframes fillFromBottom {
+      0% {
+        stroke-dashoffset: ${2 * Math.PI * 25};
+        transform: rotate(90deg);
+      }
+      100% {
+        stroke-dashoffset: var(--final-offset);
+        transform: rotate(var(--final-rotation));
+      }
+    }
+  `;
+  document.head.appendChild(style);
+};
+
+if (typeof document !== 'undefined') {
+  addQuizHoverStyles();
+}

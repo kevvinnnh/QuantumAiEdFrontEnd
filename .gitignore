@@ -12,6 +12,8 @@ frontend/node_modules/
 dist/
 frontend/dist/
 frontend/dist-ssr/
+coverage/
+frontend/coverage/
 
 # Environment files
 .env
