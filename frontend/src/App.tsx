@@ -17,13 +17,13 @@ import {
   Routes,
   Route
 } from 'react-router-dom';
-import Login from './components/Login';
-import ProfileCreation from './components/ProfileCreation';
-import Dashboard from './components/Dashboard';
-import Quiz from './components/Quiz';
-import AdminDashboard from './components/AdminDashboard';
-import ResetPassword from './components/ResetPassword';
-import { allQuizData } from './components/QuizQuestion';
+import Login from './components/auth/Login';
+import ProfileCreation from './components/profile/ProfileCreation';
+import Dashboard from './components/dashboard/Dashboard';
+import Quiz from './components/quiz/Quiz';
+import AdminDashboard from './components/admin/AdminDashboard';
+import ResetPassword from './components/auth/ResetPassword';
+import { allQuizData } from './data/quizData';
 import { AuthProvider, ProtectedRoute, AdminRoute, AdminToggle } from './AuthContext';
 import './App.css';
 
