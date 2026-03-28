@@ -9,7 +9,7 @@ if (!rootElement) throw new Error('Root element not found');
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <GoogleOAuthProvider clientId="740895408114-0sahrr5bs45dc26rlhk6hjioran3vhvs.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <App />
     </GoogleOAuthProvider>
   </React.StrictMode>
