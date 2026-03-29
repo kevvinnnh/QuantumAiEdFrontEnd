@@ -395,7 +395,7 @@ const Dashboard: React.FC = () => {
           role="region"
           aria-label="Scrollable content area"
         >
-          {data.contentError && (
+          {data.contentError !== null && data.contentError !== undefined && (
             <p role="alert" style={{ color: '#f87171', marginBottom: 12 }}>
               Course content is temporarily unavailable. Please try again later.
             </p>
