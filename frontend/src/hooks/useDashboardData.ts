@@ -1,8 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/api';
-import { allQuizData } from '@/data/quizData';
-import { lessonContents } from '@/data/lessonContents';
-import { courses } from '@/data/courseData';
 import type { Question } from '@/types/quiz';
 import type { LessonContent, ParagraphItem } from '@/types/lesson';
 import type { Course, CompletedQuiz } from '@/types/course';
@@ -27,6 +24,7 @@ interface UseDashboardDataOptions {
 }
 
 export interface UseDashboardDataReturn {
+  contentError: unknown;
   userEmail: string | null;
   userName: string;
   userPicture: string;
@@ -45,17 +43,12 @@ export interface UseDashboardDataReturn {
   isTopicUnlocked: (topicId: number) => boolean;
 }
 
-const DEFAULT_SECTIONS: DashboardSection[] = [
-  { id: 'foundations', title: 'Foundations', order: 0, courses: [0, 1, 2] },
-  { id: 'in-action', title: 'Quantum computing in action', order: 1, courses: [3, 4, 5] },
-  { id: 'deep-dive', title: 'Deep dive into quantum theory', order: 2, courses: [6, 7, 8] },
-];
-
 /**
  * Manages all API data fetching (user progress, lesson content, dashboard config)
  * and derived progress computations (course unlock, topic unlock, progress %).
  */
 export function useDashboardData({ currentLesson }: UseDashboardDataOptions): UseDashboardDataReturn {
+  const [contentError, setContentError] = useState<unknown>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
   const [userPicture, setUserPicture] = useState('');
@@ -99,7 +92,7 @@ export function useDashboardData({ currentLesson }: UseDashboardDataOptions): Us
           });
         }
       })
-      .catch(() => { /* fall back to hardcoded */ });
+      .catch((err) => { setContentError(err); });
     return () => { cancelled = true; };
   }, [currentLesson]);
 
@@ -119,12 +112,12 @@ export function useDashboardData({ currentLesson }: UseDashboardDataOptions): Us
         }));
         setDashboardConfig({ sections: data.sections || [], courses: mappedCourses });
       })
-      .catch(() => { /* fall back to hardcoded */ });
+      .catch((err) => { setContentError(err); });
     return () => { cancelled = true; };
   }, []);
 
-  const activeCourses: Course[] = dashboardConfig?.courses || courses;
-  const activeSections: DashboardSection[] = dashboardConfig?.sections || DEFAULT_SECTIONS;
+  const activeCourses: Course[] = dashboardConfig?.courses ?? [];
+  const activeSections: DashboardSection[] = dashboardConfig?.sections ?? [];
 
   // Fetch user progress
   const fetchUserProgress = useCallback(async () => {
@@ -220,15 +213,14 @@ export function useDashboardData({ currentLesson }: UseDashboardDataOptions): Us
     return false;
   }, [activeCourses, isCourseUnlocked]);
 
-  // Resolved quiz/lesson content (API or hardcoded fallback)
-  const currentQuiz = currentLesson !== null
-    ? (apiQuiz || allQuizData[currentLesson])
-    : [];
-  const currentLessonContent = currentLesson !== null
-    ? (apiLessonContent || lessonContents[currentLesson])
+  // Resolved quiz/lesson content from API
+  const currentQuiz: Question[] = currentLesson !== null ? (apiQuiz ?? []) : [];
+  const currentLessonContent: LessonContent | undefined = currentLesson !== null
+    ? (apiLessonContent ?? undefined)
     : undefined;
 
   return {
+    contentError,
     userEmail,
     userName,
     userPicture,

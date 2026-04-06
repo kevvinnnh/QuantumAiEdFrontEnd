@@ -3,9 +3,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import HighlightableInstructionsForReading from './HighlightableInstructionsForReadings';
 
-// Import hardcoded data as fallback
-import { lessonContents } from '@/components/quiz/LessonContents';
-
 import api, { BACKEND_URL } from '@/api';
 import type { ContentBlock } from '@/types/lesson';
 
@@ -76,11 +73,13 @@ const Reading: React.FC<Props> = ({
 }) => {
   const [apiLesson, setApiLesson] = useState<ApiLesson | null>(null);
   const [fetchAttempted, setFetchAttempted] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   // Fetch lesson from API
   useEffect(() => {
     let cancelled = false;
     setFetchAttempted(false);
+    setFetchError(false);
     setApiLesson(null);
 
     api.get(`/api/lessons/${courseId}`)
@@ -88,7 +87,7 @@ const Reading: React.FC<Props> = ({
         if (!cancelled) setApiLesson(res.data);
       })
       .catch(() => {
-        // Fall back to hardcoded content
+        if (!cancelled) setFetchError(true);
       })
       .finally(() => {
         if (!cancelled) setFetchAttempted(true);
@@ -97,63 +96,35 @@ const Reading: React.FC<Props> = ({
     return () => { cancelled = true; };
   }, [courseId]);
 
-  // Use API data if available, otherwise fall back to hardcoded
-  const useApi = apiLesson !== null;
-  const fallbackContent = lessonContents[courseId];
-
   const renderedContent = useMemo(() => {
-    if (useApi) {
-      // Render from API blocks
-      return apiLesson.blocks.map((block, idx) => {
-        if (block.type === 'image') {
-          return <ImageBlock key={idx} block={block} />;
-        }
-
-        const text = block.text || '';
-        let elementStyle = styles.paragraph;
-        let Element: keyof React.JSX.IntrinsicElements = 'p';
-
-        if (block.type === 'heading') {
-          elementStyle = styles.heading;
-          Element = 'h3';
-        } else if (block.type === 'subheading') {
-          elementStyle = styles.subheading;
-          Element = 'h4';
-        }
-
-        return <Element key={idx} style={elementStyle}>{text}</Element>;
-      });
-    }
-
-    // Fallback: render from hardcoded content
-    return fallbackContent.paragraphs.map((item, paraIdx) => {
-      let text: string;
-      let type: 'heading' | 'subheading' | 'paragraph' = 'paragraph';
-
-      if (typeof item === 'string') {
-        text = item;
-      } else {
-        text = item.text;
-        type = item.type || 'paragraph';
+    if (!apiLesson) return null;
+    return apiLesson.blocks.map((block, idx) => {
+      if (block.type === 'image') {
+        return <ImageBlock key={idx} block={block} />;
       }
 
+      const text = block.text || '';
       let elementStyle = styles.paragraph;
       let Element: keyof React.JSX.IntrinsicElements = 'p';
 
-      if (type === 'heading') {
+      if (block.type === 'heading') {
         elementStyle = styles.heading;
         Element = 'h3';
-      } else if (type === 'subheading') {
+      } else if (block.type === 'subheading') {
         elementStyle = styles.subheading;
         Element = 'h4';
       }
 
-      return <Element key={paraIdx} style={elementStyle}>{text}</Element>;
+      return <Element key={idx} style={elementStyle}>{text}</Element>;
     });
-  }, [useApi, apiLesson, fallbackContent]);
+  }, [apiLesson]);
 
   if (!fetchAttempted) {
     return <p style={{ color: '#aab4c8' }}>Loading lesson...</p>;
+  }
+
+  if (fetchError || !apiLesson) {
+    return <p style={{ color: '#f87171' }}>Lesson content is temporarily unavailable.</p>;
   }
 
   return (

@@ -8,7 +8,7 @@ import '@fontsource/inter/600.css';
 import '@fontsource/sarabun/400.css';
 import '@fontsource/sarabun/500.css';
 import '@fontsource/sarabun/600.css';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   useParams,
   useNavigate,
@@ -23,35 +23,37 @@ import Dashboard from './components/dashboard/Dashboard';
 import Quiz from './components/quiz/Quiz';
 import AdminDashboard from './components/admin/AdminDashboard';
 import ResetPassword from './components/auth/ResetPassword';
-import { allQuizData } from './data/quizData';
+import api from './api';
+import type { Question } from './types/quiz';
 import { AuthProvider, ProtectedRoute, AdminRoute, AdminToggle } from './AuthContext';
 import './App.css';
 
 /**
- * QuizPage acts as a thin wrapper around the Quiz component,
- * pulling courseId from the URL and looking up the appropriate questions.
+ * QuizPage fetches quiz questions from the API by courseId and renders the Quiz component.
  */
 const QuizPage: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const id = Number(courseId);
-  const questions = allQuizData[id];
+  const [questions, setQuestions] = useState<Question[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
-  // If no such course, redirect back to Dashboard
-  if (isNaN(id) || !(id in allQuizData)) {
-    return <Navigate to="/map" replace />;
-  }
+  useEffect(() => {
+    if (isNaN(id)) return;
+    api.get(`/api/lessons/${id}`)
+      .then(res => { setQuestions(res.data.quiz || []); })
+      .catch(() => { setLoadError(true); });
+  }, [id]);
+
+  if (isNaN(id) || loadError) return <Navigate to="/map" replace />;
+  if (questions === null) return null;
 
   return (
     <Quiz
       courseId={id}
       questions={questions}
-      onComplete={() => {
-        navigate('/map');
-      }}
-      onExit={() => {
-        navigate('/map');
-      }}
+      onComplete={() => { navigate('/map'); }}
+      onExit={() => { navigate('/map'); }}
     />
   );
 };

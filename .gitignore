@@ -15,6 +15,12 @@ frontend/dist-ssr/
 coverage/
 frontend/coverage/
 
+# Vite dev-server config cache
+*.timestamp-*.mjs
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Environment files
 .env
 frontend/.env
